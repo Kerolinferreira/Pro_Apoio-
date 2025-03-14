@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alterar/Incluir Informações - ProApoio</title>
+    <link rel="stylesheet" href="2_1_alterar_informacoes_candidato.css">
+</head>
+<body>
+    <header>
+        <h1>Alterar/Incluir Informações</h1>
+        <nav>
+            <ul>
+                <li><a href="1_pagina_inicial.html">Voltar para a Página Inicial</a></li>
+                <li><a href="2_area_candidato.html">Sair</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Dados Pessoais</h2>
+        <form id="formDados">
+            <label for="telefone">Número de Telefone:</label>
+            <input type="tel" id="telefone" name="telefone" required><br><br>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br><br>
+            
+            <label for="cep">CEP:</label>
+            <input type="text" id="cep" name="cep" required><br><br>
+
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" required>
+                <option value="">Selecione...</option>
+                <option value="feminino">Feminino</option>
+                <option value="masculino">Masculino</option>
+                <option value="outro">Outro</option>
+            </select><br><br>
+            
+            <label for="email_contato">Aceita receber contato via Email:</label>
+            <input type="checkbox" id="email_contato" name="email_contato"><br><br>
+            
+            <label for="whatsapp_contato">Aceita receber contato via WhatsApp:</label>
+            <input type="checkbox" id="whatsapp_contato" name="whatsapp_contato"><br><br>
+            
+            <label for="distancia">Distância máxima até o seu trabalho (km):</label>
+            <input type="number" id="distancia" name="distancia" required><br><br>
+            
+            <h2>Dados Profissionais</h2>
+            
+            <label for="experiencia1">Experiência 1:</label>
+            <textarea id="experiencia1" name="experiencia1"></textarea><br><br>
+            
+            <button type="button" onclick="adicionarExperiencia()">Adicionar Experiência</button>
+            <div id="outras-experiencias"></div><br><br>
+            
+            <label for="consideracoes">Considerações sobre suas experiências:</label>
+            <textarea id="consideracoes" name="consideracoes"></textarea><br><br>
+            
+            <label for="habilidades">Habilidades:</label>
+            <textarea id="habilidades" name="habilidades"></textarea><br><br>
+
+            <label for="escolaridade">Escolaridade:</label>
+            <select id="escolaridade" name="escolaridade" required>
+                <option value="">Selecione...</option>
+                <option value="fundamental">Ensino Fundamental</option>
+                <option value="medio">Ensino Médio</option>
+                <option value="superior">Ensino Superior</option>
+            </select><br><br>
+
+            <label for="experiencia_deficiencia">Experiência com Deficiência:</label>
+            <select id="experiencia_deficiencia" name="experiencia_deficiencia" required>
+                <option value="">Selecione...</option>
+                <option value="visual">Deficiência Visual</option>
+                <option value="auditiva">Deficiência Auditiva</option>
+                <option value="fisica">Deficiência Física</option>
+            </select><br><br>
+            
+            <h2>Formação</h2>
+            
+            <label for="nome_formacao">Nome da Formação:</label>
+            <input type="text" id="nome_formacao" name="nome_formacao" required><br><br>
+            
+            <label for="instituicao">Instituição:</label>
+            <input type="text" id="instituicao" name="instituicao" required><br><br>
+            
+            <label for="duracao">Tempo de Duração:</label>
+            <input type="text" id="duracao" name="duracao" required><br><br>
+            
+            <label for="inicio">Iniciada em:</label>
+            <input type="date" id="inicio" name="inicio" required><br><br>
+            
+            <label for="termino">Terminada em:</label>
+            <input type="date" id="termino" name="termino" required><br><br>
+            
+            <button type="submit">Salvar</button>
+            <button type="reset">Cancelar</button>
+        </form>
+    </main>
+    <footer>
+        <p>&copy; 2024 ProApoio. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        function adicionarExperiencia() {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <label for="nova-experiencia">Experiência:</label>
+                <textarea id="nova-experiencia" name="nova-experiencia"></textarea><br><br>
+            `;
+            document.getElementById("outras-experiencias").appendChild(div);
+        }
+
+        document.getElementById('formDados').addEventListener('submit', function(event) {
+            const telefone = document.getElementById('telefone').value;
+            const email = document.getElementById('email').value;
+            const cep = document.getElementById('cep').value;
+            const sexo = document.getElementById('sexo').value;
+            const escolaridade = document.getElementById('escolaridade').value;
+            const experienciaDeficiencia = document.getElementById('experiencia_deficiencia').value;
+            const distancia = document.getElementById('distancia').value;
+            const nome_formacao = document.getElementById('nome_formacao').value;
+            const instituicao = document.getElementById('instituicao').value;
+            const duracao = document.getElementById('duracao').value;
+            const inicio = document.getElementById('inicio').value;
+            const termino = document.getElementById('termino').value;
+
+            if (!telefone || !email || !cep || !sexo || !escolaridade || !experienciaDeficiencia || !distancia || !nome_formacao || !instituicao || !duracao || !inicio || !termino) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                event.preventDefault(); // Impede o envio do formulário
+            } else {
+                event.preventDefault(); // Impede o envio real do formulário
+                mostrarConfirmacao();
+            }
+        });
+
+        function mostrarConfirmacao() {
+            const confirmacao = confirm("Confirma as informações?");
+            if (confirmacao) {
+                alert('Informações salvas com sucesso!');
+                window.location.href = '1_pagina_inicial.html'; // Redireciona para a página inicial
+            } else {
+                alert('Por favor, revise suas informações.');
+            }
+        }
+    </script>
+</body>
+</html>

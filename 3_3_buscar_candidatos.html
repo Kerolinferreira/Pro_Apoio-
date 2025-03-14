@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca de Candidatos - PróApoio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px;
+        }
+        .filters {
+            width: 20%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .candidates {
+            width: 75%;
+        }
+        .candidate {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        .no-results {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+            margin-top: 20px;
+        }
+        .filter-item {
+            margin-bottom: 15px;
+        }
+        .filter-item label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .filter-item select, .filter-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">PróApoio</div>
+
+    <nav>
+        <ul>
+            <li><a href="1_pagina_inicial.html">Voltar para a Página Inicial</a></li>
+            <li><a href="3_area_instituicao.html">Área da Instituição</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="filters">
+            <h3>Filtros</h3>
+            <div class="filter-item">
+                <label for="escolaridade">Escolaridade</label>
+                <select id="escolaridade" onchange="filtrarCandidatos()">
+                    <option value="">Todos</option>
+                    <option value="fundamental">Ensino Fundamental</option>
+                    <option value="medio">Ensino Médio</option>
+                    <option value="superior">Ensino Superior</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="experiencia">Experiência com Deficiência</label>
+                <select id="experiencia" onchange="filtrarCandidatos()">
+                    <option value="">Todos</option>
+                    <option value="visual">Deficiência Visual</option>
+                    <option value="auditiva">Deficiência Auditiva</option>
+                    <option value="fisica">Deficiência Física</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="localizacao">Localização (km)</label>
+                <input type="number" id="localizacao" min="0" placeholder="Distância em km" oninput="filtrarCandidatos()">
+            </div>
+        </div>
+
+        <div class="candidates" id="candidates">
+            <div class="candidate" data-escolaridade="medio" data-experiencia="visual" data-localizacao="10">
+                <h3><a href="joana.html">Joana</a></h3>
+            </div>
+            <div class="candidate" data-escolaridade="superior" data-experiencia="auditiva" data-localizacao="15">
+                <h3><a href="Miquelângela.html">Miquelângela</a></h3>
+            </div>
+            <div class="candidate" data-escolaridade="fundamental" data-experiencia="fisica" data-localizacao="20">
+                <h3><a href="karineu.html">Karineu</a></h3>
+            </div>
+            <div class="no-results" id="no-results" style="display: none;">
+                Nenhum resultado encontrado.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filtrarCandidatos() {
+            const escolaridade = document.getElementById('escolaridade').value;
+            const experiencia = document.getElementById('experiencia').value;
+            const localizacao = document.getElementById('localizacao').value;
+
+            const candidatos = document.querySelectorAll('.candidate');
+            let resultadosEncontrados = false;
+
+            candidatos.forEach(candidato => {
+                const candidatoEscolaridade = candidato.getAttribute('data-escolaridade');
+                const candidatoExperiencia = candidato.getAttribute('data-experiencia');
+                const candidatoLocalizacao = candidato.getAttribute('data-localizacao');
+
+                let mostrar = true;
+
+                if (escolaridade && candidatoEscolaridade !== escolaridade) {
+                    mostrar = false;
+                }
+
+                if (experiencia && candidatoExperiencia !== experiencia) {
+                    mostrar = false;
+                }
+
+                if (localizacao && parseInt(candidatoLocalizacao) > parseInt(localizacao)) {
+                    mostrar = false;
+                }
+
+                if (mostrar) {
+                    candidato.style.display = 'block';
+                    resultadosEncontrados = true;
+                } else {
+                    candidato.style.display = 'none';
+                }
+            });
+
+            const noResults = document.getElementById('no-results');
+            if (resultadosEncontrados) {
+                noResults.style.display = 'none';
+            } else {
+                noResults.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

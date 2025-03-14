@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alterar/Incluir Informações - Pró Apoio</title>
+    <link rel="stylesheet" href="3_1_alterar_informacoes_instituicao.css">
+</head>
+<body>
+    <header>
+        <h1>Alterar/Incluir Informações</h1>
+        <nav>
+            <ul>
+                <li><a href="1_pagina_inicial.html">Voltar para a Página Inicial</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Dados da Instituição</h2>
+        <form id="formDadosInstituicao">
+            <h3>Dados Básicos</h3>
+            <label for="nome_instituicao">Nome da Instituição:</label>
+            <input type="text" id="nome_instituicao" name="nome_instituicao" required><br><br>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br><br>
+            
+            <label for="telefone">Número de Telefone:</label>
+            <input type="tel" id="telefone" name="telefone" required><br><br>
+            
+            <label for="endereco">Endereço:</label>
+            <input type="text" id="endereco" name="endereco" required><br><br>
+            
+            <h3>Dados de Ensino</h3>
+            <label for="tipo_ensino">Tipo de Ensino:</label>
+            <input type="text" id="tipo_ensino" name="tipo_ensino" required><br><br>
+            
+            <label for="curso">Curso(s) Oferecido(s):</label>
+            <textarea id="curso" name="curso" required></textarea><br><br>
+
+            <h3>Alunos com Deficiência</h3>
+            <div id="alunos">
+                <div class="aluno">
+                    <label for="nome_aluno">Nome do Aluno:</label>
+                    <input type="text" id="nome_aluno" name="nome_aluno" required><br><br>
+                    
+                    <label for="genero">Gênero:</label>
+                    <select id="genero" name="genero" required>
+                        <option value="masculino">Masculino</option>
+                        <option value="feminino">Feminino</option>
+                        <option value="outro">Outro</option>
+                    </select><br><br>
+                    
+                    <label for="deficiencia">Deficiência:</label>
+                    <input type="text" id="deficiencia" name="deficiencia" required><br><br>
+                    
+                    <label for="necessidades">Necessidades:</label>
+                    <textarea id="necessidades" name="necessidades" required></textarea><br><br>
+                </div>
+            </div>
+            
+            <button type="button" onclick="adicionarAluno()">Adicionar Aluno</button><br><br>
+
+            <button type="submit">Salvar</button>
+            <button type="reset">Cancelar</button>
+        </form>
+    </main>
+    <footer>
+        <p>&copy; 2024 Conexão Ensino. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        function adicionarAluno() {
+            const div = document.createElement("div");
+            div.classList.add("aluno");
+            div.innerHTML = `
+                <label for="nome_aluno">Nome do Aluno:</label>
+                <input type="text" id="nome_aluno" name="nome_aluno" required><br><br>
+                
+                <label for="genero">Gênero:</label>
+                <select id="genero" name="genero" required>
+                    <option value="masculino">Masculino</option>
+                    <option value="feminino">Feminino</option>
+                    <option value="outro">Outro</option>
+                </select><br><br>
+                
+                <label for="deficiencia">Deficiência:</label>
+                <input type="text" id="deficiencia" name="deficiencia" required><br><br>
+                
+                <label for="necessidades">Necessidades:</label>
+                <textarea id="necessidades" name="necessidades" required></textarea><br><br>
+            `;
+            document.getElementById("alunos").appendChild(div);
+        }
+
+        document.getElementById('formDadosInstituicao').addEventListener('submit', function(event) {
+            const nomeInstituicao = document.getElementById('nome_instituicao').value;
+            const email = document.getElementById('email').value;
+            const telefone = document.getElementById('telefone').value;
+            const endereco = document.getElementById('endereco').value;
+            const tipoEnsino = document.getElementById('tipo_ensino').value;
+            const curso = document.getElementById('curso').value;
+            const nomeAluno = document.getElementsByName('nome_aluno');
+            const genero = document.getElementsByName('genero');
+            const deficiencia = document.getElementsByName('deficiencia');
+            const necessidades = document.getElementsByName('necessidades');
+
+            if (!nomeInstituicao || !email || !telefone || !endereco || !tipoEnsino || !curso) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                event.preventDefault(); // Impede o envio do formulário
+                return;
+            }
+
+            for (let i = 0; i < nomeAluno.length; i++) {
+                if (!nomeAluno[i].value || !genero[i].value || !deficiencia[i].value || !necessidades[i].value) {
+                    alert('Por favor, preencha todos os campos dos alunos.');
+                    event.preventDefault(); // Impede o envio do formulário
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

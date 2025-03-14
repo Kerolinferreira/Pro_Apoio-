@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propostas Recebidas - ProApoio</title>
+    <link rel="stylesheet" href="2_2_propostas_recebidas.css">
+    <script>
+        function toggleVisibility(id) {
+            var element = document.getElementById(id);
+            if (element.style.display === "none") {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Propostas Recebidas</h1>
+        <nav>
+            <ul>
+                <li><a href="1_pagina_inicial.html">Voltar para a Página Inicial</a></li>
+                <li><a href="2_area_candidato.html">Sair</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Propostas</h2>
+        <div class="propostas">
+            <button onclick="toggleVisibility('aceitas')">Propostas Aceitas</button>
+            <div id="aceitas" style="display: none;">
+                <p>Aqui vão as propostas aceitas...</p>
+            </div>
+
+            <button onclick="toggleVisibility('recusadas')">Propostas Recusadas</button>
+            <div id="recusadas" style="display: none;">
+                <p>Aqui vão as propostas recusadas...</p>
+            </div>
+
+            <button onclick="toggleVisibility('pendentes')">Propostas Pendentes</button>
+            <div id="pendentes" style="display: none;">
+                <p>Aqui vão as propostas pendentes...</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Conexão Ensino. Todos os direitos reservados.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Pró Apoio</title>
+    <link rel="stylesheet" href="7_login.css">
+    <script>
+        // Simulação de dados cadastrados
+        const usuarios = [
+            { email: 'candidato@exemplo.com', senha: 'senha123', tipo: 'candidate' },
+            { email: 'instituicao@exemplo.com', senha: 'senha456', tipo: 'institution' }
+        ];
+
+        function validarLogin(event) {
+            event.preventDefault(); // Impede o envio do formulário
+
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            const usuario = usuarios.find(user => user.email === email && user.senha === senha);
+
+            if (usuario) {
+                alert('Login bem-sucedido!');
+                // Redireciona para a página adequada com base no tipo de usuário
+                if (usuario.tipo === 'candidate') {
+                    window.location.href = '2_area_candidato.html';
+                } else if (usuario.tipo === 'institution') {
+                    window.location.href = '3_area_instituicao.html';
+                }
+            } else {
+                alert('Email ou senha incorretos.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Login</h1>
+        <nav>
+            <ul>
+                <li><a href="1_pagina_inicial.html">Voltar para a Página Inicial</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Entrar</h2>
+        <form onsubmit="validarLogin(event)">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br><br>
+            
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" name="senha" required><br><br>
+            
+            <button type="submit">Login</button>
+            <button type="reset">Cancelar</button>
+        </form>
+        <p>Não tem uma conta? <a href="6_cadastro.html">Cadastre-se aqui</a></p>
+    </main>
+    <footer>
+        <p>&copy; 2024 Pró Apoio. Todos os direitos reservados.</p>
+    </footer>
+</body>
+</html>
