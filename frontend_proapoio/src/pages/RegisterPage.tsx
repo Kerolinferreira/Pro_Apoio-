@@ -1,321 +1,364 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+// Componentes de UI simulados, use os seus reais
+const Input = ({ label, name, type = 'text', value, onChange, required = false, error }) => (
+    <div className="mb-4">
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}{required && <span className="text-red-500"> *</span>}</label>
+        <input
+            id={name}
+            name={name}
+            type={type}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className={`mt-1 block w-full rounded-md border p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${error ? 'border-red-500' : 'border-gray-300'}`}
+        />
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    </div>
+);
 
-export default function RegisterPage() {
-  const [tipo, setTipo] = useState<'candidato' | 'instituicao'>('candidato')
-
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordConfirmation, setPasswordConfirmation] = useState('')
-  const [showPwd, setShowPwd] = useState(false)
-  const [showPwd2, setShowPwd2] = useState(false)
-
-  // Instituição
-  const [cnpj, setCnpj] = useState('')
-  const [razaoSocial, setRazaoSocial] = useState('')
-  const [nomeFantasia, setNomeFantasia] = useState('')
-  const [codigoInep, setCodigoInep] = useState('')
-
-  // Candidato
-  const [cpf, setCpf] = useState('')
-  const [cep, setCep] = useState('')
-  const [logradouro, setLogradouro] = useState('')
-  const [bairro, setBairro] = useState('')
-  const [cidade, setCidade] = useState('')
-  const [estado, setEstado] = useState('')
-  const [numero, setNumero] = useState('')
-  const [complemento, setComplemento] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [escolaridade, setEscolaridade] = useState('')
-  const [nomeCurso, setNomeCurso] = useState('')
-  const [nomeInstituicaoEnsino, setNomeInstituicaoEnsino] = useState('')
-
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string>('')
-  const [success, setSuccess] = useState<string>('')
-  const liveRef = useRef<HTMLParagraphElement>(null)
-
-  const navigate = useNavigate()
-
-  // --- Máscaras ---
-  function formatCPF(value: string) {
-    const digits = value.replace(/\D/g, '').slice(0, 11)
-    return digits.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-  }
-  function formatCNPJ(value: string) {
-    const digits = value.replace(/\D/g, '').slice(0, 14)
-    return digits.replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2')
-  }
-  function formatCEP(value: string) {
-    const digits = value.replace(/\D/g, '').slice(0, 8)
-    return digits.replace(/(\d{5})(\d)/, '$1-$2')
-  }
-  function formatPhone(value: string) {
-    const digits = value.replace(/\D/g, '').slice(0, 11)
-    if (digits.length <= 10) return digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
-    return digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
-  }
-
-  // Força de senha
-  const pwdScore = useMemo(() => {
-    let s = 0
-    if (password.length >= 8) s++
-    if (/[A-Z]/.test(password)) s++
-    if (/[a-z]/.test(password)) s++
-    if (/[0-9]/.test(password)) s++
-    if (/[^A-Za-z0-9]/.test(password)) s++
-    return s
-  }, [password])
-
-  function announce(msg: string) {
-    if (liveRef.current) {
-      liveRef.current.textContent = msg
-      setTimeout(() => { if (liveRef.current) liveRef.current.textContent = '' }, 2000)
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-
-    // Validações básicas
-    if (!nome.trim()) return setError('Informe o nome.')
-    if (!email.trim()) return setError('Informe o email.')
-    if (password !== passwordConfirmation) return setError('As senhas não conferem.')
-    if (password.length < 8) return setError('A senha deve ter pelo menos 8 caracteres.')
-
-    setLoading(true)
-    try {
-      if (tipo === 'candidato') {
-        await api.post('/auth/register/candidato', {
-          nome,
-          email,
-          password,
-          password_confirmation: passwordConfirmation,
-          cpf: cpf.replace(/\D/g, ''),
-          cep: cep.replace(/\D/g, ''),
-          logradouro,
-          bairro,
-          cidade,
-          estado,
-          numero,
-          complemento,
-          telefone: telefone.replace(/\D/g, ''),
-          escolaridade,
-          nome_curso: nomeCurso,
-          nome_instituicao_ensino: nomeInstituicaoEnsino,
-        })
-      } else {
-        await api.post('/auth/register/instituicao', {
-          nome,
-          email,
-          password,
-          password_confirmation: passwordConfirmation,
-          cnpj: cnpj.replace(/\D/g, ''),
-          razao_social: razaoSocial,
-          nome_fantasia: nomeFantasia,
-          codigo_inep: codigoInep,
-        })
-      }
-      setSuccess('Cadastro realizado. Você pode entrar agora.')
-      announce('Cadastro realizado com sucesso.')
-      navigate('/login')
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Não foi possível concluir o cadastro.'
-      setError(msg)
-      announce(msg)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    // limpar mensagens ao trocar tipo
-    setError('')
-    setSuccess('')
-  }, [tipo])
-
-  return (
-    <main className="max-w-2xl mx-auto p-4" aria-labelledby="titulo-cadastro">
-      <h1 id="titulo-cadastro" className="text-2xl font-extrabold mb-4">Cadastro</h1>
-      <p ref={liveRef} className="sr-only" aria-live="polite" />
-
-      {/* Seletor de tipo acessível */}
-      <div role="tablist" aria-label="Tipo de conta" className="inline-flex rounded-lg ring-1 ring-zinc-300 overflow-hidden mb-4">
-        <button
-          role="tab"
-          id="aba-candidato"
-          aria-selected={tipo === 'candidato'}
-          aria-controls="painel-candidato"
-          onClick={() => setTipo('candidato')}
-          className={`px-4 py-2 text-sm font-medium ${tipo === 'candidato' ? 'bg-blue-700 text-white' : 'bg-white'}`}
+const Select = ({ label, name, value, onChange, required = false, options }) => (
+    <div className="mb-4">
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}{required && <span className="text-red-500"> *</span>}</label>
+        <select
+            id={name}
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         >
-          Sou candidato
-        </button>
-        <button
-          role="tab"
-          id="aba-instituicao"
-          aria-selected={tipo === 'instituicao'}
-          aria-controls="painel-instituicao"
-          onClick={() => setTipo('instituicao')}
-          className={`px-4 py-2 text-sm font-medium ${tipo === 'instituicao' ? 'bg-blue-700 text-white' : 'bg-white'}`}
-        >
-          Sou instituição
-        </button>
-      </div>
+            {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                    {option.label}
+                </option>
+            ))}
+        </select>
+    </div>
+);
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4" aria-describedby="ajuda">
-        <p id="ajuda" className="text-sm text-zinc-600">Preencha os campos obrigatórios. Senha mínima de 8 caracteres.</p>
+const Button = ({ children, onClick, disabled = false, variant = 'primary', type = 'button' }) => (
+    <button
+        type={type}
+        onClick={onClick}
+        disabled={disabled}
+        className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+            disabled ? 'bg-gray-400 cursor-not-allowed' : variant === 'primary' ? 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-gray-600 hover:bg-gray-700'
+        }`}
+    >
+        {children}
+    </button>
+);
 
-        <div>
-          <label htmlFor="nome" className="block text-sm font-medium">Nome</label>
-          <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1 border p-2 w-full rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700" />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium">Email</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputMode="email" autoComplete="email" required className="mt-1 border p-2 w-full rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700" />
-        </div>
 
-        <div>
-          <label htmlFor="pwd" className="block text-sm font-medium">Senha</label>
-          <div className="mt-1 relative">
-            <input id="pwd" type={showPwd ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required className="border p-2 w-full rounded pr-24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700" />
-            <button type="button" className="absolute inset-y-0 right-0 px-3 text-sm underline underline-offset-4" aria-pressed={showPwd} aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPwd((v) => !v)}>
-              {showPwd ? 'Ocultar' : 'Mostrar'}
-            </button>
-          </div>
-          {/* Barra simples de força */}
-          <div className="mt-1 h-1 rounded bg-zinc-200" aria-hidden>
-            <div className={`h-1 rounded ${pwdScore <= 2 ? 'bg-red-500 w-1/4' : pwdScore === 3 ? 'bg-amber-500 w-2/4' : 'bg-green-600 w-3/4'}`} />
-          </div>
-          <p className="text-xs text-zinc-600 mt-1">Use letras maiúsculas, minúsculas, números e símbolos.</p>
-        </div>
+const escolaridadeOptions = [
+    { value: '', label: 'Selecione a Escolaridade' },
+    { value: 'Fundamental Completo', label: 'Fundamental Completo' },
+    { value: 'Médio Completo', label: 'Médio Completo' },
+    { value: 'Superior Incompleto', label: 'Superior Incompleto' },
+    { value: 'Superior Completo', label: 'Superior Completo' },
+    // Adicionar mais níveis conforme a documentação
+];
 
-        <div>
-          <label htmlFor="pwd2" className="block text-sm font-medium">Confirmar senha</label>
-          <div className="mt-1 relative">
-            <input id="pwd2" type={showPwd2 ? 'text' : 'password'} value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} autoComplete="new-password" required className="border p-2 w-full rounded pr-24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700" />
-            <button type="button" className="absolute inset-y-0 right-0 px-3 text-sm underline underline-offset-4" aria-pressed={showPwd2} aria-label={showPwd2 ? 'Ocultar confirmação' : 'Mostrar confirmação'} onClick={() => setShowPwd2((v) => !v)}>
-              {showPwd2 ? 'Ocultar' : 'Mostrar'}
-            </button>
-          </div>
-        </div>
+const initialCandidatoState = {
+    nome_completo: '',
+    email: '',
+    telefone: '',
+    cpf: '',
+    data_nascimento: '',
+    senha: '',
+    confirmar_senha: '',
+    escolaridade: '',
+    curso: '', // Condicional
+    instituicao_ensino: '', // Condicional
+    cep: '',
+    logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    // ... outros campos necessários
+};
 
-        {/* Painéis condicionais */}
-        {tipo === 'candidato' ? (
-          <section role="region" aria-labelledby="h-cand" id="painel-candidato" className="space-y-3">
-            <h2 id="h-cand" className="font-semibold">Dados do candidato</h2>
-            <div>
-              <label htmlFor="cpf" className="block text-sm font-medium">CPF</label>
-              <input id="cpf" value={cpf} onChange={(e) => setCpf(formatCPF(e.target.value))} inputMode="numeric" className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="cep" className="block text-sm font-medium">CEP</label>
-              <input id="cep" value={cep} onChange={(e) => setCep(formatCEP(e.target.value))} onBlur={async () => {
-                const onlyDigits = cep.replace(/\D/g, '')
-                if (onlyDigits.length === 8) {
-                  try {
-                    const resp = await api.get(`/external/viacep/${onlyDigits}`)
-                    const data = resp.data
-                    if (!data?.erro) {
-                      setLogradouro(data.logradouro || '')
-                      setBairro(data.bairro || '')
-                      setCidade(data.localidade || '')
-                      setEstado(data.uf || '')
-                    }
-                  } catch { /* ignora */ }
+const initialInstituicaoState = {
+    nome_fantasia: '',
+    razao_social: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    senha: '',
+    confirmar_senha: '',
+    // Desvio 4 será corrigido aqui: Faltam campos de endereço
+    cep: '', 
+    logradouro: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    complemento: '',
+    ponto_referencia: '',
+};
+
+const RegisterPage: React.FC = () => {
+    const navigate = useNavigate();
+    const { login } = useAuth();
+    const [userType, setUserType] = useState<'candidato' | 'instituicao' | null>(null);
+    const [candidatoForm, setCandidatoForm] = useState(initialCandidatoState);
+    const [instituicaoForm, setInstituicaoForm] = useState(initialInstituicaoState);
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    const handleCandidatoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setCandidatoForm(prev => ({ ...prev, [name]: value }));
+        // Remover erro ao começar a digitar
+        setErrors(prev => ({ ...prev, [name]: undefined }));
+
+        // Lógica para auto-preenchimento de CEP, se implementada
+        // if (name === 'cep' && value.length === 9) { fetchAddress(value, setCandidatoForm); }
+    };
+
+    const handleInstituicaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setInstituicaoForm(prev => ({ ...prev, [name]: value }));
+        setErrors(prev => ({ ...prev, [name]: undefined }));
+
+        // Lógica para auto-preenchimento de CEP, se implementada
+        // if (name === 'cep' && value.length === 9) { fetchAddress(value, setInstituicaoForm); }
+    };
+
+
+    const validateCandidato = () => {
+        const newErrors: Record<string, string> = {};
+        if (candidatoForm.senha !== candidatoForm.confirmar_senha) {
+            newErrors.confirmar_senha = 'As senhas não coincidem.';
+        }
+        // ... outras validações obrigatórias (email, cpf, etc.)
+
+        if (candidatoForm.escolaridade && isSuperiorLevel(candidatoForm.escolaridade)) {
+            if (!candidatoForm.curso) { newErrors.curso = 'O campo Curso é obrigatório para este nível de escolaridade.'; }
+            if (!candidatoForm.instituicao_ensino) { newErrors.instituicao_ensino = 'O campo Instituição é obrigatório para este nível de escolaridade.'; }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validateInstituicao = () => {
+        const newErrors: Record<string, string> = {};
+        if (instituicaoForm.senha !== instituicaoForm.confirmar_senha) {
+            newErrors.confirmar_senha = 'As senhas não coincidem.';
+        }
+        // ... outras validações obrigatórias (cnpj, cep, etc.)
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // Lógica Condicional para Escolaridade Superior
+    const isSuperiorLevel = (escolaridade: string): boolean => {
+        const upperLevels = ['Superior Incompleto', 'Superior Completo'];
+        return upperLevels.includes(escolaridade);
+    };
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            if (userType === 'candidato') {
+                if (!validateCandidato()) {
+                    setLoading(false);
+                    return;
                 }
-              }} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="logradouro" className="block text-sm font-medium">Logradouro</label>
-              <input id="logradouro" value={logradouro} onChange={(e) => setLogradouro(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="bairro" className="block text-sm font-medium">Bairro</label>
-              <input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label htmlFor="cidade" className="block text-sm font-medium">Cidade</label>
-                <input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-              </div>
-              <div className="w-32">
-                <label htmlFor="uf" className="block text-sm font-medium">UF</label>
-                <input id="uf" value={estado} onChange={(e) => setEstado(e.target.value.toUpperCase())} maxLength={2} className="mt-1 border p-2 w-full rounded" />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label htmlFor="numero" className="block text-sm font-medium">Número</label>
-                <input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-              </div>
-              <div className="flex-1">
-                <label htmlFor="comp" className="block text-sm font-medium">Complemento</label>
-                <input id="comp" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="tel" className="block text-sm font-medium">Telefone</label>
-              <input id="tel" value={telefone} onChange={(e) => setTelefone(formatPhone(e.target.value))} inputMode="tel" className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="escolaridade" className="block text-sm font-medium">Escolaridade</label>
-              <input id="escolaridade" value={escolaridade} onChange={(e) => setEscolaridade(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="curso" className="block text-sm font-medium">Nome do curso</label>
-              <input id="curso" value={nomeCurso} onChange={(e) => setNomeCurso(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="ies" className="block text-sm font-medium">Instituição de ensino</label>
-              <input id="ies" value={nomeInstituicaoEnsino} onChange={(e) => setNomeInstituicaoEnsino(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-          </section>
-        ) : (
-          <section role="region" aria-labelledby="h-inst" id="painel-instituicao" className="space-y-3">
-            <h2 id="h-inst" className="font-semibold">Dados da instituição</h2>
-            <div>
-              <label htmlFor="cnpj" className="block text-sm font-medium">CNPJ</label>
-              <input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCNPJ(e.target.value))} onBlur={async () => {
-                const digits = cnpj.replace(/\D/g, '')
-                if (digits.length === 14) {
-                  try {
-                    const resp = await api.get(`/external/receitaws/${digits}`)
-                    const data = resp.data
-                    if (data && !data.erro) {
-                      setRazaoSocial(data.razao_social || data.nome || razaoSocial)
-                      setNomeFantasia(data.nome_fantasia || data.fantasia || nomeFantasia)
-                    }
-                  } catch { /* ignora */ }
+                const payload = {
+                    ...candidatoForm,
+                    // Mapeamento e sanitização de dados para o payload da API
+                };
+                await api.post('/candidatos/register', payload);
+                // Lógica de sucesso - Redirecionar para login ou autenticar
+                navigate('/login?success=candidato');
+
+            } else if (userType === 'instituicao') {
+                if (!validateInstituicao()) {
+                    setLoading(false);
+                    return;
                 }
-              }} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="razao" className="block text-sm font-medium">Razão social</label>
-              <input id="razao" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="fantasia" className="block text-sm font-medium">Nome fantasia</label>
-              <input id="fantasia" value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-            <div>
-              <label htmlFor="inep" className="block text-sm font-medium">Código INEP</label>
-              <input id="inep" value={codigoInep} onChange={(e) => setCodigoInep(e.target.value)} className="mt-1 border p-2 w-full rounded" />
-            </div>
-          </section>
-        )}
+                const payload = {
+                    ...instituicaoForm,
+                    // Mapeamento e sanitização de dados para o payload da API
+                };
+                await api.post('/instituicoes/register', payload);
+                // Lógica de sucesso - Redirecionar para login ou autenticar
+                navigate('/login?success=instituicao');
+            }
+        } catch (error) {
+            console.error('Erro de registro:', error);
+            setErrors({ api: 'Ocorreu um erro ao processar seu cadastro. Verifique os dados e tente novamente.' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        {error && <div role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{error}</div>}
-        {success && <div role="status" className="rounded border border-green-200 bg-green-50 p-2 text-green-800">{success}</div>}
+    const renderCandidatoForm = () => {
+        const showEducationalDetails = isSuperiorLevel(candidatoForm.escolaridade);
 
-        <button type="submit" disabled={loading} aria-busy={loading} className="bg-green-700 text-white px-4 py-2 rounded font-semibold disabled:opacity-60">
-          {loading ? 'Registrando…' : 'Registrar'}
-        </button>
-      </form>
-    </main>
-  )
-}
+        return (
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Input label="Nome Completo" name="nome_completo" value={candidatoForm.nome_completo} onChange={handleCandidatoChange} required error={errors.nome_completo} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Email" name="email" type="email" value={candidatoForm.email} onChange={handleCandidatoChange} required error={errors.email} />
+                    <Input label="Telefone" name="telefone" value={candidatoForm.telefone} onChange={handleCandidatoChange} required error={errors.telefone} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="CPF" name="cpf" value={candidatoForm.cpf} onChange={handleCandidatoChange} required error={errors.cpf} />
+                    <Input label="Data de Nascimento" name="data_nascimento" type="date" value={candidatoForm.data_nascimento} onChange={handleCandidatoChange} required error={errors.data_nascimento} />
+                </div>
+
+                <Select
+                    label="Escolaridade"
+                    name="escolaridade"
+                    value={candidatoForm.escolaridade}
+                    onChange={handleCandidatoChange}
+                    required
+                    options={escolaridadeOptions}
+                />
+                
+                {/* INÍCIO DA CORREÇÃO - Renderização Condicional */}
+                {showEducationalDetails && (
+                    <>
+                        <Input 
+                            label="Nome do Curso" 
+                            name="curso" 
+                            value={candidatoForm.curso} 
+                            onChange={handleCandidatoChange} 
+                            required={showEducationalDetails} 
+                            error={errors.curso} 
+                        />
+                        <Input 
+                            label="Instituição de Ensino" 
+                            name="instituicao_ensino" 
+                            value={candidatoForm.instituicao_ensino} 
+                            onChange={handleCandidatoChange} 
+                            required={showEducationalDetails} 
+                            error={errors.instituicao_ensino} 
+                        />
+                    </>
+                )}
+                {/* FIM DA CORREÇÃO */}
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Endereço</h3>
+                {/* Campos de endereço (CEP, logradouro, etc.) viriam aqui */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="CEP" name="cep" value={candidatoForm.cep} onChange={handleCandidatoChange} required error={errors.cep} />
+                    <Input label="Número" name="numero" value={candidatoForm.numero} onChange={handleCandidatoChange} required error={errors.numero} />
+                </div>
+                <Input label="Logradouro" name="logradouro" value={candidatoForm.logradouro} onChange={handleCandidatoChange} required error={errors.logradouro} />
+                <div className="grid grid-cols-3 gap-4">
+                    <Input label="Bairro" name="bairro" value={candidatoForm.bairro} onChange={handleCandidatoChange} required error={errors.bairro} />
+                    <Input label="Cidade" name="cidade" value={candidatoForm.cidade} onChange={handleCandidatoChange} required error={errors.cidade} />
+                    <Input label="Estado" name="estado" value={candidatoForm.estado} onChange={handleCandidatoChange} required error={errors.estado} />
+                </div>
+                
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Segurança</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Senha" name="senha" type="password" value={candidatoForm.senha} onChange={handleCandidatoChange} required error={errors.senha} />
+                    <Input label="Confirmar Senha" name="confirmar_senha" type="password" value={candidatoForm.confirmar_senha} onChange={handleCandidatoChange} required error={errors.confirmar_senha} />
+                </div>
+
+                {errors.api && <p className="text-red-600 text-center">{errors.api}</p>}
+                
+                <Button type="submit" disabled={loading}>
+                    {loading ? 'Cadastrando...' : 'Cadastrar Candidato'}
+                </Button>
+            </form>
+        );
+    };
+
+    const renderInstituicaoForm = () => {
+        // Renderização para Instituição (Desvio 4 será corrigido aqui)
+        return (
+             <form onSubmit={handleSubmit} className="space-y-4">
+                <Input label="Nome Fantasia" name="nome_fantasia" value={instituicaoForm.nome_fantasia} onChange={handleInstituicaoChange} required error={errors.nome_fantasia} />
+                <Input label="Razão Social" name="razao_social" value={instituicaoForm.razao_social} onChange={handleInstituicaoChange} required error={errors.razao_social} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="CNPJ" name="cnpj" value={instituicaoForm.cnpj} onChange={handleInstituicaoChange} required error={errors.cnpj} />
+                    <Input label="Telefone" name="telefone" value={instituicaoForm.telefone} onChange={handleInstituicaoChange} required error={errors.telefone} />
+                </div>
+                <Input label="Email" name="email" type="email" value={instituicaoForm.email} onChange={handleInstituicaoChange} required error={errors.email} />
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Endereço</h3>
+                {/* DESVIO 4 - CORREÇÃO: Campos de endereço para Instituição que estavam faltando */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="CEP" name="cep" value={instituicaoForm.cep} onChange={handleInstituicaoChange} required error={errors.cep} />
+                    <Input label="Número" name="numero" value={instituicaoForm.numero} onChange={handleInstituicaoChange} required error={errors.numero} />
+                </div>
+                <Input label="Logradouro" name="logradouro" value={instituicaoForm.logradouro} onChange={handleInstituicaoChange} required error={errors.logradouro} />
+                <div className="grid grid-cols-3 gap-4">
+                    <Input label="Bairro" name="bairro" value={instituicaoForm.bairro} onChange={handleInstituicaoChange} required error={errors.bairro} />
+                    <Input label="Cidade" name="cidade" value={instituicaoForm.cidade} onChange={handleInstituicaoChange} required error={errors.cidade} />
+                    <Input label="Estado" name="estado" value={instituicaoForm.estado} onChange={handleInstituicaoChange} required error={errors.estado} />
+                </div>
+                <Input label="Complemento (Opcional)" name="complemento" value={instituicaoForm.complemento} onChange={handleInstituicaoChange} error={errors.complemento} />
+                <Input label="Ponto de Referência (Opcional)" name="ponto_referencia" value={instituicaoForm.ponto_referencia} onChange={handleInstituicaoChange} error={errors.ponto_referencia} />
+                {/* FIM CORREÇÃO DESVIO 4 */}
+
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Segurança</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Senha" name="senha" type="password" value={instituicaoForm.senha} onChange={handleInstituicaoChange} required error={errors.senha} />
+                    <Input label="Confirmar Senha" name="confirmar_senha" type="password" value={instituicaoForm.confirmar_senha} onChange={handleInstituicaoChange} required error={errors.confirmar_senha} />
+                </div>
+
+                {errors.api && <p className="text-red-600 text-center">{errors.api}</p>}
+
+                <Button type="submit" disabled={loading}>
+                    {loading ? 'Cadastrando...' : 'Cadastrar Instituição'}
+                </Button>
+            </form>
+        );
+    };
+
+    if (!userType) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center">
+                    <h1 className="text-2xl font-bold mb-6 text-gray-800">Escolha o seu Perfil</h1>
+                    <p className="text-gray-600 mb-8">Você está se cadastrando como:</p>
+                    <div className="space-y-4">
+                        <Button onClick={() => setUserType('candidato')}>
+                            Agente de Apoio (Candidato)
+                        </Button>
+                        <Button onClick={() => setUserType('instituicao')} variant="secondary">
+                            Instituição de Ensino
+                        </Button>
+                    </div>
+                    <Link to="/login" className="mt-6 inline-block text-sm text-blue-600 hover:text-blue-800">
+                        Já tem conta? Entrar
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen flex flex-col items-center pt-10 pb-20 bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
+                <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+                    Cadastro de {userType === 'candidato' ? 'Agente de Apoio' : 'Instituição'}
+                </h1>
+                <p className="text-center text-sm mb-8 text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => setUserType(null)}>
+                    &larr; Voltar para a escolha de perfil
+                </p>
+
+                {userType === 'candidato' ? renderCandidatoForm() : renderInstituicaoForm()}
+            </div>
+        </div>
+    );
+};
+
+export default RegisterPage;

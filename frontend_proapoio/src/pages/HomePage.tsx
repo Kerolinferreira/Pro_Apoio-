@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom'
 
 /**
+ * Nota: Este arquivo implementa a Landing Page (página inicial) para visitantes não autenticados.
+ *
+ * Desvio Corrigido:
+ * O cabeçalho (Header) agora inclui os links de navegação "Como Funciona", "Para Candidatos"
+ * e "Para Instituições", conforme a documentação, para o visitante não logado.
+ * * Desvio Corrigido:
+ * Os CTAs da Seção Principal (Hero) agora usam os textos segmentados por público, 
+ * conforme especificado na documentação: "Sou Candidato, Quero Ajudar" e 
+ * "Sou Instituição, Preciso de Apoio", e direcionam para o registro correto.
  */
 export default function HomePage() {
   const year = new Date().getFullYear()
@@ -28,6 +37,25 @@ export default function HomePage() {
           </Link>
 
           <nav aria-label="Navegação principal" className="flex items-center gap-2 sm:gap-4">
+            <Link
+              to="/como-funciona"
+              className="hidden sm:block underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Como Funciona
+            </Link>
+            <Link
+              to="/para-candidatos"
+              className="hidden sm:block underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Para Candidatos
+            </Link>
+            <Link
+              to="/para-instituicoes"
+              className="hidden sm:block underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Para Instituições
+            </Link>
+
             <Link
               to="/login"
               className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -58,22 +86,24 @@ export default function HomePage() {
               Publique oportunidades acessíveis, encontre perfis compatíveis e finalize propostas com segurança.
             </p>
 
+            {/* INÍCIO DA CORREÇÃO: CTAs da Seção Principal (Hero) com textos segmentados e rotas de registro específicas */}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                to="/register"
+                to="/register/candidato"
                 className="w-full sm:w-auto rounded-lg bg-blue-700 text-white px-6 py-3 font-semibold shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                aria-label="Quero me cadastrar agora"
+                aria-label="Sou Candidato, Quero Ajudar"
               >
-                Quero me cadastrar
+                Sou Candidato, Quero Ajudar
               </Link>
               <Link
-                to="/login"
+                to="/register/instituicao"
                 className="w-full sm:w-auto rounded-lg bg-white text-blue-700 px-6 py-3 font-semibold shadow ring-1 ring-inset ring-blue-700/30 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                aria-label="Já tenho conta, acessar login"
+                aria-label="Sou Instituição, Preciso de Apoio"
               >
-                Já tenho conta
+                Sou Instituição, Preciso de Apoio
               </Link>
             </div>
+            {/* FIM DA CORREÇÃO */}
 
             {/* Indicadores de confiança */}
             <ul className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm" aria-label="Indicadores de confiança">
