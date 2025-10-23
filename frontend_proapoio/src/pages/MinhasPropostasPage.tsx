@@ -256,9 +256,11 @@ export default function MinhasPropostasPage() {
                     {p.created_at && (<p className="text-xs text-zinc-500 mt-0.5">Criada em {new Date(p.created_at).toLocaleDateString()}</p>)}
                     <p className="mt-2"><span className="font-medium">Mensagem:</span> {p.mensagem}</p>
 
-                    {/* Ações */}
+                    {/* INÍCIO DA CORREÇÃO: Lógica de Ações para Resposta (Recebidas) ou Cancelamento (Enviadas) */}
                     <div className="mt-3 flex flex-wrap gap-2" aria-label={`Ações para proposta ${p.id}`}>
-                      {p.status === 'pendente' && (
+                      
+                      {/* AÇÕES DE RECEPTOR: Somente na aba Recebidas e se status for pendente */}
+                      {tab === 'recebidas' && p.status === 'pendente' && (
                         <>
                           <button
                             onClick={() => aceitar(p.id)}
@@ -276,14 +278,20 @@ export default function MinhasPropostasPage() {
                           </button>
                         </>
                       )}
-                      <button
-                        onClick={() => cancelar(p.id)}
-                        className="rounded bg-red-700 text-white px-3 py-1.5 text-sm disabled:opacity-60"
-                        disabled={mutatingId === p.id}
-                      >
-                        Cancelar
-                      </button>
+
+                      {/* AÇÃO DE INICIADOR: Somente na aba Enviadas e se status for pendente */}
+                      {tab === 'enviadas' && p.status === 'pendente' && (
+                        <button
+                          onClick={() => cancelar(p.id)}
+                          className="rounded bg-red-700 text-white px-3 py-1.5 text-sm disabled:opacity-60"
+                          disabled={mutatingId === p.id}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+
                     </div>
+                    {/* FIM DA CORREÇÃO */}
 
                     {/* Contatos apenas quando aceita e carregados. Não mostrar CPF. */}
                     {p.status === 'aceita' && contacts[p.id] && (

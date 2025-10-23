@@ -19,7 +19,7 @@ const Input = ({ label, name, type = 'text', value, onChange, required = false, 
     </div>
 );
 
-const Select = ({ label, name, value, onChange, required = false, options }) => (
+const Select = ({ label, name, value, onChange, required = false, options, error }) => (
     <div className="mb-4">
         <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}{required && <span className="text-red-500"> *</span>}</label>
         <select
@@ -28,7 +28,7 @@ const Select = ({ label, name, value, onChange, required = false, options }) => 
             value={value}
             onChange={onChange}
             required={required}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className={`mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${error ? 'border-red-500' : 'border-gray-300'}`}
         >
             {options.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -36,8 +36,35 @@ const Select = ({ label, name, value, onChange, required = false, options }) => 
                 </option>
             ))}
         </select>
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
 );
+
+const CheckboxGroup = ({ label, name, options, values, onChange, required = false, error }) => (
+    <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">{label}{required && <span className="text-red-500"> *</span>}</label>
+        <div className="mt-2 space-y-2">
+            {options.map((option) => (
+                <div key={option.value} className="flex items-center">
+                    <input
+                        id={`${name}-${option.value}`}
+                        name={name}
+                        type="checkbox"
+                        value={option.value}
+                        checked={values.includes(option.value)}
+                        onChange={onChange}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor={`${name}-${option.value}`} className="ml-3 text-sm text-gray-700">
+                        {option.label}
+                    </label>
+                </div>
+            ))}
+        </div>
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    </div>
+);
+
 
 const Button = ({ children, onClick, disabled = false, variant = 'primary', type = 'button' }) => (
     <button
@@ -62,6 +89,26 @@ const escolaridadeOptions = [
     // Adicionar mais níveis conforme a documentação
 ];
 
+const tipoInstituicaoOptions = [
+    { value: '', label: 'Selecione o Tipo de Instituição' },
+    { value: 'Pública Municipal', label: 'Pública Municipal' },
+    { value: 'Pública Estadual', label: 'Pública Estadual' },
+    { value: 'Pública Federal', label: 'Pública Federal' },
+    { value: 'Privada', label: 'Privada' },
+    { value: 'Filantrópica', label: 'Filantrópica' },
+];
+
+const niveisOferecidosOptions = [
+    { value: 'Ed. Infantil', label: 'Ed. Infantil' },
+    { value: 'Fundamental I', label: 'Fundamental I' },
+    { value: 'Fundamental II', label: 'Fundamental II' },
+    { value: 'Ensino Médio', label: 'Ensino Médio' },
+    { value: 'Técnica', label: 'Técnica' },
+    { value: 'Superior', label: 'Superior' },
+    { value: 'EJA', label: 'EJA' },
+];
+
+
 const initialCandidatoState = {
     nome_completo: '',
     email: '',
@@ -82,18 +129,29 @@ const initialCandidatoState = {
     // ... outros campos necessários
 };
 
+// CORREÇÃO: Inclusão de todos os campos obrigatórios da Instituição (Documentação Módulo 2)
 const initialInstituicaoState = {
     nome_fantasia: '',
     razao_social: '',
     cnpj: '',
-    email: '',
-    telefone: '',
+    email: '', // Email de login
     senha: '',
     confirmar_senha: '',
-    // Desvio 4 será corrigido aqui: Faltam campos de endereço
-    cep: '', 
+    // Campos organizacionais
+    codigo_inep: '', // Doc: Opcional, BE: nullable
+    tipo_instituicao: '', // Doc: Obrigatório, BE: nullable (validaremos como obrigatório para aderência à doc)
+    niveis_oferecidos: [] as string[], // Doc: Obrigatório, BE: nullable|json (validaremos como obrigatório para aderência à doc)
+    // Campos de contato
+    email_corporativo: '', // Doc: Obrigatório, BE: nullable (validaremos como obrigatório para aderência à doc)
+    celular_corporativo: '', // Doc: Obrigatório, BE: nullable (validaremos como obrigatório para aderência à doc)
+    telefone_fixo: '', // Doc: Não obrigatório, BE: nullable
+    // Campos do responsável
+    nome_responsavel: '', // Doc: Obrigatório, BE: nullable (validaremos como obrigatório para aderência à doc)
+    funcao_responsavel: '', // Doc: Obrigatório, BE: nullable (validaremos como obrigatório para aderência à doc)
+    // Endereço (Desvio 4 corrigido no original, mantido e ajustado para obrigatoriedade da doc)
+    cep: '', // Doc: Obrigatório
     logradouro: '',
-    numero: '',
+    numero: '', // Doc: Obrigatório
     bairro: '',
     cidade: '',
     estado: '',
@@ -108,7 +166,7 @@ const RegisterPage: React.FC = () => {
     const [candidatoForm, setCandidatoForm] = useState(initialCandidatoState);
     const [instituicaoForm, setInstituicaoForm] = useState(initialInstituicaoState);
     const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
     const handleCandidatoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -121,8 +179,21 @@ const RegisterPage: React.FC = () => {
     };
 
     const handleInstituicaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setInstituicaoForm(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+
+        if (name === 'niveis_oferecidos' && type === 'checkbox') {
+            const checked = (e.target as HTMLInputElement).checked;
+            setInstituicaoForm(prev => {
+                const currentNiveis = prev.niveis_oferecidos as string[];
+                const newNiveis = checked
+                    ? [...currentNiveis, value]
+                    : currentNiveis.filter(n => n !== value);
+                return { ...prev, [name]: newNiveis };
+            });
+        } else {
+            setInstituicaoForm(prev => ({ ...prev, [name]: value }));
+        }
+
         setErrors(prev => ({ ...prev, [name]: undefined }));
 
         // Lógica para auto-preenchimento de CEP, se implementada
@@ -151,7 +222,17 @@ const RegisterPage: React.FC = () => {
         if (instituicaoForm.senha !== instituicaoForm.confirmar_senha) {
             newErrors.confirmar_senha = 'As senhas não coincidem.';
         }
-        // ... outras validações obrigatórias (cnpj, cep, etc.)
+        
+        // Validações obrigatórias conforme a documentação 
+        if (!instituicaoForm.tipo_instituicao) { newErrors.tipo_instituicao = 'O Tipo de Instituição é obrigatório.'; }
+        if (instituicaoForm.niveis_oferecidos.length === 0) { newErrors.niveis_oferecidos = 'Selecione ao menos um Nível Oferecido.'; }
+        if (!instituicaoForm.nome_responsavel) { newErrors.nome_responsavel = 'O Nome do Responsável é obrigatório.'; }
+        if (!instituicaoForm.funcao_responsavel) { newErrors.funcao_responsavel = 'A Função do Responsável é obrigatória.'; }
+        if (!instituicaoForm.email_corporativo) { newErrors.email_corporativo = 'O Email Corporativo é obrigatório.'; }
+        if (!instituicaoForm.celular_corporativo) { newErrors.celular_corporativo = 'O Celular Corporativo é obrigatório.'; }
+        if (!instituicaoForm.cep) { newErrors.cep = 'O CEP é obrigatório.'; }
+        if (!instituicaoForm.numero) { newErrors.numero = 'O Número do endereço é obrigatório.'; }
+        // ... outras validações obrigatórias (cnpj, email de login, razao_social, nome_fantasia)
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -177,8 +258,14 @@ const RegisterPage: React.FC = () => {
                 const payload = {
                     ...candidatoForm,
                     // Mapeamento e sanitização de dados para o payload da API
+                    nome: candidatoForm.nome_completo, // O backend espera 'nome' para User
+                    // O backend espera 'escolaridade' como 'nivel_escolaridade' ou 'escolaridade'
+                    // e 'curso'/'instituicao_ensino' como 'curso_superior'/'instituicao_ensino'
+                    nivel_escolaridade: candidatoForm.escolaridade,
+                    curso_superior: candidatoForm.curso,
+                    instituicao_ensino: candidatoForm.instituicao_ensino,
                 };
-                await api.post('/candidatos/register', payload);
+                await api.post('/auth/register/candidato', payload);
                 // Lógica de sucesso - Redirecionar para login ou autenticar
                 navigate('/login?success=candidato');
 
@@ -189,9 +276,11 @@ const RegisterPage: React.FC = () => {
                 }
                 const payload = {
                     ...instituicaoForm,
-                    // Mapeamento e sanitização de dados para o payload da API
+                    // CORREÇÃO: O backend espera o campo 'nome' para a tabela User
+                    nome: instituicaoForm.nome_fantasia, 
+                    // Os nomes de campo já estão alinhados com o backend request (e.g., celular_corporativo, telefone_fixo)
                 };
-                await api.post('/instituicoes/register', payload);
+                await api.post('/auth/register/instituicao', payload);
                 // Lógica de sucesso - Redirecionar para login ou autenticar
                 navigate('/login?success=instituicao');
             }
@@ -210,7 +299,7 @@ const RegisterPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 <Input label="Nome Completo" name="nome_completo" value={candidatoForm.nome_completo} onChange={handleCandidatoChange} required error={errors.nome_completo} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Email" name="email" type="email" value={candidatoForm.email} onChange={handleCandidatoChange} required error={errors.email} />
+                    <Input label="Email de Login" name="email" type="email" value={candidatoForm.email} onChange={handleCandidatoChange} required error={errors.email} />
                     <Input label="Telefone" name="telefone" value={candidatoForm.telefone} onChange={handleCandidatoChange} required error={errors.telefone} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,6 +314,7 @@ const RegisterPage: React.FC = () => {
                     onChange={handleCandidatoChange}
                     required
                     options={escolaridadeOptions}
+                    error={errors.escolaridade}
                 />
                 
                 {/* INÍCIO DA CORREÇÃO - Renderização Condicional */}
@@ -280,16 +370,51 @@ const RegisterPage: React.FC = () => {
     };
 
     const renderInstituicaoForm = () => {
-        // Renderização para Instituição (Desvio 4 será corrigido aqui)
+        // CORREÇÃO: Renderização de todos os campos da Instituição conforme documentação 
         return (
              <form onSubmit={handleSubmit} className="space-y-4">
+                <h3 className="text-lg font-semibold mb-2">Dados Básicos e Legais</h3>
                 <Input label="Nome Fantasia" name="nome_fantasia" value={instituicaoForm.nome_fantasia} onChange={handleInstituicaoChange} required error={errors.nome_fantasia} />
                 <Input label="Razão Social" name="razao_social" value={instituicaoForm.razao_social} onChange={handleInstituicaoChange} required error={errors.razao_social} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input label="CNPJ" name="cnpj" value={instituicaoForm.cnpj} onChange={handleInstituicaoChange} required error={errors.cnpj} />
-                    <Input label="Telefone" name="telefone" value={instituicaoForm.telefone} onChange={handleInstituicaoChange} required error={errors.telefone} />
+                    <Input label="Código INEP/MEC (Opcional)" name="codigo_inep" value={instituicaoForm.codigo_inep} onChange={handleInstituicaoChange} error={errors.codigo_inep} />
                 </div>
-                <Input label="Email" name="email" type="email" value={instituicaoForm.email} onChange={handleInstituicaoChange} required error={errors.email} />
+                
+                <Select
+                    label="Tipo de Instituição"
+                    name="tipo_instituicao"
+                    value={instituicaoForm.tipo_instituicao}
+                    onChange={handleInstituicaoChange}
+                    required
+                    options={tipoInstituicaoOptions}
+                    error={errors.tipo_instituicao}
+                />
+
+                <CheckboxGroup
+                    label="Níveis Oferecidos"
+                    name="niveis_oferecidos"
+                    options={niveisOferecidosOptions}
+                    values={instituicaoForm.niveis_oferecidos}
+                    onChange={handleInstituicaoChange}
+                    required
+                    error={errors.niveis_oferecidos}
+                />
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Contatos</h3>
+                <Input label="Email de Login" name="email" type="email" value={instituicaoForm.email} onChange={handleInstituicaoChange} required error={errors.email} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input label="Email Corporativo" name="email_corporativo" type="email" value={instituicaoForm.email_corporativo} onChange={handleInstituicaoChange} required error={errors.email_corporativo} />
+                    <Input label="Celular Corporativo" name="celular_corporativo" value={instituicaoForm.celular_corporativo} onChange={handleInstituicaoChange} required error={errors.celular_corporativo} />
+                    <Input label="Telefone Fixo (Opcional)" name="telefone_fixo" value={instituicaoForm.telefone_fixo} onChange={handleInstituicaoChange} error={errors.telefone_fixo} />
+                </div>
+
+                <h3 className="text-lg font-semibold mt-6 mb-2">Responsável</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Nome Completo do Responsável" name="nome_responsavel" value={instituicaoForm.nome_responsavel} onChange={handleInstituicaoChange} required error={errors.nome_responsavel} />
+                    <Input label="Função do Responsável" name="funcao_responsavel" value={instituicaoForm.funcao_responsavel} onChange={handleInstituicaoChange} required error={errors.funcao_responsavel} />
+                </div>
+                
 
                 <h3 className="text-lg font-semibold mt-6 mb-2">Endereço</h3>
                 {/* DESVIO 4 - CORREÇÃO: Campos de endereço para Instituição que estavam faltando */}
@@ -297,11 +422,11 @@ const RegisterPage: React.FC = () => {
                     <Input label="CEP" name="cep" value={instituicaoForm.cep} onChange={handleInstituicaoChange} required error={errors.cep} />
                     <Input label="Número" name="numero" value={instituicaoForm.numero} onChange={handleInstituicaoChange} required error={errors.numero} />
                 </div>
-                <Input label="Logradouro" name="logradouro" value={instituicaoForm.logradouro} onChange={handleInstituicaoChange} required error={errors.logradouro} />
+                <Input label="Logradouro" name="logradouro" value={instituicaoForm.logradouro} onChange={handleInstituicaoChange} error={errors.logradouro} />
                 <div className="grid grid-cols-3 gap-4">
-                    <Input label="Bairro" name="bairro" value={instituicaoForm.bairro} onChange={handleInstituicaoChange} required error={errors.bairro} />
-                    <Input label="Cidade" name="cidade" value={instituicaoForm.cidade} onChange={handleInstituicaoChange} required error={errors.cidade} />
-                    <Input label="Estado" name="estado" value={instituicaoForm.estado} onChange={handleInstituicaoChange} required error={errors.estado} />
+                    <Input label="Bairro" name="bairro" value={instituicaoForm.bairro} onChange={handleInstituicaoChange} error={errors.bairro} />
+                    <Input label="Cidade" name="cidade" value={instituicaoForm.cidade} onChange={handleInstituicaoChange} error={errors.cidade} />
+                    <Input label="Estado" name="estado" value={instituicaoForm.estado} onChange={handleInstituicaoChange} error={errors.estado} />
                 </div>
                 <Input label="Complemento (Opcional)" name="complemento" value={instituicaoForm.complemento} onChange={handleInstituicaoChange} error={errors.complemento} />
                 <Input label="Ponto de Referência (Opcional)" name="ponto_referencia" value={instituicaoForm.ponto_referencia} onChange={handleInstituicaoChange} error={errors.ponto_referencia} />
