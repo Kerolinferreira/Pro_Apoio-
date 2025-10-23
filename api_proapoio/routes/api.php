@@ -100,7 +100,7 @@ Route::get('/external/receitaws/{cnpj}', [ExternalApiController::class, 'receita
 // instituição (middleware jwt garante autenticação; a verificação de tipo
 // é feita no controlador). O endpoint público /candidatos/{id} retorna
 // o perfil público de um candidato individual.
-Route::middleware('jwt')->get('/candidatos', [CandidatoFinderController::class, 'index']);
+Route::middleware('jwt')->get('/candidatos', [CandidatoFinderController::class, 'buscar']);
 Route::get('/candidatos/{id}', [CandidatoFinderController::class, 'show'])->where('id','\\d+');
 
 // Rotas públicas para instituições: exibe informações básicas sem dados
