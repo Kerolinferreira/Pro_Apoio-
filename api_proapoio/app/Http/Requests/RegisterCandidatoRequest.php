@@ -5,10 +5,10 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * FormRequest para cadastro de candidatos.
- * Aceita chaves alternativas do front e aplica validações PT-BR.
+ * FormRequest para cadastro de instituições.
+ * Normaliza e valida campos com pt-br-validator.
  */
-class RegisterCandidatoRequest extends FormRequest
+class RegisterInstituicaoRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,74 +16,87 @@ class RegisterCandidatoRequest extends FormRequest
     }
 
     /**
-     * Normaliza e mapeia campos antes da validação:
+     * Normalizações antes da validação:
      * - email: trim + lowercase
-     * - escolaridade -> nivel_escolaridade
-     * - nome_curso -> curso_superior
-     * - nome_instituicao_ensino -> instituicao_ensino
-     * - termos_aceite -> boolean
+     * - niveis_oferecidos: aceita array; se vier array, converte para JSON string
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'email'               => mb_strtolower(trim((string) $this->input('email'))),
-            'nivel_escolaridade'  => $this->input('nivel_escolaridade', $this->input('escolaridade')),
-            'curso_superior'      => $this->input('curso_superior', $this->input('nome_curso')),
-            'instituicao_ensino'  => $this->input('instituicao_ensino', $this->input('nome_instituicao_ensino')),
-            'termos_aceite'       => filter_var($this->input('termos_aceite', false), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        $payload = [
+            'email' => mb_strtolower(trim((string) $this->input('email'))),
+        ];
+
+        if ($this->has('niveis_oferecidos')) {
+            $niv = $this->input('niveis_oferecidos');
+            if (is_array($niv)) {
+                $payload['niveis_oferecidos'] = json_encode($niv, JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        $this->merge($payload);
     }
 
     /**
-     * Regras de validação.
-     * Observação: nomes de tabelas minúsculos (users, candidatos) para o unique/exists.
+     * Regras.
+     * Observação: use nomes de tabelas minúsculos nas regras unique/exists.
      */
     public function rules(): array
     {
+        // CORREÇÃO DEVIDO À INCONSISTÊNCIA DE QA:
+        // Campos que eram 'nullable' e foram alterados para 'required' para
+        // corresponder à documentação que os lista como Obrigatórios.
         return [
-            'nome'          => 'required|string|min:3',
-            'email'         => 'required|email|unique:users,email',
-            // mínimo 8, precisa de letra e número, e confirmação
-            'password'      => ['required','min:8','confirmed','regex:/^(?=.*[A-Za-z])(?=.*\d).+$/'],
+            'nome'                 => 'required|string|min:3',
+            'email'                => 'required|email|unique:users,email',
+            'password'             => ['required','min:8','confirmed','regex:/^(?=.*[A-Za-z])(?=.*\d).+$/'],
 
-            // Campos com máscaras (pt-br-validator)
-            'cpf'           => 'required|cpf|unique:candidatos,cpf',
-            'cep'           => 'required|formato_cep',
-            'telefone'      => 'required|telefone_com_ddd',
+            'cnpj'                 => 'required|cnpj|unique:instituicoes,cnpj',
+            'razao_social'         => 'required|string',
+            'nome_fantasia'        => 'required|string',
+
+            // Código INEP, agora 'required'
+            'codigo_inep'          => ['required','string','regex:/^\d{8}$/'],
 
             // Endereço
-            'logradouro'        => 'nullable|string',
-            'bairro'            => 'nullable|string',
-            'cidade'            => 'nullable|string',
-            'estado'            => 'nullable|string|size:2',
-            'numero'            => 'nullable|string',
-            'complemento'       => 'nullable|string',
-            'ponto_referencia'  => 'nullable|string',
+            'cep'                  => 'required|formato_cep', // Alterado para 'required'
+            'logradouro'           => 'nullable|string',
+            'bairro'               => 'nullable|string',
+            'cidade'               => 'nullable|string',
+            'estado'               => 'nullable|string|size:2',
+            'numero'               => 'required|string', // Alterado para 'required'
+            'complemento'          => 'nullable|string',
+            'ponto_referencia'     => 'nullable|string',
 
-            // Perfil acadêmico
-            'nivel_escolaridade' => 'required|string',
-            'curso_superior'     => 'required_if:nivel_escolaridade,Superior Incompleto,Superior Completo,Pós-Graduação,Mestrado,Doutorado',
-            'instituicao_ensino' => 'required_with:curso_superior',
+            // Contatos e metadados
+            'telefone_fixo'        => 'nullable|telefone_com_ddd',
+            'celular_corporativo'  => 'required|celular_com_ddd', // Alterado para 'required'
+            'email_corporativo'    => 'required|email', // Alterado para 'required'
 
-            // Outros
-            'link_perfil'    => 'nullable|url',
-            'termos_aceite'  => 'nullable|boolean',
+            'tipo_instituicao'     => 'nullable|string',
+
+            // Aceita string JSON; se vier array, é convertido em prepareForValidation
+            'niveis_oferecidos'    => 'nullable|json',
+
+            'nome_responsavel'     => 'required|string', // Alterado para 'required'
+            'funcao_responsavel'   => 'required|string', // Alterado para 'required'
+
+            'termos_aceite'        => 'nullable|boolean',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'email.unique'                     => 'E-mail já cadastrado.',
-            'password.confirmed'               => 'A confirmação de senha não confere.',
-            'password.regex'                   => 'A senha deve conter ao menos uma letra e um número.',
-            'cpf.cpf'                          => 'CPF inválido.',
-            'cpf.unique'                       => 'CPF já cadastrado.',
-            'cep.formato_cep'                  => 'CEP em formato inválido.',
-            'telefone.telefone_com_ddd'        => 'Telefone em formato inválido.',
-            'nivel_escolaridade.required'      => 'Informe o nível de escolaridade.',
-            'curso_superior.required_if'       => 'O campo curso superior é obrigatório para o nível selecionado.',
-            'instituicao_ensino.required_with' => 'Informe a instituição de ensino ao preencher o curso.',
+            'email.unique'                           => 'E-mail já cadastrado.',
+            'password.confirmed'                     => 'A confirmação de senha não confere.',
+            'password.regex'                         => 'A senha deve conter ao menos uma letra e um número.',
+            'cnpj.cnpj'                              => 'CNPJ inválido.',
+            'cnpj.unique'                            => 'CNPJ já cadastrado.',
+            'cep.formato_cep'                        => 'CEP em formato inválido.',
+            'telefone_fixo.telefone_com_ddd'         => 'Telefone fixo em formato inválido.',
+            'celular_corporativo.celular_com_ddd'    => 'Celular em formato inválido.',
+            'codigo_inep.regex'                      => 'O código INEP deve conter 8 dígitos.',
+            'niveis_oferecidos.json'                 => 'O campo níveis oferecidos deve ser um JSON válido.',
         ];
     }
 }

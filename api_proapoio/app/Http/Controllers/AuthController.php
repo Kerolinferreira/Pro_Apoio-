@@ -104,12 +104,14 @@ class AuthController extends Controller
 
         return DB::transaction(function () use ($data, $email, $cnpj) {
             $endereco = Endereco::create([
-                'cep'              => isset($data['cep']) ? $this->onlyDigits($data['cep']) : null,
+                // Removido o isset/?? null, pois 'cep' agora é requerido no FormRequest.
+                'cep'              => $this->onlyDigits($data['cep']),
                 'logradouro'       => $data['logradouro'] ?? null,
                 'bairro'           => $data['bairro'] ?? null,
                 'cidade'           => $data['cidade'] ?? null,
                 'estado'           => $data['estado'] ?? null,
-                'numero'           => $data['numero'] ?? null,
+                // Removido o ?? null, pois 'numero' agora é requerido no FormRequest.
+                'numero'           => $data['numero'],
                 'complemento'      => $data['complemento'] ?? null,
                 'ponto_referencia' => $data['ponto_referencia'] ?? null,
             ]);
@@ -129,14 +131,19 @@ class AuthController extends Controller
                 'cnpj'                => $cnpj,
                 'razao_social'        => $data['razao_social'],
                 'nome_fantasia'       => $data['nome_fantasia'],
-                'codigo_inep'         => $data['codigo_inep'] ?? null,
+                // Removido o ?? null, pois 'codigo_inep' agora é requerido no FormRequest.
+                'codigo_inep'         => $data['codigo_inep'],
                 'tipo_instituicao'    => $data['tipo_instituicao'] ?? null,
                 'niveis_oferecidos'   => $data['niveis_oferecidos'] ?? null,
-                'nome_responsavel'    => $data['nome_responsavel'] ?? null,
-                'funcao_responsavel'  => $data['funcao_responsavel'] ?? null,
-                'email_corporativo'   => $data['email_corporativo'] ?? null,
+                // Removido o ?? null, pois 'nome_responsavel' agora é requerido no FormRequest.
+                'nome_responsavel'    => $data['nome_responsavel'],
+                // Removido o ?? null, pois 'funcao_responsavel' agora é requerido no FormRequest.
+                'funcao_responsavel'  => $data['funcao_responsavel'],
+                // Removido o ?? null, pois 'email_corporativo' agora é requerido no FormRequest.
+                'email_corporativo'   => $data['email_corporativo'],
                 'telefone_fixo'       => $data['telefone_fixo'] ?? null,
-                'celular_corporativo' => $data['celular_corporativo'] ?? null,
+                // Removido o ?? null, pois 'celular_corporativo' agora é requerido no FormRequest.
+                'celular_corporativo' => $data['celular_corporativo'],
             ]);
 
             $token = JwtHelper::generateToken($user);

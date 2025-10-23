@@ -64,7 +64,12 @@ class VagaSalvaController extends Controller
             'id_vaga'      => $vaga->id_vaga,
         ]);
 
-        return response()->json($saved->load('vaga'), 201);
+        // CORREÇÃO DEVIDO À INCONSISTÊNCIA DE QA (Idempotência/Status Code):
+        // Verifica se o registro foi criado recentemente.
+        $statusCode = $saved->wasRecentlyCreated ? 201 : 200;
+        
+        // Retorna 201 se criado, 200 se já existia (idempotência).
+        return response()->json($saved->load('vaga'), $statusCode);
     }
 
     /** Remove uma vaga salva. */
