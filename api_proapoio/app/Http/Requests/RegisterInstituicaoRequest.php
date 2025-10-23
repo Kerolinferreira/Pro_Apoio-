@@ -71,8 +71,8 @@ class RegisterInstituicaoRequest extends FormRequest
 
             'tipo_instituicao'     => 'nullable|string',
 
-            // Aceita string JSON; se vier array, é convertido em prepareForValidation
-            'niveis_oferecidos'    => 'nullable|json',
+            // CORREÇÃO: Alterado para 'required|json' para atender a regra de "Obrigatório (mínimo 1 selecionado)" da documentação.
+            'niveis_oferecidos'    => 'required|json',
 
             'nome_responsavel'     => 'nullable|string',
             'funcao_responsavel'   => 'nullable|string',
@@ -93,6 +93,7 @@ class RegisterInstituicaoRequest extends FormRequest
             'telefone_fixo.telefone_com_ddd'         => 'Telefone fixo em formato inválido.',
             'celular_corporativo.celular_com_ddd'    => 'Celular em formato inválido.',
             'codigo_inep.regex'                      => 'O código INEP deve conter 8 dígitos.',
+            'niveis_oferecidos.required'             => 'O campo níveis oferecidos é obrigatório.',
             'niveis_oferecidos.json'                 => 'O campo níveis oferecidos deve ser um JSON válido.',
         ];
     }
