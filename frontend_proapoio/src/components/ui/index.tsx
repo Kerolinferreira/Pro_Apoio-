@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export const LoadingSpinner = () => (
   <div className="text-center py-10">Carregando...</div>

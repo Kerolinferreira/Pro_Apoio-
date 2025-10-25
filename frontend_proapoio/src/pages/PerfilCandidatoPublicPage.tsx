@@ -3,15 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api'; // Assuming standard service location
 import Header from '../components/Header'; // Assuming common components
 import Footer from '../components/Footer'; // Assuming common components
-import {
-    Container,
-    Title,
-    Section,
-    InfoBlock,
-    ErrorAlert,
-    LoadingSpinner,
-    // Add other relevant components like Avatar, Button if necessary
-} from '../components/ui'; // Placeholder for assumed UI components
+import { LoadingSpinner, ErrorAlert, Button } from '../components/ui';
 
 // Define types based on common API responses
 interface CandidatoPublico {
