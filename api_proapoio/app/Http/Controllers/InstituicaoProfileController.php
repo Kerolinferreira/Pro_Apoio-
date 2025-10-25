@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Instituicao;
+
+class InstituicaoProfileController extends Controller
+{
+    /** Somente dígitos */
+    private function onlyDigits(?string $v): ?string
+    {
+        if ($v === null) return null;
+        return preg_replace('/\D+/', '', $v);
+    }
+
+    /**
+     * Retorna o perfil da instituição logada.
+     */
+    public function show(Request $request)
+    {
+        $user = $request->user();
+
+        $instituicao = Instituicao::where('id_usuario', $user->id)
+            ->with('endereco')
+            ->firstOrFail();
+
+        return response()->json($instituicao);
+    }
+
+    /**
+     * Atualiza dados da instituição e do endereço (cria endereço se ausente).
+     */
+    public function update(Request $request)
+    {
+        $user = $request->user();
+        $instituicao = Instituicao::where('id_usuario', $user->id)->with('endereco')->firstOrFail();
+
+        $data = $request->validate([
+            // Instituição
+            'cnpj'               => 'nullable|string',
+            'razao_social'       => 'nullable|string',
+            'nome_fantasia'      => 'nullable|string',
+            'tipo_instituicao'   => 'nullable|string',
+            'niveis_oferecidos'  => 'nullable', // aceita array ou json string
+            'nome_responsavel'   => 'nullable|string',
+            'funcao_responsavel' => 'nullable|string',
+            'email_corporativo'  => 'nullable|email',
+            'telefone_fixo'      => 'nullable|string',
+            'celular_corporativo'=> 'nullable|string',
+            'codigo_inep'        => 'nullable|string',
+
+            // Endereço
+            'cep'                => 'nullable|string',
+            'logradouro'         => 'nullable|string',
+            'bairro'             => 'nullable|string',
+            'cidade'             => 'nullable|string',
+            'estado'             => 'nullable|string|max:2',
+            'numero'             => 'nullable|string',
+            'complemento'        => 'nullable|string',
+            'ponto_referencia'   => 'nullable|string',
+        ]);
+
+        // Normalizações de dígitos
+        if (isset($data['cnpj']))               $data['cnpj']               = $this->onlyDigits($data['cnpj']);
+        if (isset($data['telefone_fixo']))      $data['telefone_fixo']      = $this->onlyDigits($data['telefone_fixo']);
+        if (isset($data['celular_corporativo']))$data['celular_corporativo']= $this->onlyDigits($data['celular_corporativo']);
+        if (isset($data['cep']))                $data['cep']                = $this->onlyDigits($data['cep']);
+
+        // niveis_oferecidos: aceita array ou JSON string
+        if (isset($data['niveis_oferecidos'])) {
+            if (is_string($data['niveis_oferecidos'])) {
+                $decoded = json_decode($data['niveis_oferecidos'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data['niveis_oferecidos'] = $decoded;
+                } // se JSON inválido, mantém string como foi enviada
+            }
+        }
+
+        // Atualiza campos próprios
+        $institPayload = collect($data)->only([
+            'cnpj','razao_social','nome_fantasia','tipo_instituicao','niveis_oferecidos',
+            'nome_responsavel','funcao_responsavel','email_corporativo',
+            'telefone_fixo','celular_corporativo','codigo_inep',
+        ])->toArray();
+
+        $instituicao->update($institPayload);
+
+        // Endereço: cria ou atualiza se veio algo
+        $enderecoPayload = collect($data)->only([
+            'cep','logradouro','bairro','cidade','estado','numero','complemento','ponto_referencia',
+        ])->filter();
+
+        if ($enderecoPayload->isNotEmpty()) {
+            if ($instituicao->endereco) {
+                $instituicao->endereco->update($enderecoPayload->toArray());
+            } else {
+                $novo = $instituicao->endereco()->create($enderecoPayload->toArray());
+                $instituicao->id_endereco = $novo->id;
+                $instituicao->save();
+            }
+        }
+
+        $instituicao->load('endereco');
+
+        return response()->json($instituicao);
+    }
+
+    /**
+     * Exibe informações públicas de uma instituição.
+     * Sem dados sensíveis.
+     */
+    public function showPublic($id)
+    {
+        $instituicao = \App\Models\Instituicao::with('endereco')->findOrFail($id);
+
+        return response()->json([
+            'id'            => $instituicao->id,
+            'razao_social'  => $instituicao->razao_social,
+            'nome_fantasia' => $instituicao->nome_fantasia,
+            'codigo_inep'   => $instituicao->codigo_inep,
+            'cidade'        => optional($instituicao->endereco)->cidade,
+            'estado'        => optional($instituicao->endereco)->estado,
+        ]);
+    }
+}
