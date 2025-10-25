@@ -6,9 +6,9 @@ import { Link } from 'react-router-dom'
  * Desvio Corrigido:
  * O cabeçalho (Header) agora inclui os links de navegação "Como Funciona", "Para Candidatos"
  * e "Para Instituições", conforme a documentação, para o visitante não logado.
- * * Desvio Corrigido:
- * Os CTAs da Seção Principal (Hero) agora usam os textos segmentados por público, 
- * conforme especificado na documentação: "Sou Candidato, Quero Ajudar" e 
+ * Desvio Corrigido:
+ * Os CTAs da Seção Principal (Hero) agora usam os textos segmentados por público,
+ * conforme especificado na documentação: "Sou Candidato, Quero Ajudar" e
  * "Sou Instituição, Preciso de Apoio", e direcionam para o registro correto.
  */
 export default function HomePage() {
@@ -82,11 +82,11 @@ export default function HomePage() {
               Conecte instituições e agentes de apoio para estudantes com deficiência
             </h1>
             <p className="mt-4 mx-auto max-w-2xl text-lg">
-              O ProApoio aproxima instituições de ensino, alunos com deficiência e agentes de apoio. 
+              O ProApoio aproxima instituições de ensino, alunos com deficiência e agentes de apoio.
               Publique oportunidades acessíveis, encontre perfis compatíveis e finalize propostas com segurança.
             </p>
 
-            {/* INÍCIO DA CORREÇÃO: CTAs da Seção Principal (Hero) com textos segmentados e rotas de registro específicas */}
+            {/* CTAs da Seção Principal */}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 to="/register/candidato"
@@ -103,7 +103,6 @@ export default function HomePage() {
                 Sou Instituição, Preciso de Apoio
               </Link>
             </div>
-            {/* FIM DA CORREÇÃO */}
 
             {/* Indicadores de confiança */}
             <ul className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm" aria-label="Indicadores de confiança">
@@ -172,3 +171,19 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-zinc-100 border-t">
+        <div className="mx-auto max-w-7xl px-4 py-6 text-sm flex items-center justify-between">
+          <p>&copy; {year} ProApoio</p>
+          <nav aria-label="Rodapé" className="flex gap-4">
+            <Link to="/privacidade" className="underline-offset-4 hover:underline">Privacidade</Link>
+            <Link to="/termos" className="underline-offset-4 hover:underline">Termos</Link>
+            <Link to="/acessibilidade" className="underline-offset-4 hover:underline">Acessibilidade</Link>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  )
+}
