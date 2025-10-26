@@ -34,8 +34,9 @@ export default function LoginPage() {
       navigate(redirectTo, { replace: true })
       return
     }
-    if (u?.tipo_usuario === 'instituicao') navigate('/perfil/instituicao', { replace: true })
-    else navigate('/perfil/candidato', { replace: true })
+    // Direcionar ao Dashboard conforme documentação
+    if (u?.tipo_usuario === 'instituicao') navigate('/dashboard/instituicao', { replace: true })
+    else navigate('/dashboard/candidato', { replace: true })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -140,7 +141,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-4 text-sm text-center">
-        Não possui conta? <a href="/register" className="underline underline-offset-4">Cadastrar</a>
+        Não possui conta? <a href="/cadastro" className="underline underline-offset-4">Cadastrar</a>
       </p>
     </main>
   )
