@@ -1,15 +1,7 @@
 import { Link } from 'react-router-dom'
 
 /**
- * Nota: Este arquivo implementa a Landing Page (página inicial) para visitantes não autenticados.
- *
- * Desvio Corrigido:
- * O cabeçalho (Header) agora inclui os links de navegação "Como Funciona", "Para Candidatos"
- * e "Para Instituições", conforme a documentação, para o visitante não logado.
- * Desvio Corrigido:
- * Os CTAs da Seção Principal (Hero) agora usam os textos segmentados por público,
- * conforme especificado na documentação: "Sou Candidato, Quero Ajudar" e
- * "Sou Instituição, Preciso de Apoio", e direcionam para o registro correto.
+ * Landing Page para visitantes não autenticados.
  */
 export default function HomePage() {
   const year = new Date().getFullYear()
@@ -62,12 +54,13 @@ export default function HomePage() {
             >
               Entrar
             </Link>
+            {/* CTA principal: Cadastre-se */}
             <Link
-              to="/register"
+              to="/cadastro"
               className="rounded-md bg-white text-blue-700 px-3 py-2 font-medium shadow hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              aria-label="Cadastrar nova conta"
+              aria-label="Cadastre-se"
             >
-              Cadastrar
+              Cadastre-se
             </Link>
           </nav>
         </div>
@@ -82,21 +75,21 @@ export default function HomePage() {
               Conecte instituições e agentes de apoio para estudantes com deficiência
             </h1>
             <p className="mt-4 mx-auto max-w-2xl text-lg">
-              O ProApoio aproxima instituições de ensino, alunos com deficiência e agentes de apoio.
-              Publique oportunidades acessíveis, encontre perfis compatíveis e finalize propostas com segurança.
+              O ProApoio aproxima instituições de ensino com alunos com deficiência a agentes de apoio.
+              Publique oportunidades, encontre perfis compatíveis e finalize propostas com segurança.
             </p>
 
-            {/* CTAs da Seção Principal */}
+            {/* CTAs duplos conforme documentação */}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                to="/register/candidato"
+                to="/cadastro?tipo=candidato"
                 className="w-full sm:w-auto rounded-lg bg-blue-700 text-white px-6 py-3 font-semibold shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                 aria-label="Sou Candidato, Quero Ajudar"
               >
                 Sou Candidato, Quero Ajudar
               </Link>
               <Link
-                to="/register/instituicao"
+                to="/cadastro?tipo=instituicao"
                 className="w-full sm:w-auto rounded-lg bg-white text-blue-700 px-6 py-3 font-semibold shadow ring-1 ring-inset ring-blue-700/30 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                 aria-label="Sou Instituição, Preciso de Apoio"
               >
@@ -104,12 +97,6 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Indicadores de confiança */}
-            <ul className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm" aria-label="Indicadores de confiança">
-              <li className="px-3 py-2 rounded bg-white shadow ring-1 ring-zinc-200">Acessibilidade por padrão</li>
-              <li className="px-3 py-2 rounded bg-white shadow ring-1 ring-zinc-200">Dados sensíveis protegidos</li>
-              <li className="px-3 py-2 rounded bg-white shadow ring-1 ring-zinc-200">Compatibilidade prioriza experiência</li>
-            </ul>
           </div>
         </section>
 
@@ -120,11 +107,11 @@ export default function HomePage() {
             <ol className="mt-8 grid gap-6 md:grid-cols-3 list-decimal [counter-reset:step]">
               <li className="p-4 border rounded-lg bg-white shadow-sm">
                 <h3 className="font-semibold mb-2">Cadastre-se</h3>
-                <p>Escolha perfil de instituição ou agente de apoio. Complete dados essenciais e preferências de acessibilidade.</p>
+                <p>Escolha perfil de instituição ou agente de apoio. Complete dados essenciais, além de informações sobre sua experiência ou as necessidades de seus alunos.</p>
               </li>
               <li className="p-4 border rounded-lg bg-white shadow-sm">
-                <h3 className="font-semibold mb-2">Explore</h3>
-                <p>Instituições publicam oportunidades. Agentes salvam vagas e demonstram interesse.</p>
+                <h3 className="font-semibold mb-2">Encontre</h3>
+                <p>Instituições publicam oportunidades. Candidatos salvam vagas e demonstram interesse.</p>
               </li>
               <li className="p-4 border rounded-lg bg-white shadow-sm">
                 <h3 className="font-semibold mb-2">Conecte-se</h3>
@@ -134,43 +121,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Vantagens */}
-        <section className="bg-gray-50 py-16 px-4">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="text-2xl font-bold text-center">Vantagens</h2>
-            <ul className="mt-8 grid gap-6 md:grid-cols-3" role="list">
-              <li className="p-4 border rounded-lg bg-white shadow-sm">
-                <h3 className="font-semibold mb-2">Inclusão</h3>
-                <p>Arquitetura acessível desde o início. Suporte a leitores de tela e navegação por teclado.</p>
-              </li>
-              <li className="p-4 border rounded-lg bg-white shadow-sm">
-                <h3 className="font-semibold mb-2">Transparência</h3>
-                <p>Perfis claros. Dados de contato ocultos até a proposta ser aceita.</p>
-              </li>
-              <li className="p-4 border rounded-lg bg-white shadow-sm">
-                <h3 className="font-semibold mb-2">Agilidade</h3>
-                <p>Cadastro simplificado com integrações como CEP e CNPJ para pré-preenchimento.</p>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Depoimentos */}
-        <section className="py-16 px-4">
-          <div className="mx-auto max-w-5xl">
-            <h2 className="text-2xl font-bold text-center">Depoimentos</h2>
-            <div className="mt-8 grid md:grid-cols-2 gap-6">
-              <blockquote className="p-4 border rounded-lg bg-white shadow-sm">
-                <p className="italic">“Consegui minha primeira oportunidade de estágio pelo ProApoio. Rápido e acessível.”</p>
-                <cite className="mt-2 block font-semibold not-italic">Ana — estudante de TI</cite>
-              </blockquote>
-              <blockquote className="p-4 border rounded-lg bg-white shadow-sm">
-                <p className="italic">“Publicamos vagas e recebemos candidatos qualificados. Fluxo seguro e simples.”</p>
-                <cite className="mt-2 block font-semibold not-italic">José — coordenação institucional</cite>
-              </blockquote>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}
@@ -178,9 +128,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-6 text-sm flex items-center justify-between">
           <p>&copy; {year} ProApoio</p>
           <nav aria-label="Rodapé" className="flex gap-4">
-            <Link to="/privacidade" className="underline-offset-4 hover:underline">Privacidade</Link>
-            <Link to="/termos" className="underline-offset-4 hover:underline">Termos</Link>
-            <Link to="/acessibilidade" className="underline-offset-4 hover:underline">Acessibilidade</Link>
+            <Link to="/sobre" className="underline-offset-4 hover:underline">Sobre Nós</Link>
+            <Link to="/contato" className="underline-offset-4 hover:underline">Contato</Link>
+            <Link to="/termos" className="underline-offset-4 hover:underline">Termos de Uso</Link>
+            <Link to="/privacidade" className="underline-offset-4 hover:underline">Política de Privacidade</Link>
           </nav>
         </div>
       </footer>

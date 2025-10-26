@@ -21,16 +21,21 @@ interface Proposta {
   candidato?: EntidadePublica
   instituicao?: EntidadePublica
   created_at?: string
+  // Opcional no contrato: indica se o destinatário já visualizou
+  visualizada?: boolean
 }
 
 interface Contatos {
   email?: string
   telefone?: string
+  // Mostrar nome completo apenas após aceite (sem CPF)
+  nomeCompleto?: string
   // Não exibir CPF por ser altamente sensível
 }
 
 export default function MinhasPropostasPage() {
-  const [tab, setTab] = useState<'enviadas' | 'recebidas'>('enviadas')
+  // Aba padrão: Recebidas (Caixa de Entrada) — doc “Aba 1: Propostas Recebidas”
+  const [tab, setTab] = useState<'enviadas' | 'recebidas'>('recebidas')
   const [propostas, setPropostas] = useState<Proposta[]>([])
   const [contacts, setContacts] = useState<Record<number, Contatos>>({})
   const [loading, setLoading] = useState<boolean>(false)
@@ -41,16 +46,26 @@ export default function MinhasPropostasPage() {
 
   const liveRef = useRef<HTMLDivElement>(null)
 
-  // Cores e rótulos de status consistentes
-  const statusBadge = useMemo(
-    () => ({
-      pendente: { label: 'Pendente', cls: 'bg-yellow-100 text-yellow-800 ring-yellow-300' },
-      aceita: { label: 'Aceita', cls: 'bg-green-100 text-green-800 ring-green-300' },
-      recusada: { label: 'Recusada', cls: 'bg-orange-100 text-orange-800 ring-orange-300' },
-      cancelada: { label: 'Cancelada', cls: 'bg-gray-100 text-gray-800 ring-gray-300' },
-    }),
-    []
-  )
+  // Rótulos alinhados à doc:
+  // Enviadas: Enviada, Visualizada, Aceita, Recusada
+  // Recebidas: Nova ou Visualizada, Aceita, Recusada
+  const statusBadge = useMemo(() => {
+    return (p: Proposta) => {
+      if (p.status === 'aceita') return { label: 'Aceita', cls: 'bg-green-100 text-green-800 ring-green-300' }
+      if (p.status === 'recusada') return { label: 'Recusada', cls: 'bg-red-100 text-red-800 ring-red-300' }
+      if (p.status === 'cancelada') return { label: 'Cancelada', cls: 'bg-gray-100 text-gray-800 ring-gray-300' }
+      // pendente
+      if (tab === 'enviadas') {
+        return p.visualizada
+          ? { label: 'Visualizada', cls: 'bg-blue-100 text-blue-800 ring-blue-300' }
+          : { label: 'Enviada', cls: 'bg-zinc-100 text-zinc-800 ring-zinc-300' }
+      }
+      // recebidas
+      return p.visualizada
+        ? { label: 'Visualizada', cls: 'bg-blue-100 text-blue-800 ring-blue-300' }
+        : { label: 'Nova', cls: 'bg-yellow-100 text-yellow-800 ring-yellow-300' }
+    }
+  }, [tab])
 
   useEffect(() => {
     let abort = new AbortController()
@@ -98,6 +113,10 @@ export default function MinhasPropostasPage() {
 
   // Ações com otimização e anúncio em aria-live
   async function aceitar(id: number) {
+    // Confirmação obrigatória — após aceitar, contato é liberado
+    if (!window.confirm('Você tem certeza que deseja aceitar esta proposta? Suas informações de contato serão compartilhadas.')) {
+      return
+    }
     setMutatingId(id)
     try {
       await api.put(`/propostas/${id}/aceitar`)
@@ -114,10 +133,17 @@ export default function MinhasPropostasPage() {
   }
 
   async function recusar(id: number) {
+    // Confirmação com mensagem opcional simplificada
+    if (!window.confirm('Confirmar recusa desta proposta?')) {
+      return
+    }
     setMutatingId(id)
     try {
       await api.put(`/propostas/${id}/recusar`)
-      setPropostas((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'recusada' } : p)))
+      // Nas "Recebidas", remover da lista após recusa (arquivar)
+      setPropostas((prev) =>
+        tab === 'recebidas' ? prev.filter((p) => p.id !== id) : prev.map((p) => (p.id === id ? { ...p, status: 'recusada' } : p))
+      )
       announce(`Proposta ${id} recusada.`)
     } catch {
       announce(`Não foi possível recusar a proposta ${id}.`)
@@ -127,6 +153,7 @@ export default function MinhasPropostasPage() {
   }
 
   async function cancelar(id: number) {
+    // Cancelar apenas para iniciador enquanto pendente/visualizada
     setMutatingId(id)
     try {
       await api.delete(`/propostas/${id}`)
@@ -149,10 +176,20 @@ export default function MinhasPropostasPage() {
     }
   }
 
+  function formatRelativa(iso?: string) {
+    if (!iso) return null
+    const d = new Date(iso)
+    const diff = Date.now() - d.getTime()
+    const dias = Math.floor(diff / 86400000)
+    if (dias <= 0) return 'hoje'
+    if (dias === 1) return 'há 1 dia'
+    return `há ${dias} dias`
+  }
+
   // Acessibilidade das abas (tablist)
   const tabs: Array<{ key: 'enviadas' | 'recebidas'; label: string; desc: string }> = [
-    { key: 'enviadas', label: 'Enviadas', desc: 'Propostas enviadas por você' },
-    { key: 'recebidas', label: 'Recebidas', desc: 'Propostas que você recebeu' },
+    { key: 'recebidas', label: 'Recebidas', desc: 'Propostas que você precisa decidir' },
+    { key: 'enviadas', label: 'Enviadas', desc: 'Propostas que você iniciou' },
   ]
 
   return (
@@ -166,7 +203,7 @@ export default function MinhasPropostasPage() {
 
       <header className="mb-4">
         <h1 className="text-2xl font-extrabold">Minhas propostas</h1>
-        <p className="text-sm text-zinc-600">Gerencie solicitações e respostas. Contatos só aparecem após aceitação.</p>
+        <p className="text-sm text-zinc-600">Contatos só aparecem após a proposta ser aceita.</p>
       </header>
 
       {/* Abas acessíveis */}
@@ -237,7 +274,7 @@ export default function MinhasPropostasPage() {
         {!loading && !error && propostas.length > 0 && (
           <ul className="space-y-3" role="list">
             {propostas.map((p) => {
-              const badge = statusBadge[p.status]
+              const badge = statusBadge(p)
               const titulo = p.vaga?.titulo || `Proposta #${p.id}`
               const origem = tab === 'enviadas' ? p.instituicao?.nome || 'Instituição' : p.candidato?.nome || 'Candidato'
               return (
@@ -252,13 +289,25 @@ export default function MinhasPropostasPage() {
                         {badge.label}
                       </span>
                     </div>
-                    <p className="text-sm text-zinc-600 mt-1">Origem/destino: {origem}</p>
-                    {p.created_at && (<p className="text-xs text-zinc-500 mt-0.5">Criada em {new Date(p.created_at).toLocaleDateString()}</p>)}
+                    <p className="text-sm text-zinc-600 mt-1">
+                      {tab === 'recebidas' ? 'Remetente' : 'Destino'}: {origem}
+                    </p>
+                    {p.vaga?.id && (
+                      <p className="text-sm mt-1">
+                        <Link to={`/vagas/${p.vaga.id}`} className="underline" aria-label={`Ver detalhes da vaga ${titulo}`}>
+                          Ver detalhes da Vaga
+                        </Link>
+                      </p>
+                    )}
+                    {p.created_at && (
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {tab === 'recebidas' ? 'Recebida' : 'Enviada'} {formatRelativa(p.created_at)}
+                      </p>
+                    )}
                     <p className="mt-2"><span className="font-medium">Mensagem:</span> {p.mensagem}</p>
 
-                    {/* INÍCIO DA CORREÇÃO: Lógica de Ações para Resposta (Recebidas) ou Cancelamento (Enviadas) */}
+                    {/* INÍCIO: Ações para Resposta (Recebidas) ou Cancelamento (Enviadas) */}
                     <div className="mt-3 flex flex-wrap gap-2" aria-label={`Ações para proposta ${p.id}`}>
-                      
                       {/* AÇÕES DE RECEPTOR: Somente na aba Recebidas e se status for pendente */}
                       {tab === 'recebidas' && p.status === 'pendente' && (
                         <>
@@ -289,14 +338,14 @@ export default function MinhasPropostasPage() {
                           Cancelar
                         </button>
                       )}
-
                     </div>
-                    {/* FIM DA CORREÇÃO */}
+                    {/* FIM */}
 
                     {/* Contatos apenas quando aceita e carregados. Não mostrar CPF. */}
                     {p.status === 'aceita' && contacts[p.id] && (
                       <div className="mt-3 border-t pt-2" aria-label="Informações de contato após aceitação">
-                        <p className="font-semibold">Contatos liberados</p>
+                        <p className="font-semibold">Informações de Contato</p>
+                        {contacts[p.id].nomeCompleto && <p>Nome completo: {contacts[p.id].nomeCompleto}</p>}
                         {contacts[p.id].email && <p>Email: {contacts[p.id].email}</p>}
                         {contacts[p.id].telefone && <p>Telefone: {contacts[p.id].telefone}</p>}
                       </div>

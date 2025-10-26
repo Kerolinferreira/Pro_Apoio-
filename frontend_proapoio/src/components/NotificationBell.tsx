@@ -1,3 +1,4 @@
+// src/components/NotificationBell.tsx
 import { useEffect, useRef, useState } from 'react'
 import api from '../services/api'
 
@@ -6,51 +7,81 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const liveRef = useRef<HTMLParagraphElement>(null)
 
+  // Mantém o valor mais recente de count sem recriar efeitos
+  const countRef = useRef(count)
   useEffect(() => {
+    countRef.current = count
+  }, [count])
+
+  useEffect(() => {
+    // Ambiente sem DOM (SSR/testes)
+    if (typeof window === 'undefined' || typeof document === 'undefined') return
+
     let active = true
     let controller: AbortController | null = null
+    let intervalId: number | null = null
 
     async function fetchNotifications() {
+      if (!active) return
       if (loading) return
-      if (document.hidden) return
+      if (typeof document !== 'undefined' && document.hidden) return
+
       setLoading(true)
-      controller = new AbortController()
+      controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+
       try {
-        const res = await api.get('/notificacoes', { signal: controller.signal })
-        const data = Array.isArray(res.data) ? res.data : res.data.data || []
-        if (active) {
-          const newCount = data.filter((n: any) => !n.lida).length
-          if (newCount !== count) {
-            setCount(newCount)
-            if (newCount > 0 && liveRef.current)
-              liveRef.current.textContent = `${newCount} nova${newCount > 1 ? 's' : ''} notificação${newCount > 1 ? 'es' : ''}.`
+        const cfg = controller ? { signal: controller.signal } : {}
+        const res = await api.get('/notificacoes', cfg as any)
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || []
+        if (!active) return
+
+        const newCount = data.filter((n: any) => !n?.lida).length
+        if (newCount !== countRef.current) {
+          setCount(newCount)
+          if (newCount > 0 && liveRef.current) {
+            const plural = newCount > 1
+            liveRef.current.textContent = `${newCount} nova${plural ? 's' : ''} notificação${plural ? 'es' : ''}.`
+            // limpa mensagem após curto período
+            window.setTimeout(() => {
+              if (liveRef.current) liveRef.current.textContent = ''
+            }, 1500)
           }
         }
-      } catch {/* ignora */}
-      finally {
-        setLoading(false)
+      } catch {
+        // silencioso por design
+      } finally {
+        if (active) setLoading(false)
       }
     }
 
+    // primeira busca imediata
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 60000)
-    const visibilityHandler = () => { if (!document.hidden) fetchNotifications() }
-    document.addEventListener('visibilitychange', visibilityHandler)
+
+    // polling a cada 60s
+    intervalId = window.setInterval(fetchNotifications, 60000)
+
+    // atualiza ao voltar a aba
+    const onVisible = () => {
+      if (typeof document !== 'undefined' && !document.hidden) fetchNotifications()
+    }
+    document.addEventListener('visibilitychange', onVisible)
 
     return () => {
       active = false
       if (controller) controller.abort()
-      clearInterval(interval)
-      document.removeEventListener('visibilitychange', visibilityHandler)
+      if (intervalId) window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [count, loading])
+  }, [loading])
 
   async function marcarComoLidas() {
-    if (count === 0) return
+    if (countRef.current === 0) return
     try {
       await api.post('/notificacoes/marcar-como-lidas')
       setCount(0)
-    } catch {/* ignora */}
+    } catch {
+      // silencioso
+    }
   }
 
   return (

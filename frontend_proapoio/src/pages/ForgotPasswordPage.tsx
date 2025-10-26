@@ -20,6 +20,7 @@ export default function ForgotPasswordPage() {
     setError('')
     setLoading(true)
     try {
+      // Endpoint conforme contrato da API
       await api.post('/auth/forgot-password', { email })
       setSubmitted(true)
       setSecondsLeft(60)

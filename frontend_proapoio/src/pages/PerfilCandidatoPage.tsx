@@ -1,288 +1,295 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
-import { useAuth } from '../contexts/AuthContext'
+import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../services/api';
+import { Button, LoadingSpinner, ErrorAlert } from '../components/ui';
 
-interface ExperienciaNova {
-  idade_aluno: string
-  tempo_experiencia: string
-  candidatar_mesma_deficiencia: boolean
-  comentario: string
+interface VagaSalva {
+  id: number;
+  vaga: {
+    id: number;
+    titulo_vaga: string;
+    cidade: string;
+    regime_contratacao: string;
+    instituicao: { nome_fantasia: string };
+  };
 }
 
-export default function PerfilCandidatoPage() {
-  const { user, token } = useAuth()
-  const navigate = useNavigate()
+export default function VagasSalvasPage() {
+  const [vagas, setVagas] = useState<VagaSalva[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [lastRemoved, setLastRemoved] = useState<VagaSalva | null>(null);
 
-  const [profile, setProfile] = useState<any>(null)
-  const [vagasCount, setVagasCount] = useState(0)
-  const [propostasCount, setPropostasCount] = useState(0)
-  const [experienciasNovas, setExperienciasNovas] = useState<ExperienciaNova[]>([
-    { idade_aluno: '', tempo_experiencia: '', candidatar_mesma_deficiencia: false, comentario: '' },
-  ])
-
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [success, setSuccess] = useState<string>('')
-  const [revealSensitive, setRevealSensitive] = useState(false)
-  const liveRef = useRef<HTMLDivElement>(null)
-
-  const isCandidato = useMemo(() => user?.tipo_usuario === 'candidato', [user])
+  // Acessibilidade: regiões vivas e gestão de foco
+  const liveRef = useRef<HTMLDivElement>(null);
+  const countLiveRef = useRef<HTMLDivElement>(null);
+  const h1Ref = useRef<HTMLHeadingElement>(null);
+  const itemRefs = useRef<Record<number, HTMLAnchorElement | null>>({}); // foco no título da vaga
 
   useEffect(() => {
-    async function carregarDados() {
-      setLoading(true)
-      setError(null)
+    let mounted = true;
+    async function fetchVagas() {
+      setLoading(true);
+      setError(null);
       try {
-        const [resp, vagasRes, propRes] = await Promise.all([
-          api.get('/profile/me'),
-          api.get('/candidatos/me/vagas-salvas'),
-          api.get('/propostas', { params: { tipo: 'enviadas' } }),
-        ])
-        setProfile(resp.data)
-        const vagasLista = vagasRes.data?.data ?? vagasRes.data
-        setVagasCount(Array.isArray(vagasLista) ? vagasLista.length : 0)
-        const propLista = propRes.data?.data ?? propRes.data
-        setPropostasCount(Array.isArray(propLista) ? propLista.length : 0)
-      } catch (err: any) {
-        setError('Não foi possível carregar os dados do perfil.')
+        const response = await api.get('/candidatos/me/vagas-salvas');
+        const payload = response.data?.data ?? response.data;
+        const fetchedVagas = Array.isArray(payload) ? payload : [];
+        
+        if (mounted) {
+          setVagas(fetchedVagas);
+          // 1. ANUNCIA A CONTAGEM INICIAL
+          announceCount(fetchedVagas.length, true); 
+        }
+      } catch {
+        if (mounted) setError('Não foi possível carregar as vagas salvas.');
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false);
       }
     }
-    if (token && isCandidato) carregarDados()
-  }, [token, isCandidato])
+    fetchVagas();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function announce(msg: string) {
     if (liveRef.current) {
-      liveRef.current.textContent = msg
-      setTimeout(() => { if (liveRef.current) liveRef.current.textContent = '' }, 1600)
+      liveRef.current.textContent = msg;
+      // REMOVIDO: setTimeout para limpar o texto. A região viva deve reter a última
+      // mensagem até ser substituída, o que é suficiente para o NVDA/JAWS.
     }
   }
 
-  function handleExperienciaChange(index: number, field: keyof ExperienciaNova, value: any) {
-    setExperienciasNovas((prev) => {
-      const copia = [...prev]
-      copia[index] = { ...copia[index], [field]: value }
-      return copia
-    })
-  }
-
-  function adicionarExperiencia() {
-    setExperienciasNovas((prev) => [
-      ...prev,
-      { idade_aluno: '', tempo_experiencia: '', candidatar_mesma_deficiencia: false, comentario: '' },
-    ])
-  }
-
-  function removerExperiencia(i: number) {
-    setExperienciasNovas((prev) => prev.filter((_, idx) => idx !== i))
-  }
-
-  function validarExperiencias(): string | null {
-    if (experienciasNovas.length === 0) return 'Informe ao menos uma experiência.'
-    for (let i = 0; i < experienciasNovas.length; i++) {
-      const e = experienciasNovas[i]
-      const idade = e.idade_aluno ? Number(e.idade_aluno) : NaN
-      if (!e.tempo_experiencia.trim()) return `Experiência ${i + 1}: tempo de experiência é obrigatório.`
-      if (e.idade_aluno && (Number.isNaN(idade) || idade < 0 || idade > 120)) return `Experiência ${i + 1}: idade do aluno inválida.`
-      if (e.comentario.length > 1000) return `Experiência ${i + 1}: comentário muito longo.`
+  // Adicionado parâmetro 'isInitial' para diferenciar o anúncio
+  function announceCount(total: number, isInitial = false) {
+    const msg = isInitial 
+      ? `Você possui ${total} vagas salvas.` 
+      : `Total de vagas salvas: ${total}`;
+      
+    if (countLiveRef.current) {
+      countLiveRef.current.textContent = msg;
+      // REMOVIDO: setTimeout para limpar o texto.
     }
-    return null
   }
 
-  async function salvarExperiencias() {
-    const erro = validarExperiencias()
-    if (erro) {
-      setSuccess('')
-      setError(erro)
-      announce(erro)
-      return
-    }
-    setSaving(true)
-    setError('')
-    setSuccess('')
+  async function remover(vagaId: number) {
+    const idx = vagas.findIndex((v) => v.vaga.id === vagaId);
+    const alvo = idx >= 0 ? vagas[idx] : null;
+
+    if (!alvo) return;
+    
+    setLastRemoved(alvo);
+    setRemovingId(vagaId);
+
+    // Calcula próximo alvo de foco antes da remoção otimista
+    const proximoItem =
+      idx + 1 < vagas.length
+        ? vagas[idx + 1]?.vaga.id // Foca no próximo
+        : idx > 0
+        ? vagas[idx - 1]?.vaga.id // Foca no anterior
+        : null;
+
+    // Remoção otimista
+    setVagas((prev) => {
+      const novo = prev.filter((v) => v.vaga.id !== vagaId);
+      announceCount(novo.length); // Anuncia a nova contagem
+      return novo;
+    });
+
     try {
-      const payload = experienciasNovas.map((exp) => ({
-        idade_aluno: exp.idade_aluno ? Number(exp.idade_aluno) : null,
-        tempo_experiencia: exp.tempo_experiencia || null,
-        candidatar_mesma_deficiencia: !!exp.candidatar_mesma_deficiencia,
-        comentario: exp.comentario || null,
-      }))
-      await api.post('/profile/experiencia-pro', { experiencias: payload })
-      setExperienciasNovas([
-        { idade_aluno: '', tempo_experiencia: '', candidatar_mesma_deficiencia: false, comentario: '' },
-      ])
-      const updated = await api.get('/profile/me')
-      setProfile(updated.data)
-      const ok = 'Experiências salvas com sucesso.'
-      setSuccess(ok)
-      announce(ok)
+      await api.delete(`/vagas/${vagaId}/salvar`);
+      
+      // Anúncio de sucesso
+      announce(`Vaga ${alvo.vaga.titulo_vaga} removida dos salvos.`);
+      
+      // Move foco (postergado para garantir a atualização do DOM)
+      setTimeout(() => {
+        if (proximoItem && itemRefs.current[proximoItem]) {
+          itemRefs.current[proximoItem]?.focus();
+        } else {
+          // Se for o último item, volta o foco para o título da página.
+          h1Ref.current?.focus();
+        }
+      }, 0);
     } catch {
-      const msg = 'Erro ao salvar experiências. Tente novamente.'
-      setError(msg)
-      announce(msg)
+      // Reverte em caso de erro
+      setVagas((prev) => {
+        // Usa a lógica de inserção inicial do item para garantir que ele volte corretamente à lista
+        const novo = [alvo, ...prev.filter(v => v.vaga.id !== vagaId)];
+        announceCount(novo.length);
+        return novo;
+      });
+      announce('Falha ao remover a vaga.');
     } finally {
-      setSaving(false)
+      setRemovingId(null);
     }
   }
 
-  if (!token) {
-    return (
-      <main className="p-4 max-w-3xl mx-auto">
-        <p>É necessário estar logado para acessar o painel do candidato.</p>
-      </main>
-    )
-  }
+  async function desfazer() {
+    const item = lastRemoved;
+    if (!item) return;
+    
+    setLastRemoved(null); // Remove o banner de desfazer imediatamente
 
-  if (!isCandidato) {
-    return (
-      <main className="p-4 max-w-3xl mx-auto">
-        <p>Este painel é exclusivo para candidatos.</p>
-      </main>
-    )
-  }
+    try {
+      await api.post(`/vagas/${item.vaga.id}/salvar`);
+      
+      // Restaura o item
+      setVagas((prev) => {
+        // Encontra o ponto de inserção para manter a ordem original
+        const vagaOriginal = vagas.find(v => v.vaga.id === item.vaga.id);
+        if (vagaOriginal) {
+           // Uma inserção simples no topo é mais segura para a lógica de estado do que tentar recriar a ordem original
+           const novo = [item, ...prev];
+           announceCount(novo.length);
+           return novo;
+        }
 
-  if (loading) {
-    return (
-      <main className="p-4 max-w-5xl mx-auto" aria-busy="true">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-zinc-200 rounded w-1/3" />
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-24 bg-zinc-200 rounded" />
-            <div className="h-24 bg-zinc-200 rounded" />
-          </div>
-          <div className="h-48 bg-zinc-200 rounded" />
-        </div>
-      </main>
-    )
+        const novo = [item, ...prev];
+        announceCount(novo.length);
+        return novo;
+      });
+      
+      announce('Vaga restaurada aos salvos.');
+      
+      // Move o foco para o item restaurado
+      setTimeout(() => itemRefs.current[item.vaga.id]?.focus(), 0);
+    } catch {
+      announce('Não foi possível desfazer. Tente novamente mais tarde.');
+      // Mantém o item no estado de lastRemoved para que a pessoa possa tentar novamente (opcional, pode-se reverter)
+      setLastRemoved(item); 
+    }
   }
 
   return (
-    <main className="p-4 max-w-5xl mx-auto space-y-6" aria-labelledby="titulo-painel">
+    <main
+      className="p-4 max-w-5xl mx-auto"
+      aria-labelledby="titulo-vagas-salvas"
+      role="main"
+    >
+      {/* Regiões vivas: 'polite' para atualizações de status e contagem de itens. */}
       <div ref={liveRef} className="sr-only" aria-live="polite" />
+      <div ref={countLiveRef} className="sr-only" aria-live="polite" />
+      
+      <h1
+        id="titulo-vagas-salvas"
+        className="text-2xl font-extrabold mb-4"
+        tabIndex={-1}
+        ref={h1Ref}
+      >
+        Vagas salvas
+      </h1>
 
-      <h1 id="titulo-painel" className="text-2xl font-extrabold">Painel do candidato</h1>
-
-      {/* Métricas */}
-      <section aria-label="Métricas" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <article className="p-4 border rounded bg-white shadow-sm">
-          <h2 className="text-sm text-zinc-600">Vagas salvas</h2>
-          <p className="text-3xl font-extrabold">{vagasCount}</p>
-          <button onClick={() => navigate('/vagas-salvas')} className="mt-2 text-blue-700 underline text-sm">Ver vagas</button>
-        </article>
-        <article className="p-4 border rounded bg-white shadow-sm">
-          <h2 className="text-sm text-zinc-600">Propostas enviadas</h2>
-          <p className="text-3xl font-extrabold">{propostasCount}</p>
-          <button onClick={() => navigate('/propostas')} className="mt-2 text-blue-700 underline text-sm">Ver propostas</button>
-        </article>
-      </section>
-
-      {/* Perfil básico */}
-      <section className="p-4 border rounded bg-white shadow-sm" aria-label="Dados pessoais">
-        <h2 className="font-semibold mb-2">Dados pessoais</h2>
-        <dl className="grid sm:grid-cols-2 gap-y-1">
-          <div><dt className="text-sm text-zinc-600">Nome</dt><dd>{profile?.nome_completo || user?.name || '—'}</dd></div>
-          <div><dt className="text-sm text-zinc-600">Escolaridade</dt><dd>{profile?.escolaridade || '—'}</dd></div>
-          <div>
-            <dt className="text-sm text-zinc-600">CPF</dt>
-            <dd>
-              {revealSensitive ? (profile?.cpf || '—') : (profile?.cpf ? `${String(profile.cpf).slice(0,3)}***.***-**` : '—')}
-              <button type="button" className="ml-2 text-xs underline" onClick={() => setRevealSensitive((v) => !v)} aria-pressed={revealSensitive}>
-                {revealSensitive ? 'Ocultar' : 'Mostrar'}
-              </button>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm text-zinc-600">Telefone</dt>
-            <dd>
-              {revealSensitive ? (profile?.telefone || '—') : (profile?.telefone ? `${String(profile.telefone).slice(0,4)}***-***` : '—')}
-            </dd>
-          </div>
-          <div><dt className="text-sm text-zinc-600">Curso</dt><dd>{profile?.nome_curso || '—'}</dd></div>
-          <div><dt className="text-sm text-zinc-600">Instituição de ensino</dt><dd>{profile?.nome_instituicao_ensino || '—'}</dd></div>
-        </dl>
-      </section>
-
-      {/* Experiências novas */}
-      <section className="p-4 border rounded bg-white shadow-sm" aria-labelledby="h-exp">
-        <h2 id="h-exp" className="font-semibold mb-2">Adicionar experiências profissionais</h2>
-        <p className="text-sm text-zinc-600 mb-3">Informe pelo menos uma experiência. Campos marcados como obrigatórios devem ser preenchidos.</p>
-
-        {experienciasNovas.map((exp, index) => (
-          <fieldset key={index} className="border p-3 mb-3 rounded space-y-2">
-            <legend className="text-sm font-medium">Experiência {index + 1}</legend>
-            <div>
-              <label htmlFor={`idade-${index}`} className="block">Idade do aluno (opcional)</label>
-              <input
-                id={`idade-${index}`}
-                type="number"
-                min={0}
-                max={120}
-                value={exp.idade_aluno}
-                onChange={(e) => handleExperienciaChange(index, 'idade_aluno', e.target.value)}
-                className="border p-2 w-full rounded"
-              />
-            </div>
-            <div>
-              <label htmlFor={`tempo-${index}`} className="block">Tempo de experiência <span className="text-red-600">*</span></label>
-              <input
-                id={`tempo-${index}`}
-                type="text"
-                required
-                placeholder="ex.: 6 meses, 2 anos"
-                value={exp.tempo_experiencia}
-                onChange={(e) => handleExperienciaChange(index, 'tempo_experiencia', e.target.value)}
-                className="border p-2 w-full rounded"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                id={`mesma-def-${index}`}
-                type="checkbox"
-                checked={exp.candidatar_mesma_deficiencia}
-                onChange={(e) => handleExperienciaChange(index, 'candidatar_mesma_deficiencia', e.target.checked)}
-              />
-              <label htmlFor={`mesma-def-${index}`}>Aceitaria trabalhar com a mesma deficiência?</label>
-            </div>
-            <div>
-              <label htmlFor={`coment-${index}`} className="block">Comentário (opcional)</label>
-              <textarea
-                id={`coment-${index}`}
-                value={exp.comentario}
-                onChange={(e) => handleExperienciaChange(index, 'comentario', e.target.value)}
-                className="border p-2 w-full rounded"
-                rows={3}
-                maxLength={1000}
-              />
-            </div>
-
-            {experienciasNovas.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removerExperiencia(index)}
-                className="bg-zinc-200 px-3 py-1 rounded text-sm"
-                aria-label={`Remover experiência ${index + 1}`}
-              >
-                Remover
-              </button>
-            )}
-          </fieldset>
-        ))}
-
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={adicionarExperiencia} className="bg-zinc-200 px-3 py-1 rounded text-sm">+ Adicionar outra experiência</button>
-          <button type="button" onClick={salvarExperiencias} disabled={saving} className="bg-green-700 text-white px-4 py-2 rounded disabled:opacity-60" aria-busy={saving}>{saving ? 'Salvando…' : 'Salvar experiências'}</button>
+      {loading && (
+        <div className="py-10" role="status" aria-live="polite">
+          <LoadingSpinner />
         </div>
+      )}
 
-        {error && (
-          <div className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-red-800" role="alert">{error}</div>
-        )}
-        {success && (
-          <div className="mt-3 rounded border border-green-200 bg-green-50 p-2 text-green-800" role="status">{success}</div>
-        )}
-      </section>
+      {error && !loading && <ErrorAlert message={error} />}
+
+      {!loading && !error && vagas.length === 0 && (
+        <section
+          className="rounded border p-6 text-center bg-white"
+          aria-labelledby="estado-vazio"
+        >
+          <h2 id="estado-vazio" className="text-lg font-semibold mb-1">
+            Nenhuma vaga salva
+          </h2>
+          <p className="text-sm text-zinc-700">
+            Você ainda não salvou nenhuma vaga.
+          </p>
+          <p className="text-sm text-zinc-600 mt-1">
+            Acesse{' '}
+            <Link to="/vagas" className="underline text-blue-700">
+              vagas disponíveis
+            </Link>{' '}
+            e clique no ícone de estrela para guardar as que interessarem.
+          </p>
+        </section>
+      )}
+
+      {!loading && !error && vagas.length > 0 && (
+        <section aria-label="Lista de vagas salvas">
+          {/* REMOVIDO: O <p className="sr-only"> estático. A contagem é comunicada dinamicamente pelo countLiveRef. */}
+          
+          <ul className="space-y-2" role="list">
+            {vagas.map((v) => {
+              const headingId = `vaga-salva-${v.vaga.id}-titulo`;
+              return (
+                <li
+                  key={v.id}
+                  className="border p-3 rounded bg-white shadow-sm"
+                  role="article"
+                  aria-labelledby={headingId}
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h2 id={headingId} className="font-semibold text-zinc-900">
+                        <Link
+                          to={`/vagas/${v.vaga.id}`}
+                          className="hover:underline focus:underline outline-none focus:outline-offset-2 focus:outline-2 focus:outline-blue-600 rounded"
+                          ref={(el) => (itemRefs.current[v.vaga.id] = el)}
+                          // REMOVIDO: O aria-label redundante. O leitor de tela lerá o texto visível do link, que é o título da vaga.
+                          // Se necessário rotular, use: aria-label={`Detalhes da vaga: ${v.vaga.titulo_vaga}`}
+                        >
+                          {v.vaga.titulo_vaga}
+                        </Link>
+                      </h2>
+                      <p className="text-sm text-zinc-700">
+                        {v.vaga.instituicao?.nome_fantasia || 'Instituição não informada'} • {v.vaga.cidade}
+                      </p>
+                      <p className="text-sm text-zinc-700">
+                        Regime: {v.vaga.regime_contratacao}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/vagas/${v.vaga.id}`}
+                        className="rounded bg-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        aria-label={`Ver detalhes da vaga ${v.vaga.titulo_vaga}`}
+                      >
+                        Ver detalhes
+                      </Link>
+                      <Button
+                        onClick={() => remover(v.vaga.id)}
+                        disabled={removingId === v.vaga.id}
+                        className="bg-red-700 text-white px-3 py-1.5 text-sm hover:bg-red-800 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-600"
+                        aria-busy={removingId === v.vaga.id}
+                        aria-disabled={removingId === v.vaga.id}
+                        aria-label={`Remover a vaga ${v.vaga.titulo_vaga} dos salvos`}
+                        title={`Remover a vaga ${v.vaga.titulo_vaga} dos salvos`}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {lastRemoved && (
+        <div
+          className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-amber-900 text-sm flex items-center justify-between"
+          role="status" // Anuncia a mudança de forma cortês (polite)
+          aria-live="polite"
+        >
+          <span>Vaga **{lastRemoved.vaga.titulo_vaga}** removida.</span>
+          <Button
+            onClick={desfazer}
+            className="underline text-amber-900 hover:text-amber-700 bg-transparent p-0 focus:outline-none focus:ring-2 focus:ring-amber-600"
+            aria-label={`Desfazer a remoção da vaga ${lastRemoved.vaga.titulo_vaga}`}
+            title="Desfazer a remoção da vaga"
+          >
+            Desfazer
+          </Button>
+        </div>
+      )}
     </main>
-  )
+  );
 }
