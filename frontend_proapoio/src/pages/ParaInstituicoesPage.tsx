@@ -1,201 +1,218 @@
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { Briefcase, UserPlus, Search, Send, Clock, MapPin } from 'lucide-react'; // Ícones para Recursos
 
-export default function ParaInstituicoesPage() {
-  return (
-    <main
-      id="conteudo"
-      role="main"
-      className="mx-auto max-w-7xl px-4 py-10"
-      aria-labelledby="titulo-para-instituicoes"
+/**
+ * @component RecursoCard
+ * @description Card modularizado para exibir recursos específicos da Instituição.
+ */
+interface RecursoCardProps {
+    id: string;
+    title: string;
+    description: string;
+    linkTo: string;
+    linkLabel: string;
+    icon: React.ReactNode;
+}
+
+const RecursoCard: React.FC<RecursoCardProps> = ({ id, title, description, linkTo, linkLabel, icon }) => (
+    <article
+        className="card-simple card-feature" // card-simple com padding ajustado
+        aria-labelledby={id}
     >
-      <div id="live-para-instituicoes" className="sr-only" aria-live="polite" aria-atomic="true" />
-
-      <header className="text-center mb-8">
-        <h1 id="titulo-para-instituicoes" className="text-3xl sm:text-4xl font-extrabold">
-          Para instituições
-        </h1>
-        <p className="mt-3 text-lg text-zinc-700 max-w-3xl mx-auto">
-          Encontre agentes de apoio com experiência comprovada e gerencie propostas com segurança.
-        </p>
-      </header>
-
-      {/* Chamadas principais */}
-      <section
-        className="flex flex-col sm:flex-row items-center justify-center gap-3"
-        aria-labelledby="cta-instituicoes"
-      >
-        <h2 id="cta-instituicoes" className="sr-only">
-          Ações principais para instituições
-        </h2>
-
-        <Link
-          to="/register/instituicao"
-          className="w-full sm:w-auto rounded-lg bg-blue-700 text-white px-6 py-3 font-semibold shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 text-center"
-          aria-label="Criar conta institucional"
-        >
-          Criar conta de instituição
-        </Link>
-
-        <Link
-          to="/candidatos"
-          className="w-full sm:w-auto rounded-lg bg-white text-blue-700 px-6 py-3 font-semibold shadow ring-1 ring-inset ring-blue-700/30 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 text-center"
-          aria-label="Ir para busca de candidatos"
-        >
-          Buscar candidatos
-        </Link>
-      </section>
-
-      {/* Fluxo da instituição */}
-      <section className="mt-12" aria-labelledby="fluxo-instituicao">
-        <h2 id="fluxo-instituicao" className="text-2xl font-bold text-center mb-8">
-          Seu fluxo em quatro passos
-        </h2>
-        <ol className="grid gap-6 md:grid-cols-4 list-decimal [counter-reset:step]">
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">1. Perfil institucional</h3>
-            <p>Cadastre sua instituição e defina necessidades e preferências.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">2. Busque candidatos</h3>
-            <p>Use filtros por cidade e tipo de experiência para encontrar perfis compatíveis.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">3. Envie propostas</h3>
-            <p>Inicie a conversa com propostas padronizadas. Contatos só são liberados após aceitação.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">4. Acompanhe</h3>
-            <p>Gerencie status das candidaturas e avance com segurança após o aceite.</p>
-          </li>
-        </ol>
-      </section>
-
-      {/* Recursos */}
-      <section className="mt-12" aria-labelledby="recursos-instituicao">
-        <h2 id="recursos-instituicao" className="text-2xl font-bold text-center mb-8">
-          Recursos para sua instituição
-        </h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          <article
-            className="p-5 border rounded-lg bg-white shadow-sm"
-            aria-labelledby="recurso-perfil-inst"
-          >
-            <h3 id="recurso-perfil-inst" className="font-semibold text-lg">
-              Perfil institucional
-            </h3>
-            <p className="mt-2">
-              Centralize informações e requisitos de apoio em um só lugar.
-            </p>
-            <div className="mt-3">
-              <Link
-                to="/perfil/instituicao"
-                className="underline text-blue-700 hover:no-underline"
-                aria-label="Editar perfil institucional"
-              >
-                Editar perfil institucional
-              </Link>
-            </div>
-          </article>
-
-          <article
-            className="p-5 border rounded-lg bg-white shadow-sm"
-            aria-labelledby="recurso-busca-cand"
-          >
-            <h3 id="recurso-busca-cand" className="font-semibold text-lg">
-              Busca de candidatos
-            </h3>
-            <p className="mt-2">
-              Filtre por localização e experiência para rapidez e precisão.
-            </p>
-            <div className="mt-3">
-              <Link
-                to="/candidatos"
-                className="underline text-blue-700 hover:no-underline"
-                aria-label="Abrir busca de candidatos"
-              >
-                Abrir busca de candidatos
-              </Link>
-            </div>
-          </article>
-
-          <article
-            className="p-5 border rounded-lg bg-white shadow-sm"
-            aria-labelledby="recurso-propostas"
-          >
-            <h3 id="recurso-propostas" className="font-semibold text-lg">
-              Propostas e status
-            </h3>
-            <p className="mt-2">
-              Envie propostas e acompanhe respostas em um só painel.
-            </p>
-            <div className="mt-3">
-              <Link
-                to="/propostas"
-                className="underline text-blue-700 hover:no-underline"
-                aria-label="Gerenciar propostas enviadas"
-              >
-                Gerenciar propostas
-              </Link>
-            </div>
-          </article>
+        <div className="text-brand-color mb-xs">{icon}</div> {/* Ícone */}
+        
+        <h3 id={id} className="title-md mb-xs">
+            {title}
+        </h3>
+        <p className="text-sm text-muted">{description}</p>
+        
+        <div className="mt-md">
+            <Link
+                to={linkTo}
+                className="btn-link text-sm" // Classe global para link de texto
+                aria-label={linkLabel}
+            >
+                {linkLabel}
+            </Link>
         </div>
-      </section>
+    </article>
+);
 
-      {/* FAQ */}
-      <section className="mt-12" aria-labelledby="faq-instituicao">
-        <h2 id="faq-instituicao" className="text-2xl font-bold text-center mb-8">
-          Perguntas frequentes
-        </h2>
-        <div className="grid gap-4">
-          <details className="p-4 border rounded-lg bg-white shadow-sm">
-            <summary className="font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-              Os contatos dos candidatos ficam visíveis?
-            </summary>
-            <p className="mt-2">
-              Não. Os contatos só são liberados após a aceitação de uma proposta.
-            </p>
-          </details>
 
-          <details className="p-4 border rounded-lg bg-white shadow-sm">
-            <summary className="font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-              Posso ver o perfil público do candidato?
-            </summary>
-            <p className="mt-2">
-              Sim. Use a busca e abra o perfil público quando disponível.
-            </p>
-          </details>
+/**
+ * @component ParaInstituicoesPage
+ * @description Página de destino dedicada a Instituições.
+ * Refatorada para usar classes globais e melhorar a semântica.
+ */
+export default function ParaInstituicoesPage() {
+    return (
+        <div className="page-wrapper">
+            <Header />
+            <main
+                id="conteudo"
+                role="main"
+                className="container py-lg"
+                aria-labelledby="titulo-para-instituicoes"
+            >
+                <div id="live-para-instituicoes" className="sr-only" aria-live="polite" aria-atomic="true" />
 
-          <details className="p-4 border rounded-lg bg-white shadow-sm">
-            <summary className="font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-              Como melhorar a compatibilidade?
-            </summary>
-            <p className="mt-2">
-              Detalhe claramente as necessidades dos alunos no perfil institucional.
-            </p>
-          </details>
+                <header className="text-center mb-xl">
+                    <h1 id="titulo-para-instituicoes" className="heading-primary mb-md">
+                        Para Sua Instituição
+                    </h1>
+                    <p className="text-lg text-muted max-w-2xl mx-auto">
+                        Encontre agentes de apoio com experiência comprovada e gerencie o processo de contratação com segurança e eficiência.
+                    </p>
+                </header>
+
+                {/* Chamadas principais (CTAs) */}
+                <section
+                    className="flex-actions-center mb-xl" // Alinha ao centro, usa gap e flex-col/row responsivo
+                    aria-labelledby="cta-instituicoes"
+                >
+                    <h2 id="cta-instituicoes" className="sr-only">Ações principais</h2>
+
+                    <Link
+                        to="/register/instituicao"
+                        className="btn-primary btn-lg" // Botão Primário, tamanho grande
+                        aria-label="Criar conta institucional"
+                    >
+                        Criar Conta de Instituição
+                    </Link>
+
+                    <Link
+                        to="/buscar-candidatos"
+                        className="btn-secondary btn-lg" // Botão Secundário, tamanho grande
+                        aria-label="Ir para busca de candidatos"
+                    >
+                        Buscar Agentes de Apoio
+                    </Link>
+                </section>
+
+                {/* Fluxo da instituição */}
+                <section className="section-padding-sm" aria-labelledby="fluxo-instituicao">
+                    <h2 id="fluxo-instituicao" className="heading-secondary text-center mb-lg">
+                        Seu fluxo em quatro passos
+                    </h2>
+                    
+                    {/* steps-grid-4 define o layout de 4 colunas em desktop */}
+                    <ol className="steps-grid-4"> 
+                        <li className="card-simple card-step">
+                            <Briefcase size={24} className="icon-step" />
+                            <h3 className="title-md mb-xs">1. Perfil Institucional</h3>
+                            <p className="text-sm text-muted">Cadastre-se com CNPJ e defina as necessidades específicas dos alunos.</p>
+                        </li>
+                        <li className="card-simple card-step">
+                            <MapPin size={24} className="icon-step" />
+                            <h3 className="title-md mb-xs">2. Publique Vagas e Busque</h3>
+                            <p className="text-sm text-muted">Crie vagas detalhadas e utilize a busca avançada para encontrar candidatos por experiência e localização.</p>
+                        </li>
+                        <li className="card-simple card-step">
+                            <Send size={24} className="icon-step" />
+                            <h3 className="title-md mb-xs">3. Gerencie Propostas</h3>
+                            <p className="text-sm text-muted">Receba propostas diretas de candidatos e envie convites de forma padronizada e segura.</p>
+                        </li>
+                        <li className="card-simple card-step">
+                            <Clock size={24} className="icon-step" />
+                            <h3 className="title-md mb-xs">4. Avance</h3>
+                            <p className="text-sm text-muted">Acompanhe o status (Aceita/Recusada) e libere contatos apenas após o aceite final.</p>
+                        </li>
+                    </ol>
+                </section>
+
+                {/* Recursos */}
+                <section className="section-padding-sm" aria-labelledby="recursos-instituicao">
+                    <h2 id="recursos-instituicao" className="heading-secondary text-center mb-lg">
+                        Recursos para sua instituição
+                    </h2>
+                    <div className="grid-3-col">
+                        <RecursoCard
+                            id="recurso-perfil-inst"
+                            title="Gerenciamento de Perfil"
+                            description="Mantenha o perfil e as informações de contato da sua instituição sempre atualizadas."
+                            linkTo="/perfil/instituicao"
+                            linkLabel="Editar Perfil"
+                            icon={<Briefcase size={32} />}
+                        />
+                        <RecursoCard
+                            id="recurso-busca-cand"
+                            title="Busca Otimizada de Agentes"
+                            description="Filtre rapidamente agentes de apoio por deficiência, escolaridade e localização."
+                            linkTo="/buscar-candidatos"
+                            linkLabel="Abrir Busca"
+                            icon={<Search size={32} />}
+                        />
+                        <RecursoCard
+                            id="recurso-propostas"
+                            title="Painel de Propostas"
+                            description="Gerencie todas as propostas enviadas e recebidas em um único e organizado painel."
+                            linkTo="/minhas-propostas"
+                            linkLabel="Gerenciar Propostas"
+                            icon={<Send size={32} />}
+                        />
+                    </div>
+                </section>
+
+                {/* FAQ */}
+                <section className="section-padding-sm" aria-labelledby="faq-instituicao">
+                    <h2 id="faq-instituicao" className="heading-secondary text-center mb-lg">
+                        Perguntas Frequentes
+                    </h2>
+                    <div className="faq-grid">
+                        <details className="card-simple card-faq">
+                            <summary className="font-semibold cursor-pointer summary-focus">
+                                Os contatos dos candidatos ficam visíveis?
+                            </summary>
+                            <p className="mt-xs text-sm text-muted">
+                                Não. Os contatos são liberados apenas para a Instituição após uma proposta ser mutuamente aceita (seja enviada por você ou pelo Candidato).
+                            </p>
+                        </details>
+
+                        <details className="card-simple card-faq">
+                            <summary className="font-semibold cursor-pointer summary-focus">
+                                Posso ver o perfil público do agente de apoio?
+                            </summary>
+                            <p className="mt-xs text-sm text-muted">
+                                Sim. Ao usar a função "Buscar Agentes de Apoio", você tem acesso ao perfil público resumido, incluindo experiências e habilidades.
+                            </p>
+                        </details>
+
+                        <details className="card-simple card-faq">
+                            <summary className="font-semibold cursor-pointer summary-focus">
+                                Como melhoro a compatibilidade entre a vaga e os candidatos?
+                            </summary>
+                            <p className="mt-xs text-sm text-muted">
+                                Detalhe claramente as necessidades específicas dos alunos, as exigências de horário e o regime de contratação nas suas publicações de vaga.
+                            </p>
+                        </details>
+                    </div>
+                </section>
+
+                {/* Atalhos finais */}
+                <nav className="text-center mt-xl" aria-label="Atalhos finais de cadastro e busca">
+                    <Link
+                        to="/register/instituicao"
+                        className="btn-link text-lg"
+                        aria-label="Ir para criar conta institucional"
+                    >
+                        Criar Conta de Instituição
+                    </Link>
+                    <span className="mx-md text-muted" aria-hidden="true">
+                        |
+                    </span>
+                    <Link
+                        to="/buscar-candidatos"
+                        className="btn-link text-lg"
+                        aria-label="Ir para busca de candidatos"
+                    >
+                        Buscar Agentes de Apoio
+                    </Link>
+                </nav>
+            </main>
+            <Footer />
         </div>
-      </section>
-
-      {/* Atalhos finais */}
-      <nav className="mt-12 text-center" aria-label="Atalhos finais">
-        <Link
-          to="/register/instituicao"
-          className="underline text-blue-700 hover:no-underline"
-          aria-label="Ir para criar conta institucional"
-        >
-          Criar conta
-        </Link>
-        <span className="mx-2" aria-hidden="true">
-          |
-        </span>
-        <Link
-          to="/candidatos"
-          className="underline text-blue-700 hover:no-underline"
-          aria-label="Ir para busca de candidatos"
-        >
-          Buscar candidatos
-        </Link>
-      </nav>
-    </main>
-  )
+    );
 }

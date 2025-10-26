@@ -1,70 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-// api, useAuth, e componentes de UI não são necessários nesta página, pois ela
-
-const Button = ({ children, onClick, variant = 'primary', type = 'button' }) => (
-    <button
-        type={type}
-        onClick={onClick}
-        className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            variant === 'primary' ? 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-gray-600 hover:bg-gray-700'
-        }`}
-    >
-        {children}
-    </button>
-);
+import React, { useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { User, Building, ArrowLeft, CheckCircle } from 'lucide-react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 /**
- * Componente RegisterPage: Agora focado apenas na seleção inicial do tipo de usuário.
- * O redirecionamento é feito para as rotas específicas criadas em App.tsx.
+ * @component RegisterPage
+ * @description Página de seleção do tipo de perfil (Candidato ou Instituição) antes do cadastro.
+ * Recebe o parâmetro 'success' da URL para exibir feedback após o cadastro bem-sucedido.
  */
-const RegisterPage: React.FC = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
+export default function RegisterPage() {
+    const [searchParams] = useSearchParams();
+    const successType = searchParams.get('success'); // 'candidato' ou 'instituicao'
+    const successRef = useRef<HTMLDivElement>(null);
 
-    // Lógica para capturar o parâmetro 'tipo' da URL (ex: /register?tipo=candidato)
+    // Foca no alerta de sucesso após o cadastro
     useEffect(() => {
-        const query = new URLSearchParams(location.search);
-        const userTypeFromQuery = query.get('tipo');
-
-        if (userTypeFromQuery === 'candidato') {
-            navigate('/register/candidato');
-        } else if (userTypeFromQuery === 'instituicao') {
-            navigate('/register/instituicao');
+        if (successType) {
+            successRef.current?.focus();
         }
-        // Se não houver 'tipo' ou for inválido, continua na tela de escolha.
-    }, [location.search, navigate]);
+    }, [successType]);
 
-    // Funções para seleção e redirecionamento
-    const handleCandidatoSelect = () => {
-        // Redireciona para a rota específica
-        navigate('/register/candidato');
-    };
-
-    const handleInstituicaoSelect = () => {
-        // Redireciona para a rota específica
-        navigate('/register/instituicao');
-    };
-
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800">Escolha o seu Perfil</h1>
-                <p className="text-gray-600 mb-8">Você está se cadastrando como:</p>
-                <div className="space-y-4">
-                    <Button onClick={handleCandidatoSelect}>
-                        Agente de Apoio (Candidato)
-                    </Button>
-                    <Button onClick={handleInstituicaoSelect} variant="secondary">
-                        Instituição de Ensino
-                    </Button>
-                </div>
-                <Link to="/login" className="mt-6 inline-block text-sm text-blue-600 hover:text-blue-800">
-                    Já tem conta? Entrar
-                </Link>
-            </div>
+    // Componente de Card de Escolha
+    const ChoiceCard: React.FC<{
+        title: string;
+        description: string;
+        linkTo: string;
+        icon: React.ReactNode;
+    }> = ({ title, description, linkTo, icon }) => (
+        <div className="card-choice">
+            <Link to={linkTo} className="card-choice-link" aria-label={`Continuar como ${title}`}>
+                <div className="card-choice-icon">{icon}</div>
+                <h2 className="title-lg mb-xs">{title}</h2>
+                <p className="text-sm text-muted">{description}</p>
+                
+                <span className="btn-primary btn-sm mt-md">
+                    Continuar
+                </span>
+            </Link>
         </div>
     );
-};
 
-export default RegisterPage;
+    return (
+        <div className="page-wrapper">
+            <Header />
+            <main className="auth-container" aria-labelledby="titulo-escolha-cadastro">
+                
+                <div className="card-auth-medium">
+                    
+                    {/* Alerta de Sucesso Pós-Cadastro */}
+                    {successType && (
+                        <div
+                            ref={successRef}
+                            tabIndex={-1}
+                            role="status"
+                            className="alert alert-success mb-lg"
+                        >
+                            <CheckCircle size={20} className="inline mr-sm" />
+                            <span className="font-semibold">
+                                Sucesso!
+                            </span> Sua conta de {successType === 'candidato' ? 'Agente de Apoio' : 'Instituição'} foi criada. Faça login para acessar o painel.
+                        </div>
+                    )}
+                    
+                    <h1
+                        id="titulo-escolha-cadastro"
+                        className="heading-secondary mb-md text-center"
+                    >
+                        Quero me cadastrar como:
+                    </h1>
+                    
+                    <p className="text-sm text-muted text-center mb-lg">
+                        Escolha o perfil que melhor se encaixa no seu objetivo para iniciar o cadastro.
+                    </p>
+
+                    {/* Cartões de Escolha */}
+                    <div className="form-grid-2">
+                        <ChoiceCard
+                            title="Agente de Apoio (Candidato)"
+                            description="Busque vagas e ofereça seus serviços a instituições de ensino."
+                            linkTo="/register/candidato"
+                            icon={<User size={32} />}
+                        />
+                        <ChoiceCard
+                            title="Instituição de Ensino"
+                            description="Publique vagas e encontre agentes de apoio qualificados para seus alunos."
+                            linkTo="/register/instituicao"
+                            icon={<Building size={32} />}
+                        />
+                    </div>
+                    
+                    {/* Link para Login */}
+                    <div className='mt-lg text-center'>
+                        <Link to="/login" className="btn-link text-sm btn-icon" type="button">
+                            <ArrowLeft size={16} className="mr-xs" /> Já tenho conta
+                        </Link>
+                    </div>
+                    
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
+}

@@ -1,112 +1,118 @@
-import { Link } from 'react-router-dom'
+import React from 'react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
-export default function ComoFuncionaPage() {
+/**
+ * @component ComoFuncionaPage
+ * @description Página informativa explicando o fluxo de trabalho da plataforma para ambos os usuários: Candidato (Agente de Apoio) e Instituição.
+ * O design e layout são baseados em classes semânticas do global.css, removendo o CSS utilitário.
+ */
+const ComoFuncionaPage: React.FC = () => {
   return (
-    <main id="conteudo" className="mx-auto max-w-7xl px-4 py-10" aria-labelledby="titulo-como-funciona">
-      {/* Região viva para leitores de tela, caso precise anunciar algo no futuro */}
-      <div className="sr-only" aria-live="polite" aria-atomic="true" />
+    <>
+      <Header />
+      <main className="container py-xl">
+        {/* Título Principal */}
+        <h1 className="heading-primary text-center mb-lg">Como Funciona o Pro Apoio?</h1>
 
-      <header className="text-center">
-        <h1 id="titulo-como-funciona" className="text-3xl sm:text-4xl font-extrabold">
-          Como funciona o ProApoio
-        </h1>
-        <p className="mt-3 text-lg text-zinc-700">
-          Conecte instituições e agentes de apoio com foco em segurança, compatibilidade e propostas formais.
+        <p className="text-center text-muted mb-xl">
+          Conectamos Agentes de Apoio (Candidatos) a Instituições que buscam profissionais qualificados para inclusão.
         </p>
-      </header>
 
-      {/* CTA duplo segmentado */}
-      <section className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3" aria-label="Chamadas para ação">
-        <Link
-          to="/register/candidato"
-          className="w-full sm:w-auto rounded-lg bg-blue-700 text-white px-6 py-3 font-semibold shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 text-center"
-          aria-label="Sou Candidato, Quero Ajudar"
-        >
-          Sou Candidato, Quero Ajudar
-        </Link>
-        <Link
-          to="/register/instituicao"
-          className="w-full sm:w-auto rounded-lg bg-white text-blue-700 px-6 py-3 font-semibold shadow ring-1 ring-inset ring-blue-700/30 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 text-center"
-          aria-label="Sou Instituição, Preciso de Apoio"
-        >
-          Sou Instituição, Preciso de Apoio
-        </Link>
-      </section>
+        {/* ================================== */}
+        {/* Seção 1: Fluxo para Agentes de Apoio (Candidatos) */}
+        {/* ================================== */}
+        <section className="mb-xl">
+          <h2 className="heading-secondary mb-lg" style={{ color: 'var(--color-brand)' }}>
+            Para você, Agente de Apoio
+          </h2>
 
-      {/* Fluxo em 4 passos */}
-      <section className="mt-12" aria-labelledby="secao-fluxo">
-        <h2 id="secao-fluxo" className="text-2xl font-bold text-center">Fluxo simples em quatro passos</h2>
-        <ol className="mt-8 grid gap-6 md:grid-cols-4 list-decimal [counter-reset:step]">
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">1. Cadastre-se</h3>
-            <p>Escolha ser instituição ou candidato. Informe dados essenciais e, quando aplicável, experiências.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">2. Encontre</h3>
-            <p>Instituições publicam vagas. Candidatos buscam e salvam oportunidades compatíveis.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">3. Envie proposta</h3>
-            <p>A interação acontece por propostas formais. Nada de contato direto antes da aceitação.</p>
-          </li>
-          <li className="p-4 border rounded-lg bg-white shadow-sm">
-            <h3 className="font-semibold mb-2">4. Conecte-se</h3>
-            <p>Após a aceitação, os contatos são liberados e o processo segue com segurança.</p>
-          </li>
-        </ol>
-      </section>
-
-      {/* Benefícios por público */}
-      <section className="mt-12" aria-labelledby="secao-beneficios">
-        <h2 id="secao-beneficios" className="text-2xl font-bold text-center">Benefícios por público</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <article className="p-5 border rounded-lg bg-white shadow-sm" aria-labelledby="benef-candidatos">
-            <h3 id="benef-candidatos" className="font-semibold text-lg">Para candidatos</h3>
-            <ul className="mt-3 list-disc ps-5 space-y-1">
-              <li>Trabalho com propósito e foco em inclusão educacional.</li>
-              <li>Propostas de instituições verificadas.</li>
-              <li>Proteção de dados pessoais até a aceitação.</li>
-            </ul>
-            <div className="mt-4">
-              <Link to="/vagas" className="underline text-blue-700 hover:no-underline">Explorar vagas</Link>
+          <div className="flex-group space-y-md">
+            {/* Passo 1 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">1. Cadastro e Perfil Completo</h3>
+              <p className="text-sm text-muted">
+                Crie seu perfil detalhado. Informe suas experiências profissionais, habilidades (como Libras e Braile) e tipos de deficiência com os quais você tem familiaridade. Quanto mais completo o perfil, maior a chance de ser encontrado.
+              </p>
             </div>
-          </article>
-
-          <article className="p-5 border rounded-lg bg-white shadow-sm" aria-labelledby="benef-instituicoes">
-            <h3 id="benef-instituicoes" className="font-semibold text-lg">Para instituições</h3>
-            <ul className="mt-3 list-disc ps-5 space-y-1">
-              <li>Perfis qualificados e filtragem por experiência.</li>
-              <li>Processo padronizado de propostas e status.</li>
-              <li>Gestão centralizada de vagas e candidatos.</li>
-            </ul>
-            <div className="mt-4">
-              <Link to="/candidatos" className="underline text-blue-700 hover:no-underline">Buscar candidatos</Link>
+            
+            {/* Passo 2 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">2. Busque Vagas e Salve Oportunidades</h3>
+              <p className="text-sm text-muted">
+                Use a busca avançada para encontrar vagas que correspondem à sua escolaridade e localização. Salve suas vagas favoritas para acompanhar o status e decidir quando enviar sua proposta.
+              </p>
             </div>
-          </article>
-        </div>
-      </section>
+            
+            {/* Passo 3 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">3. Envie sua Proposta</h3>
+              <p className="text-sm text-muted">
+                Ao encontrar a vaga ideal, envie uma proposta diretamente à Instituição, demonstrando seu interesse. Você pode anexar documentos e incluir uma mensagem personalizada.
+              </p>
+            </div>
 
-      {/* Depoimentos opcional */}
-      <section className="mt-12" aria-labelledby="secao-depoimentos">
-        <h2 id="secao-depoimentos" className="text-2xl font-bold text-center">Depoimentos</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <blockquote className="p-5 border rounded-lg bg-white shadow-sm">
-            <p className="italic">“O fluxo de propostas trouxe segurança para iniciar conversas.”</p>
-            <footer className="mt-2 text-sm text-zinc-600">Coordenadora pedagógica</footer>
-          </blockquote>
-          <blockquote className="p-5 border rounded-lg bg-white shadow-sm">
-            <p className="italic">“Consegui achar vagas alinhadas com minha experiência.”</p>
-            <footer className="mt-2 text-sm text-zinc-600">Agente de apoio</footer>
-          </blockquote>
-        </div>
-      </section>
+            {/* Passo 4 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">4. Receba Convites e Notificações</h3>
+              <p className="text-sm text-muted">
+                Instituições podem entrar em contato com você se o seu perfil for compatível. Acompanhe o status das suas propostas e receba notificações sobre novas oportunidades e respostas.
+              </p>
+            </div>
+          </div>
+        </section>
 
-      {/* Atalhos finais */}
-      <nav className="mt-12 text-center" aria-label="Atalhos finais">
-        <Link to="/register" className="underline text-blue-700 hover:no-underline">Criar conta</Link>
-        <span className="mx-2" aria-hidden="true">|</span>
-        <Link to="/login" className="underline text-blue-700 hover:no-underline">Entrar</Link>
-      </nav>
-    </main>
-  )
-}
+        {/* ================================== */}
+        {/* Seção 2: Fluxo para Instituições */}
+        {/* ================================== */}
+        <section>
+          <h2 className="heading-secondary mb-lg" style={{ color: 'var(--color-secondary)' }}>
+            Para sua Instituição
+          </h2>
+          
+          <div className="flex-group space-y-md">
+            {/* Passo 1 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">1. Publique Vagas Detalhadas</h3>
+              <p className="text-sm text-muted">
+                Cadastre as vagas com todos os detalhes importantes: regime, cidade, requisitos e expectativas. Vagas claras atraem candidatos mais alinhados.
+              </p>
+            </div>
+            
+            {/* Passo 2 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">2. Encontre Profissionais Específicos</h3>
+              <p className="text-sm text-muted">
+                Utilize a busca de candidatos para filtrar Agentes de Apoio por escolaridade, localização e experiência com tipos específicos de deficiência, acelerando o processo de recrutamento.
+              </p>
+            </div>
+            
+            {/* Passo 3 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">3. Gerencie Propostas</h3>
+              <p className="text-sm text-muted">
+                Receba e gerencie todas as propostas em um só lugar. Aceite, recuse ou interaja com os candidatos que se candidataram à sua vaga.
+              </p>
+            </div>
+
+            {/* Passo 4 */}
+            <div className="card-simple">
+              <h3 className="title-lg mb-xs">4. Notificação e Contratação</h3>
+              <p className="text-sm text-muted">
+                Após aceitar uma proposta, o candidato é notificado e vocês podem prosseguir com os trâmites de contratação fora da plataforma.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <p className="text-center text-muted mt-xl">
+          Pronto para começar? Escolha seu perfil e junte-se à nossa rede!
+        </p>
+
+      </main>
+      <Footer />
+    </>
+  );
+};
+
+export default ComoFuncionaPage;
