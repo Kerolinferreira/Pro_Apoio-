@@ -1,7 +1,5 @@
-// src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-// Páginas já existentes no seu projeto
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -15,32 +13,11 @@ import DetalhesVagaPage from './pages/DetalhesVagaPage'
 import BuscarCandidatosPage from './pages/BuscarCandidatosPage'
 import PerfilCandidatoPublicPage from './pages/PerfilCandidatoPublicPage'
 import MinhasPropostasPage from './pages/MinhasPropostasPage'
-
-// Stubs temporários (troque depois por páginas reais em ./pages)
-function ComoFuncionaPage() {
-  return (
-    <main className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold">Como Funciona</h1>
-      <p className="mt-2">Página temporária. Substitua por ./pages/ComoFuncionaPage.tsx</p>
-    </main>
-  )
-}
-function ParaCandidatosPage() {
-  return (
-    <main className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold">Para Candidatos</h1>
-      <p className="mt-2">Página temporária. Substitua por ./pages/ParaCandidatosPage.tsx</p>
-    </main>
-  )
-}
-function ParaInstituicoesPage() {
-  return (
-    <main className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold">Para Instituições</h1>
-      <p className="mt-2">Página temporária. Substitua por ./pages/ParaInstituicoesPage.tsx</p>
-    </main>
-  )
-}
+import ComoFuncionaPage from './pages/ComoFuncionaPage'
+import ParaCandidatosPage from './pages/ParaCandidatosPage'
+import ParaInstituicoesPage from './pages/ParaInstituicoesPage'
+import RegisterCandidatoPage from './pages/RegisterCandidatoPage'
+import RegisterInstituicaoPage from './pages/RegisterInstituicaoPage'
 
 export default function App() {
   return (
@@ -50,29 +27,28 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        
+        {/* ROTAS DE CADASTRO ESPECÍFICAS ADICIONADAS AQUI: */}
+        <Route path="/register/candidato" element={<RegisterCandidatoPage />} />
+        <Route path="/register/instituicao" element={<RegisterInstituicaoPage />} />
+
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Navegação informativa novas */}
+        {/* Navegação informativa  */}
         <Route path="/como-funciona" element={<ComoFuncionaPage />} />
         <Route path="/para-candidatos" element={<ParaCandidatosPage />} />
         <Route path="/para-instituicoes" element={<ParaInstituicoesPage />} />
-
-        {/* Candidato */}
+        
+        {/* ... (Rotas de Candidato e Instituição) ... */}
         <Route path="/perfil/candidato" element={<PerfilCandidatoPage />} />
         <Route path="/vagas-salvas" element={<VagasSalvasPage />} />
-
-        {/* Instituição */}
         <Route path="/perfil/instituicao" element={<PerfilInstituicaoPage />} />
         <Route path="/candidatos" element={<BuscarCandidatosPage />} />
         <Route path="/candidatos/:id" element={<PerfilCandidatoPublicPage />} />
-
-        {/* Vagas e propostas */}
         <Route path="/vagas" element={<BuscarVagasPage />} />
         <Route path="/vagas/:id" element={<DetalhesVagaPage />} />
         <Route path="/propostas" element={<MinhasPropostasPage />} />
-
-        {/* Sem catch-all redirecionando para "/" */}
       </Routes>
     </BrowserRouter>
   )
