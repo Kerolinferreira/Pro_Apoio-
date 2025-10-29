@@ -1,7 +1,8 @@
+import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react'
 import api from '../services/api'
 import { Link } from 'react-router-dom'
-import { CheckCircle, XCircle, Send, Clock, User, Briefcase, Mail, Phone, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, Send, Clock, User, Briefcase, Mail, Phone, Loader2, AlertTriangle, ArrowLeft, Zap } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 

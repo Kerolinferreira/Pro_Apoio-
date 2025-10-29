@@ -874,6 +874,25 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
 }
 
 /* ============================== */
+/* 6. ALERTS, BADGES E FEEDBACK - Adição de Erros de Formulário */
+/* ============================== */
+
+/* Estilo para campos de formulário inválidos */
+.form-input[aria-invalid="true"],
+.form-select[aria-invalid="true"],
+.form-textarea[aria-invalid="true"] {
+    border-color: var(--color-error);
+}
+
+/* Mensagem de erro para campos de formulário */
+.error-text {
+    color: var(--color-error);
+    font-size: 0.875rem; /* text-sm */
+    margin-top: 0.5rem; /* mt-2 */
+}
+
+
+/* ============================== */
 /* ADIÇÕES FINAIS AO GLOBAL.CSS (HEADER/FOOTER LOGADO) */
 /* ============================== */
 

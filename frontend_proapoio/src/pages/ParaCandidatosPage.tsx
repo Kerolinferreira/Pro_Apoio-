@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { UserPlus, Search, Heart, CheckCircle, Zap, MessageSquare, Briefcase } from 'lucide-react'; // Ícones para Recursos
+import { UserPlus, Search, Heart, CheckCircle, Zap, MessageSquare, Briefcase, Send, User } from 'lucide-react'; // Ícones para Recursos
 
 /**
  * @component RecursoCard

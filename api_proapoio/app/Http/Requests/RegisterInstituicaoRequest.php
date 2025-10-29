@@ -93,7 +93,7 @@ class RegisterInstituicaoRequest extends FormRequest
             'funcao_responsavel'      => 'required|string|max:255', // Definido como obrigatório
 
             // CORREÇÃO: Deve ser 'required|accepted' para garantir que foi marcado
-            'termos_aceite'           => 'required|boolean|accepted',
+            'termos_aceite'           => 'required|accepted',
         ];
     }
 

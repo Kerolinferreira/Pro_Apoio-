@@ -447,7 +447,15 @@ const BuscarVagasPage: React.FC = () => {
             <div className="space-y-6">
               {!loading && vagas.length > 0 ? (
                 vagas.map(vaga => (
-                  <VagaCard key={vaga.id} vaga={vaga} isCandidato={true} />
+                  <VagaCard
+                    key={vaga.id}
+                    id={vaga.id}
+                    title={vaga.titulo}
+                    institution={vaga.instituicao.nome}
+                    city={vaga.cidade}
+                    regime={vaga.tipo}
+                    linkTo={`/vagas/${vaga.id}`}
+                  />
                 ))
               ) : !loading && vagas.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-lg border border-gray-200">

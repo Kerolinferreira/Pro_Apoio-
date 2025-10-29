@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Accessibility, Save, Edit, Loader2, AlertTriangle, Trash2, PlusCircle, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Accessibility, Save, Edit, Loader2, AlertTriangle, Trash2, PlusCircle, Eye, EyeOff, Calendar, Lock as LockIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext'; 
 
 // ===================================
@@ -10,13 +10,13 @@ import { useAuth } from '../contexts/AuthContext';
 // ===================================
 
 interface Endereco {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
 }
 
 interface Deficiencia {
@@ -276,7 +276,7 @@ const PerfilCandidatoPage: React.FC = () => {
                             {renderField('Email (Não editável)', 'email', <Mail size={20} />, 'email')}
                             {renderField('Telefone', 'telefone', <Phone size={20} />, 'tel')}
                             {renderField('Data de Nascimento', 'data_nascimento', <Calendar size={20} />, 'date')}
-                            {renderField('CPF (Apenas leitura)', 'cpf', <Lock size={20} />, 'text')}
+                            {renderField('CPF (Apenas leitura)', 'cpf', <LockIcon size={20} />, 'text')}
                             
                             {/* Gênero - Simulação de Select */}
                             <div className="form-group">

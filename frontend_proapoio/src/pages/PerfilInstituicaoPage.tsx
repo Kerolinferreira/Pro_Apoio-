@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock, Pause, XCircle, CheckCircle } from 'lucide-react';
+import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock as LockIcon, Pause, XCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext'; 
 
 // ===================================
@@ -11,13 +11,13 @@ import { useAuth } from '../contexts/AuthContext';
 // ===================================
 
 interface Endereco {
-    cep: string;
-    logradouro: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
 }
 
 interface VagaResumo {
@@ -147,7 +147,7 @@ const PerfilInstituicaoPage: React.FC = () => {
         setFormData(prev => ({ ...prev, endereco: { ...(prev.endereco || {}), [name]: value } }));
     };
 
-    const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const cep = e.target.value.replace(/\D/g, '');
         if (cep.length !== 8) return;
         // Lógica ViaCEP (similar ao Perfil Candidato)
@@ -284,8 +284,8 @@ const PerfilInstituicaoPage: React.FC = () => {
                     <Section title="Identificação e Contato">
                         <div className="grid-2-col-lg">
                             {renderField('Nome Fantasia', 'nome_fantasia', <Building size={20} />, 'text')}
-                            {renderField('Razão Social (Apenas leitura)', 'razao_social', <Lock size={20} />, 'text', undefined, true)}
-                            {renderField('CNPJ (Apenas leitura)', 'cnpj', <Lock size={20} />, 'text', undefined, true)}
+                            {renderField('Razão Social (Apenas leitura)', 'razao_social', <LockIcon size={20} />, 'text', undefined, true)}
+                            {renderField('CNPJ (Apenas leitura)', 'cnpj', <LockIcon size={20} />, 'text', undefined, true)}
                             {renderField('Email', 'email', <Mail size={20} />, 'email')}
                             {renderField('Telefone', 'telefone', <Phone size={20} />, 'tel')}
                         </div>

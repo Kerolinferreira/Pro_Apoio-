@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * @function login
      * @description Realiza o login na API e armazena os dados do usuário.
      */
-    const login = useCallback(async (email, password, options = { remember: true }) => {
+    const login = useCallback(async (email: string, password: string, options = { remember: true }) => {
         const response = await api.post('/auth/login', { email, password });
         
         const token = response.data.access_token;

@@ -49,9 +49,6 @@ Route::get('/external/receitaws/{cnpj}', [ExternalApiController::class, 'receita
 // O uso de 'auth:api' garante que o token JWT seja validado.
 Route::middleware('auth:api')->group(function () {
 
-    // Rota para obter dados do usuário autenticado (Usada no AuthContext para 'hydrate')
-    Route::get('/profile/me', [AuthController::class, 'me']);
-    
     // Logout
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 

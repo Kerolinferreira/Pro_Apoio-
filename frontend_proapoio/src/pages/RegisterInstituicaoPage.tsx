@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Building, Lock, Mail, Phone, MapPin, User, Briefcase, GraduationCap, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Building, Lock as LockIcon, Mail, Phone, MapPin, User, Briefcase, GraduationCap, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { maskCEP, maskCNPJ, maskPhone, maskFixo } from '../utils/masks';
 
 // ===================================
@@ -52,6 +52,8 @@ const NIVEIS_OFERECIDOS_OPCOES = [
     { value: 'Superior', label: 'Superior' },
     { value: 'EJA', label: 'EJA' },
 ];
+
+const ESTADOS_OPCOES = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 
 // Estado Inicial
 const initialInstituicaoState: InstituicaoFormData = {
@@ -292,7 +294,7 @@ const RegisterInstituicaoPage: React.FC = () => {
                             <div className="form-group">
                                 <label htmlFor="cnpj" className="form-label">CNPJ</label>
                                 <div className="form-input-icon-wrapper">
-                                    <Lock size={20} className="form-icon" />
+                                    <LockIcon size={20} className="form-icon" />
                                     <input id="cnpj" name="cnpj" type="text" required value={instituicaoForm.cnpj} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.cnpj} inputMode="numeric" />
                                 </div>
                                 <ErrorText id="erro-cnpj" message={errors.cnpj} />
@@ -377,7 +379,7 @@ const RegisterInstituicaoPage: React.FC = () => {
                             <div className="form-group mt-md">
                                 <label htmlFor="senha" className="form-label">Senha</label>
                                 <div className="form-input-icon-wrapper">
-                                    <Lock size={20} className="form-icon" />
+                                    <LockIcon size={20} className="form-icon" />
                                     <input id="senha" name="senha" type="password" required value={instituicaoForm.senha} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.senha} autoComplete="new-password" />
                                 </div>
                                 <ErrorText id="erro-senha" message={errors.senha} />
@@ -387,7 +389,7 @@ const RegisterInstituicaoPage: React.FC = () => {
                             <div className="form-group mt-md">
                                 <label htmlFor="confirmar_senha" className="form-label">Confirmar Senha</label>
                                 <div className="form-input-icon-wrapper">
-                                    <Lock size={20} className="form-icon" />
+                                    <LockIcon size={20} className="form-icon" />
                                     <input id="confirmar_senha" name="confirmar_senha" type="password" required value={instituicaoForm.confirmar_senha} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.confirmar_senha} autoComplete="new-password" />
                                 </div>
                                 <ErrorText id="erro-confirmar_senha" message={errors.confirmar_senha} />
@@ -462,7 +464,7 @@ const RegisterInstituicaoPage: React.FC = () => {
                                 <label htmlFor="estado" className="form-label">Estado</label>
                                 <select id="estado" name="estado" required value={instituicaoForm.estado} onChange={handleInstituicaoChange} className="form-select" aria-invalid={!!errors.estado}>
                                     <option value="">UF</option>
-                                    {ESTADOS_OPCOES.map(e => <option key={e} value={e}>{e}</option>)}
+                                    {ESTADOS_OPCOES.map((e: string) => <option key={e} value={e}>{e}</option>)}
                                 </select>
                                 <ErrorText id="erro-estado" message={errors.estado} />
                             </div>

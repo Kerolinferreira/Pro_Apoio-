@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
-import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft, UserPlus } from 'lucide-react';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks';
 
 // ===================================
@@ -13,15 +13,15 @@ type FormData = {
     email: string;
     telefone: string;
     cpf: string;
-    data_nascimento: string;
-    senha: string;
-    confirmarSenha: string;
+    data_nascimento: string; // yyyy-mm-dd
+    password: string;
+    password_confirmation: string;
     cep: string;
     cidade: string;
     estado: string;
     escolaridade: string;
-    curso: string;
-    instituicao_ensino: string;
+    curso_superior: string;
+    instituicao_ensino: string; // Nome da instituição
     experiencia: string; // Resumo da experiência
 };
 
@@ -62,15 +62,15 @@ export default function RegisterCandidatoPage() {
         email: '',
         telefone: '',
         cpf: '',
-        data_nascimento: '',
-        senha: '',
-        confirmarSenha: '',
+        data_nascimento: '', // yyyy-mm-dd
+        password: '',
+        password_confirmation: '',
         cep: '',
         cidade: '',
         estado: '',
         escolaridade: '',
-        curso: '',
-        instituicao_ensino: '',
+        curso_superior: '',
+        instituicao_ensino: '', // Nome da instituição
         experiencia: '',
     });
 
@@ -132,8 +132,8 @@ export default function RegisterCandidatoPage() {
         if (!formData.data_nascimento.trim()) e.data_nascimento = 'Informe a data de nascimento.';
         
         // Senha
-        if (!senhaValida(formData.senha)) e.senha = 'A senha deve ter no mínimo 8 caracteres com letras e números.';
-        if (formData.senha !== formData.confirmarSenha) e.confirmarSenha = 'As senhas não coincidem.';
+        if (!senhaValida(formData.password)) e.password = 'A senha deve ter no mínimo 8 caracteres com letras e números.';
+        if (formData.password !== formData.password_confirmation) e.password_confirmation = 'As senhas não coincidem.';
         
         // Endereço
         if (formData.cep.replace(/\D/g, '').length !== 8) e.cep = 'CEP inválido.';
@@ -144,7 +144,7 @@ export default function RegisterCandidatoPage() {
         if (!formData.escolaridade) e.escolaridade = 'Selecione a escolaridade.';
         const exigeCurso = formData.escolaridade.includes('Superior') || ['Pós-Graduação', 'Mestrado', 'Doutorado'].includes(formData.escolaridade);
         if (exigeCurso) {
-            if (!formData.curso.trim()) e.curso = 'Informe o curso.';
+            if (!formData.curso_superior.trim()) e.curso_superior = 'Informe o curso.';
             if (!formData.instituicao_ensino.trim()) e.instituicao_ensino = 'Informe a instituição de ensino.';
         }
         
@@ -187,8 +187,20 @@ export default function RegisterCandidatoPage() {
         const eMap = validar();
         setErrors(eMap);
         if (Object.keys(eMap).length > 0) {
-            setMensagem('Corrija os campos destacados.');
-            setTimeout(() => alertRef.current?.focus(), 0);
+            const errorFields = Object.keys(eMap).map(key => {
+                const labels: Record<string, string> = {
+                    nome_completo: 'Nome completo',
+                    password: 'Senha',
+                    password_confirmation: 'Confirmar senha',
+                    curso_superior: 'Nome do Curso',
+                };
+                return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+            });
+
+            const errorMessage = `Corrija os campos destacados: ${errorFields.join(', ')}.`;
+            setMensagem(errorMessage);
+            announce(errorMessage);
+            setTimeout(() => alertRef.current?.focus(), 100);
             return;
         }
 
@@ -201,15 +213,15 @@ export default function RegisterCandidatoPage() {
                 telefone: formData.telefone.replace(/\D/g, ''), // Envia sem máscara
                 cpf: formData.cpf.replace(/\D/g, ''), // Envia sem máscara
                 data_nascimento: formData.data_nascimento,
-                senha: formData.senha,
-                senha_confirmation: formData.confirmarSenha, 
+                password: formData.password,
+                password_confirmation: formData.password_confirmation, 
                 
                 cep: formData.cep.replace(/\D/g, ''), // Envia sem máscara
                 cidade: formData.cidade,
                 estado: formData.estado,
                 
                 nivel_escolaridade: formData.escolaridade, 
-                curso_superior: formData.curso, 
+                curso_superior: formData.curso_superior, 
                 instituicao_ensino: formData.instituicao_ensino, 
                 experiencia: formData.experiencia,
             };
@@ -238,17 +250,20 @@ export default function RegisterCandidatoPage() {
                 Object.entries(laravelErrors).forEach(([key, messages]) => {
                     const msg = Array.isArray(messages) ? messages[0] : 'Erro de validação.';
                     
-                    if (key === 'nome') fieldErrors.nome_completo = msg;
-                    else if (key in formData) (fieldErrors as any)[key] = msg;
-                    else erroMsg = msg; // Mensagem geral (ex: 'O email informado já existe.')
+                    const keyMap: Record<string, keyof FormData> = {
+                        'nome': 'nome_completo',
+                        'nivel_escolaridade': 'escolaridade',
+                    };
+
+                    const formKey = keyMap[key] || key;
+
+                    if (formKey in formData) (fieldErrors as any)[formKey] = msg;
+                    else erroMsg = msg; // Mensagem geral (ex: 'O email informado já existe.') se não mapear
                 });
                 
                 setErrors(fieldErrors);
                 setMensagem(Object.keys(fieldErrors).length > 0 ? 'Corrija os campos destacados.' : erroMsg);
-            } else if (error.message) {
-                erroMsg = error.message;
-            }
-            
+            } 
             announce(erroMsg);
             setTimeout(() => alertRef.current?.focus(), 0);
         } finally {
@@ -352,22 +367,22 @@ export default function RegisterCandidatoPage() {
                         {/* Senha */}
                         <div className="form-grid-2 mt-md">
                             <div className="form-group">
-                                <label htmlFor="senha" className="form-label">Senha</label>
+                                <label htmlFor="password" className="form-label">Senha</label>
                                 <div className="form-input-icon-wrapper">
                                     <Lock size={20} className="form-icon" />
-                                    <input id="senha" name="senha" type="password" required value={formData.senha} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.senha} aria-describedby={errors.senha ? 'erro-senha' : 'ajuda-senha'} autoComplete="new-password" />
+                                    <input id="password" name="password" type="password" required value={formData.password} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.password} aria-describedby={errors.password ? 'erro-password' : 'ajuda-senha'} autoComplete="new-password" />
                                 </div>
-                                <ErrorText id="erro-senha" message={errors.senha} />
+                                <ErrorText id="erro-password" message={errors.password} />
                                 <p id="ajuda-senha" className="text-xs text-muted mt-xs">Mínimo 8 caracteres com letras e números.</p>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="confirmarSenha" className="form-label">Confirmar senha</label>
+                                <label htmlFor="password_confirmation" className="form-label">Confirmar senha</label>
                                 <div className="form-input-icon-wrapper">
                                     <Lock size={20} className="form-icon" />
-                                    <input id="confirmarSenha" name="confirmarSenha" type="password" required value={formData.confirmarSenha} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.confirmarSenha} aria-describedby={errors.confirmarSenha ? 'erro-confirmar' : undefined} autoComplete="new-password" />
+                                    <input id="password_confirmation" name="password_confirmation" type="password" required value={formData.password_confirmation} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.password_confirmation} aria-describedby={errors.password_confirmation ? 'erro-confirmar' : undefined} autoComplete="new-password" />
                                 </div>
-                                <ErrorText id="erro-confirmar" message={errors.confirmarSenha} />
+                                <ErrorText id="erro-confirmar" message={errors.password_confirmation} />
                             </div>
                         </div>
                     </fieldset>
@@ -426,11 +441,11 @@ export default function RegisterCandidatoPage() {
                         {exigeCurso && (
                             <div className='form-grid-2 mt-md'>
                                 <div className="form-group">
-                                    <label htmlFor="curso" className="form-label">Nome do Curso</label>
+                                    <label htmlFor="curso_superior" className="form-label">Nome do Curso</label>
                                     <div className="form-input-icon-wrapper">
-                                        <input id="curso" name="curso" type="text" required={exigeCurso} value={formData.curso} onChange={handleChange} className="form-input" aria-invalid={!!errors.curso} aria-describedby={errors.curso ? 'erro-curso' : undefined} />
+                                        <input id="curso_superior" name="curso_superior" type="text" required={exigeCurso} value={formData.curso_superior} onChange={handleChange} className="form-input" aria-invalid={!!errors.curso_superior} aria-describedby={errors.curso_superior ? 'erro-curso' : undefined} />
                                     </div>
-                                    <ErrorText id="erro-curso" message={errors.curso} />
+                                    <ErrorText id="erro-curso" message={errors.curso_superior} />
                                 </div>
                                 
                                 <div className="form-group">
