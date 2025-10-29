@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock, Pause, XCircle, **CheckCircle** } from 'lucide-react';
+import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock, Pause, XCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext'; 
 
 // ===================================
@@ -84,14 +84,14 @@ const PerfilInstituicaoPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [editMode, setEditMode] = useState(false);
 
-    // --- LÓGICA DE BUSCA DO PERFIL (GET /instituicoes/me) ---
+    // --- LÓGICA DE BUSCA DO PERFIL (GET /instituicoes/me/) ---
     const fetchProfile = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         setError(null);
         try {
-            // GET /instituicoes/me [cite: Documentação final.docx]
-            const response = await api.get(`/instituicoes/me`);
+            // GET /instituicoes/me/ [cite: Documentação final.docx]
+            const response = await api.get(`/instituicoes/me/`);
             const data: Instituicao = response.data;
 
             setInstituicao(data);
@@ -108,7 +108,7 @@ const PerfilInstituicaoPage: React.FC = () => {
         fetchProfile();
     }, [fetchProfile]);
 
-    // --- LÓGICA DE SUBMISSÃO (PUT /instituicoes/me) ---
+    // --- LÓGICA DE SUBMISSÃO (PUT /instituicoes/me/) ---
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -121,8 +121,8 @@ const PerfilInstituicaoPage: React.FC = () => {
         }
 
         try {
-            // PUT /instituicoes/me [cite: Documentação final.docx]
-            await api.put(`/instituicoes/me`, formData);
+            // PUT /instituicoes/me/ [cite: Documentação final.docx]
+            await api.put(`/instituicoes/me/`, formData);
             
             setInstituicao(formData as Instituicao); 
             setEditMode(false); 
@@ -348,7 +348,7 @@ const PerfilInstituicaoPage: React.FC = () => {
                 <section className="mt-xl pt-lg border-top-divider" aria-labelledby="vagas-publicadas">
                     <header className="flex-group-md-row mb-lg" style={{ justifyContent: 'space-between' }}>
                         <h2 id="vagas-publicadas" className="title-lg">Vagas Publicadas ({instituicao.vagas.length})</h2>
-                        <Link to="/vagas/nova" className="btn-primary btn-icon btn-sm">
+                        <Link to="#" className="btn-primary btn-icon btn-sm">
                             <PlusCircle size={20} className="mr-sm" /> Publicar Nova Vaga
                         </Link>
                     </header>

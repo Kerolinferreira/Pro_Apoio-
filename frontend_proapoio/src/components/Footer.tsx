@@ -18,8 +18,8 @@ export default function Footer() {
         </p>
         
         <nav aria-label="Rodapé" className="footer-nav">
-          <Link to="/termos" className="nav-link text-sm">Termos de Uso</Link>
-          <Link to="/privacidade" className="nav-link text-sm">Política de Privacidade</Link>
+          <Link to="#" className="nav-link text-sm">Termos de Uso</Link>
+          <Link to="#" className="nav-link text-sm">Política de Privacidade</Link>
         </nav>
       </div>
     </footer>

@@ -78,8 +78,8 @@ const BuscarCandidatosPage: React.FC = () => {
         setError(null);
         try {
             const queryString = getQueryString(currentFilters);
-            // GET /candidatos/buscar (Endpoint implícito pela documentação)
-            const response = await api.get(`/candidatos/buscar?${queryString}`);
+            // GET /candidatos (Endpoint correto para busca de candidatos)
+            const response = await api.get(`/candidatos?${queryString}`);
             setCandidatos(response.data);
         } catch (err) {
             console.error('Erro ao buscar candidatos:', err);

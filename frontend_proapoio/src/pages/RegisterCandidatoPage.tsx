@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { applyMask } from '../utils/masks'; // Assumindo que você terá um utilitário de máscaras
+import { maskCEP, maskCPF, maskPhone } from '../utils/masks';
 
 // ===================================
 // TIPOS E DEFINIÇÕES
@@ -49,11 +49,6 @@ const ErrorText: React.FC<{ id: string; message?: string }> = ({ id, message }) 
         </p>
     ) : null
 );
-
-// Máscaras utilitárias (simulando um arquivo utils/masks.ts)
-const maskCEP = (v: string) => v.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
-const maskCPF = (v: string) => v.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-const maskPhone = (v: string) => v.replace(/\D/g, '').slice(0, 11).replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
 
 
 // ===================================

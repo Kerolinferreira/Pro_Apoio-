@@ -81,14 +81,14 @@ const PerfilCandidatoPage: React.FC = () => {
         ]);
     }, []);
 
-    // --- LÓGICA DE BUSCA DO PERFIL (GET /candidatos/me) ---
+    // --- LÓGICA DE BUSCA DO PERFIL (GET /candidatos/me/) ---
     const fetchProfile = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         setError(null);
         try {
-            // GET /candidatos/me [cite: Documentação final.docx]
-            const response = await api.get(`/candidatos/me`);
+            // GET /candidatos/me/ [cite: Documentação final.docx]
+            const response = await api.get(`/candidatos/me/`);
             const data: Candidato = response.data;
 
             setCandidato(data);
@@ -105,7 +105,7 @@ const PerfilCandidatoPage: React.FC = () => {
         fetchProfile();
     }, [fetchProfile]);
 
-    // --- LÓGICA DE SUBMISSÃO (PUT /candidatos/me) ---
+    // --- LÓGICA DE SUBMISSÃO (PUT /candidatos/me/) ---
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -119,8 +119,8 @@ const PerfilCandidatoPage: React.FC = () => {
         }
 
         try {
-            // PUT /candidatos/me [cite: Documentação final.docx]
-            await api.put(`/candidatos/me`, formData);
+            // PUT /candidatos/me/ [cite: Documentação final.docx]
+            await api.put(`/candidatos/me/`, formData);
             
             // Atualiza o estado principal
             setCandidato(formData as Candidato); 

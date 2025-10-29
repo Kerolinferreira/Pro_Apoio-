@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Building, Lock, Mail, Phone, MapPin, User, Briefcase, GraduationCap, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { maskCEP, maskCNPJ, maskPhone, maskFixo } from '../utils/masks';
 
 // ===================================
 // TIPOS E DEFINIÇÕES
@@ -64,10 +65,6 @@ const initialInstituicaoState: InstituicaoFormData = {
 // ===================================
 // MÁSCARAS E AUXILIARES (Reutilizadas do Candidato)
 // ===================================
-const maskCEP = (v: string) => v.replace(/\D/g, '').slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
-const maskCNPJ = (v: string) => v.replace(/\D/g, '').slice(0, 14).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-const maskPhone = (v: string) => v.replace(/\D/g, '').slice(0, 11).replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
-const maskFixo = (v: string) => v.replace(/\D/g, '').slice(0, 10).replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
 
 const ErrorText: React.FC<{ id: string; message?: string }> = ({ id, message }) => (
     message ? (<p id={id} className="error-text">{message}</p>) : null

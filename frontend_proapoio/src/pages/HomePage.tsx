@@ -61,10 +61,10 @@ const FooterBase: React.FC = () => {
                 
                 <nav aria-label="Rodapé" className="footer-nav">
                     {/* Links de Rodapé */}
-                    <Link to="/sobre" className="nav-link text-sm">Sobre Nós</Link>
-                    <Link to="/contato" className="nav-link text-sm">Contato</Link>
-                    <Link to="/termos" className="nav-link text-sm">Termos de Uso</Link>
-                    <Link to="/privacidade" className="nav-link text-sm">Política de Privacidade</Link>
+                    <Link to="#" className="nav-link text-sm">Sobre Nós</Link>
+                    <Link to="#" className="nav-link text-sm">Contato</Link>
+                    <Link to="#" className="nav-link text-sm">Termos de Uso</Link>
+                    <Link to="#" className="nav-link text-sm">Política de Privacidade</Link>
                 </nav>
             </div>
         </footer>

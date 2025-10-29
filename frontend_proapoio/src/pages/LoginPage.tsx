@@ -179,7 +179,7 @@ export default function LoginPage() {
               />
               Manter conectado
             </label>
-            <Link to="/recuperar-senha" className="btn-link text-sm">Esqueci minha senha</Link>
+            <Link to="/forgot-password" className="btn-link text-sm">Esqueci minha senha</Link>
           </div>
 
           {/* Botão de Submissão */}

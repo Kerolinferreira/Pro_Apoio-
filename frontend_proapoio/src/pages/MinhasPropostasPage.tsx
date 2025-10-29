@@ -472,7 +472,7 @@ const MinhasPropostasPage: React.FC = () => {
             <div className="alert alert-warning text-center">
               <p className="font-semibold">Não há propostas {tab === 'enviadas' ? 'enviadas' : 'recebidas'}.</p>
               {tab === 'enviadas' ? (
-                <p className="text-sm text-muted mt-xs">Você pode <Link to="/buscar-vagas" className="btn-link text-sm">explorar vagas</Link> e enviar uma proposta.</p>
+                <p className="text-sm text-muted mt-xs">Você pode <Link to="/vagas" className="btn-link text-sm">explorar vagas</Link> e enviar uma proposta.</p>
               ) : (
                 <p className="text-sm text-muted mt-xs">Quando alguém enviar uma proposta, ela aparecerá aqui.</p>
               )}

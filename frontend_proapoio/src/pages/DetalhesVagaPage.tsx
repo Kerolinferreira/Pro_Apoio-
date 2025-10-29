@@ -107,28 +107,30 @@ const DetalhesVagaPage: React.FC = () => {
 
   /**
    * @function handleSave
-   * @description Lógica para salvar/remover vaga salva (POST/DELETE /candidatos/me/vagas-salvas).
+   * @description Lógica para salvar/remover vaga da lista de favoritas do candidato.
+   * Utiliza os endpoints: POST /vagas/{id}/salvar e DELETE /vagas/{id}/salvar.
    */
   const handleSave = async () => {
     if (!id || isSaving) return;
 
     setIsSaving(true);
     try {
-        if (isSaved) {
-            // DELETE /candidatos/me/vagas-salvas/{id} (Endpoint simulado)
-            console.log('Removendo vaga salva:', id);
-            // await api.delete(`/candidatos/me/vagas-salvas/${id}`);
-        } else {
-            // POST /candidatos/me/vagas-salvas (Endpoint simulado)
-            console.log('Salvando vaga:', id);
-            // await api.post('/candidatos/me/vagas-salvas', { vaga_id: id });
-        }
-        setIsSaved(prev => !prev);
-    } catch (e) {
-        console.error('Erro ao salvar/remover vaga:', e);
-        // Mostrar feedback de erro para o usuário (via Toast ou Alert)
+      if (isSaved) {
+        // DELETE /vagas/{id}/salvar
+        await api.delete(`/vagas/${id}/salvar`);
+        console.log('Vaga removida das salvas:', id);
+      } else {
+        // POST /vagas/{id}/salvar
+        await api.post(`/vagas/${id}/salvar`);
+        console.log('Vaga salva com sucesso:', id);
+      }
+      setIsSaved((prev) => !prev);
+    } catch (err) {
+      console.error('Erro ao salvar/remover vaga:', err);
+      // Um feedback para o usuário é importante aqui
+      alert('Não foi possível atualizar o status da vaga. Por favor, tente novamente.');
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
