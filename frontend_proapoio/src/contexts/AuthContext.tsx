@@ -1,14 +1,11 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import api from '../services/api'; // Importa a instância configurada do Axios
+import { useNavigate } from 'react-router-dom';
+import api, { setLogoutCallback } from '../services/api'; // Importa a instância e o callback setter
 
 // ===================================
 // TIPOS E INTERFACES
 // ===================================
 
-/**
- * @interface AuthUser
- * @description Representa os dados essenciais do usuário após o login.
- */
 export interface AuthUser {
     id: number;
     email: string;
@@ -16,10 +13,6 @@ export interface AuthUser {
     token: string;
 }
 
-/**
- * @interface AuthContextData
- * @description Define a estrutura do Contexto de Autenticação.
- */
 interface AuthContextData {
     user: AuthUser | null;
     isAuthenticated: boolean;
@@ -28,10 +21,7 @@ interface AuthContextData {
     loading: boolean;
 }
 
-// Criação do Contexto
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
-
-// Nome da chave de armazenamento local
 const STORAGE_KEY = '@ProApoio:user';
 
 // ===================================
@@ -41,6 +31,7 @@ const STORAGE_KEY = '@ProApoio:user';
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     /**
      * @description Carrega o usuário da sessão anterior (local storage) ao montar.
@@ -51,8 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const parsedUser: AuthUser = JSON.parse(storedUser);
                 setUser(parsedUser);
-                // Define o header Authorization para a instância do Axios
-                api.defaults.headers.common['Authorization'] = `Bearer ${parsedUser.token}`;
+                // O interceptor de requisição em api.ts agora lida com o header.
             } catch (e) {
                 console.error("Failed to parse stored user data:", e);
                 localStorage.removeItem(STORAGE_KEY);
@@ -67,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * @description Realiza o login na API e armazena os dados do usuário.
      */
     const login = useCallback(async (email, password, options = { remember: true }) => {
-        // POST /auth/login [cite: Documentação final.docx]
         const response = await api.post('/auth/login', { email, password });
         
         const token = response.data.access_token;
@@ -77,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error("Resposta de login incompleta.");
         }
 
-        // Monta o objeto de usuário completo
         const loggedUser: AuthUser = {
             id: userData.id,
             email: userData.email,
@@ -86,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         setUser(loggedUser);
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // O interceptor de requisição em api.ts agora lida com o header.
 
         if (options.remember) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
@@ -97,20 +85,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     /**
      * @function logout
-     * @description Limpa a sessão e remove o token.
+     * @description Limpa a sessão local e redireciona. Chamado pelo usuário ou pelo interceptor 401.
      */
-    const logout = useCallback(async () => {
-        try {
-            // POST /auth/logout [cite: Documentação final.docx]
-            await api.post('/auth/logout'); 
-        } catch (e) {
-            console.warn('Logout failed on backend, but clearing local session.', e);
-        }
-        
+    const logout = useCallback(() => {
+        // Limpa o estado local primeiro para uma resposta de UI imediata.
         setUser(null);
         localStorage.removeItem(STORAGE_KEY);
-        delete api.defaults.headers.common['Authorization'];
-    }, []);
+        
+        // Redireciona para a página de login com um parâmetro que pode ser útil.
+        navigate('/login?session=expired');
+
+        // Tenta fazer o logout no backend (fire-and-forget).
+        // Não bloqueia a UI e não gera erro se falhar, pois a sessão local já foi encerrada.
+        api.post('/auth/logout').catch(e => {
+            console.warn('Backend logout call failed, but local session is cleared.', e);
+        });
+    }, [navigate]);
+
+    // Registra a função de logout no interceptor da API assim que o provider for montado.
+    useEffect(() => {
+        setLogoutCallback(logout);
+    }, [logout]);
 
     if (loading) return null; 
 

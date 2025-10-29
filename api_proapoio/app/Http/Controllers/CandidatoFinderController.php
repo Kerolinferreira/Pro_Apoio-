@@ -109,38 +109,73 @@ class CandidatoFinderController extends Controller
      */
     public function show($id)
     {
+        // Eager-load all necessary nested relationships to prevent N+1 issues.
         $candidato = Candidato::with([
-            // Seleciona apenas campos de endereço necessários para a visualização pública
-            'endereco' => function ($q) {
-                $q->select('id_endereco', 'cidade', 'estado');
-            },
-            // Seleciona apenas campos de experiências pessoais necessários
-            'experienciasPessoais' => function ($q) {
-                $q->select('id_experiencia_pessoal', 'id_candidato', 'descricao');
-            },
-            // Retorna as deficiências (tabela Deficiencias, relação Many-to-Many)
-            'deficiencias',
+            'endereco',
+            'experienciasPessoais',
+            'experienciasProfissionais.deficiencias' // Load deficiencias through professional experiences
         ])
-            // Seleciona apenas campos públicos do Candidato. CPF e Telefone são omitidos.
-            ->select('id_candidato', 'id_endereco', 'nome_completo', 'nivel_escolaridade', 'foto_url', 'link_perfil')
-            ->findOrFail($id);
-            
-        // Mapeia para o formato esperado pelo frontend (PerfilCandidatoPublicPage.tsx)
+        ->findOrFail($id);
+
+        // Unify personal and professional experiences into a single collection.
+        $experienciasPessoais = $candidato->experienciasPessoais->map(function ($exp) {
+            return [
+                'id' => $exp->id_experiencia_pessoal,
+                'tipo' => 'pessoal',
+                'titulo' => $exp->titulo ?? 'Experiência Pessoal', // Fallback title
+                'descricao' => $exp->descricao,
+                'data_inicio' => $exp->data_inicio,
+                'data_fim' => $exp->data_fim,
+            ];
+        });
+
+        $experienciasProfissionais = $candidato->experienciasProfissionais->map(function ($exp) {
+            return [
+                'id' => $exp->id_experiencia_profissional,
+                'tipo' => 'profissional',
+                'titulo' => $exp->titulo,
+                'descricao' => $exp->descricao,
+                'data_inicio' => $exp->data_inicio,
+                'data_fim' => $exp->data_fim,
+            ];
+        });
+
+        $todasExperiencias = $experienciasPessoais->merge($experienciasProfissionais)->sortByDesc('data_inicio')->values();
+
+        // Collect unique deficiencies from all professional experiences.
+        $deficienciasAtuadas = $candidato->experienciasProfissionais
+            ->pluck('deficiencias')
+            ->flatten()
+            ->unique('id_deficiencia')
+            ->map(function ($def) {
+                return [
+                    'id' => $def->id_deficiencia,
+                    'nome' => $def->nome,
+                ];
+            })
+            ->values();
+
+        // Build the final response structure matching the frontend's CandidatoPublico interface.
         return response()->json([
             'id'                  => $candidato->id,
             'nome_completo'       => $candidato->nome_completo,
-            // O frontend usa 'escolaridade', o modelo usa 'nivel_escolaridade'
             'escolaridade'        => $candidato->nivel_escolaridade,
-            // O campo 'bio' não existe no modelo Candidato original, mas o front espera.
-            // Se existisse, seria incluído aqui.
             'foto_url'            => $candidato->foto_url,
             'link_perfil'         => $candidato->link_perfil,
-            // Endereço
-            'cidade'              => optional($candidato->endereco)->cidade,
-            'estado'              => optional($candidato->endereco)->estado,
-            // Relações
-            'deficiencias'        => $candidato->deficiencias->map(fn($d) => ['nome' => $d->nome]),
-            'experiencias_pessoais' => $candidato->experienciasPessoais->map(fn($e) => ['descricao' => $e->descricao]),
+            
+            // Correctly nested endereco object
+            'endereco'            => [
+                'cidade' => optional($candidato->endereco)->cidade,
+                'estado' => optional($candidato->endereco)->estado,
+            ],
+            
+            // Correctly named and structured deficiencies array
+            'deficiencias_atuadas' => $deficienciasAtuadas,
+            
+            // Unified and correctly structured experiences array
+            'experiencias'        => $todasExperiencias,
+
+            // NOTE: Fields expected by frontend but not present in backend model (bio, data_nascimento, genero) are omitted.
         ]);
     }
 }
