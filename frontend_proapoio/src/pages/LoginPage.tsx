@@ -197,7 +197,7 @@ export default function LoginPage() {
         {/* Link para Cadastro */}
         <p className="mt-lg text-sm text-center">
           Não possui conta? 
-          <Link to="/cadastro" className="btn-link ml-xs">
+          <Link to="/register" className="btn-link ml-xs">
             <UserPlus size={16} className="inline mr-xs" />Cadastrar
           </Link>
         </p>

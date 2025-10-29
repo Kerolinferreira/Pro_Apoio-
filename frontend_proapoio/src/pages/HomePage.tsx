@@ -36,7 +36,7 @@ const HeaderBase: React.FC = () => {
                     </Link>
                     {/* CTA principal: Cadastre-se */}
                     <Link
-                        to="/cadastro"
+                        to="/register"
                         className="btn-secondary-inverted" // Classe para botão de contraste no Header
                         aria-label="Cadastre-se"
                     >
@@ -59,13 +59,6 @@ const FooterBase: React.FC = () => {
             <div className="container footer-content">
                 <p className="text-sm">&copy; {year} ProApoio. Todos os direitos reservados.</p>
                 
-                <nav aria-label="Rodapé" className="footer-nav">
-                    {/* Links de Rodapé */}
-                    <Link to="#" className="nav-link text-sm">Sobre Nós</Link>
-                    <Link to="#" className="nav-link text-sm">Contato</Link>
-                    <Link to="#" className="nav-link text-sm">Termos de Uso</Link>
-                    <Link to="#" className="nav-link text-sm">Política de Privacidade</Link>
-                </nav>
             </div>
         </footer>
     );
@@ -109,14 +102,14 @@ export default function HomePage() {
                         {/* CTAs duplos */}
                         <div className="hero-actions">
                             <Link
-                                to="/cadastro?tipo=candidato"
+                                to="/register/candidato"
                                 className="btn-primary btn-lg" // btn-lg para destaque
                                 aria-label="Sou Candidato, Quero Ajudar"
                             >
                                 Sou Candidato, Quero Ajudar
                             </Link>
                             <Link
-                                to="/cadastro?tipo=instituicao"
+                                to="/register/instituicao"
                                 className="btn-secondary btn-lg" // btn-lg para destaque
                                 aria-label="Sou Instituição, Preciso de Apoio"
                             >

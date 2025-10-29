@@ -164,13 +164,13 @@ const PerfilCandidatoPage: React.FC = () => {
         setFormData(prev => ({ ...prev, deficiencias_atuadas: newDeficienciaObjects }));
     };
 
-    // --- LÓGICA DE CEP (Acionar API ViaCEP) ---
+    // --- LÓGICA DE CEP (Acionar API ViaCEP via Proxy BE) ---
     const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const cep = e.target.value.replace(/\D/g, '');
         if (cep.length !== 8) return;
 
         try {
-            const response = await api.get(`https://viacep.com.br/ws/${cep}/json/`);
+            const response = await api.get(`/external/viacep/${cep}`);
             if (!response.data.erro) {
                 const data = response.data;
                 setFormData(prev => ({
