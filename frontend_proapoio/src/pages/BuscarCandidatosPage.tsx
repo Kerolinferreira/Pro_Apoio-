@@ -19,7 +19,7 @@ interface FilterState {
     termo: string;
     escolaridade: string[]; // Suporta múltiplos checkboxes
     tipo_deficiencia: string;
-    distancia_km: number; 
+    localizacao: '' | 'cidade' | 'estado';
 }
 
 // Opções estáticas para o filtro de escolaridade
@@ -47,7 +47,7 @@ const BuscarCandidatosPage: React.FC = () => {
         termo: '',
         escolaridade: [],
         tipo_deficiencia: '',
-        distancia_km: 10,
+        localizacao: '',
     });
 
     /**
@@ -61,7 +61,11 @@ const BuscarCandidatosPage: React.FC = () => {
         if (f.tipo_deficiencia) params.append('tipo_deficiencia', f.tipo_deficiencia);
         
         // Filtro de deslocamento (distância_km)
-        if (f.distancia_km > 0) params.append('distancia_km', f.distancia_km.toString());
+        if (f.localizacao === 'cidade') {
+            params.append('distancia_km', '50');
+        } else if (f.localizacao === 'estado') {
+            params.append('distancia_km', '200');
+        }
 
         return params.toString();
     };
@@ -87,7 +91,7 @@ const BuscarCandidatosPage: React.FC = () => {
 
     /**
      * @description Efeito com Debounce para buscar candidatos quando os filtros mudam, 
-     * evitando excesso de chamadas de API (especialmente útil para o slider/range).
+     * evitando excesso de chamadas de API.
      */
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -105,8 +109,8 @@ const BuscarCandidatosPage: React.FC = () => {
         setFilters(prev => ({ ...prev, termo: e.target.value }));
     };
     
-    const handleDistanciaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFilters(prev => ({ ...prev, distancia_km: Number(e.target.value) }));
+    const handleLocalizacaoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setFilters(prev => ({ ...prev, localizacao: e.target.value as FilterState['localizacao'] }));
     };
 
     const handleEscolaridadeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,28 +182,25 @@ const BuscarCandidatosPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Filtro de Deslocamento (Slider/Range) */}
+                        {/* Filtro de Deslocamento (Select) */}
                         <div className="mb-md">
-                            <h3 className="text-sm mb-sm">Disponibilidade de Deslocamento</h3>
-                            {/* Valor atual destacado (title-lg) */}
-                            <label htmlFor="distancia-km" className="title-lg mb-xs" style={{ color: 'var(--color-brand)' }}>
-                                {filters.distancia_km} km
+                            <label htmlFor="localizacao-filtro" className="text-sm mb-xs">
+                                Disponibilidade de Deslocamento
                             </label>
-                            <input
-                                id="distancia-km"
-                                type="range"
-                                min="0"
-                                max="100" 
-                                step="5"
-                                value={filters.distancia_km}
-                                onChange={handleDistanciaChange}
-                                className="form-range" // Estilo global para slider
-                            />
-                            {/* Tags de limite para acessibilidade visual */}
-                            <div className="flex-group-md-row" style={{ justifyContent: 'space-between', gap: '0', marginTop: '4px' }}>
-                                <span className="text-xs text-muted">0 km</span>
-                                <span className="text-xs text-muted">100 km+</span>
-                            </div>
+                            <select
+                                id="localizacao-filtro"
+                                name="localizacao"
+                                value={filters.localizacao}
+                                onChange={handleLocalizacaoChange}
+                                className="form-select"
+                            >
+                                <option value="">Qualquer distância</option>
+                                <option value="cidade">Apenas na minha cidade (aprox. 50km)</option>
+                                <option value="estado">Apenas no meu estado (aprox. 200km)</option>
+                            </select>
+                            <p className="text-xs text-muted mt-xs">
+                                O filtro de distância é uma estimativa.
+                            </p>
                         </div>
                         
                         {/* Filtro por Tipo de Deficiência (Select) */}
