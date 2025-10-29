@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Frown, Filter, Search, MapPin, Briefcase } from 'lucide-react';
-import { api } from '../services/api';
+import api from '../services/api';
 import VagaCard from '../components/VagaCard';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
@@ -136,7 +136,17 @@ const BuscarVagasPage: React.FC = () => {
 
     // Busca as vagas com os filtros atuais
     fetchVagas(currentPage, currentFilters);
-  }, [currentPage, fetchVagas]); // Dependências controlam quando a busca deve ser feita
+  }, [
+    currentPage,
+    fetchVagas,
+    filterQuery,
+    tipoFiltro,
+    modalidadeFiltro,
+    cidadeFiltro,
+    estadoFiltro,
+    remuneracaoMinFiltro,
+    remuneracaoMaxFiltro,
+  ]); // Dependências controlam quando a busca deve ser feita
 
   // Handlers para o formulário de busca/filtro
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

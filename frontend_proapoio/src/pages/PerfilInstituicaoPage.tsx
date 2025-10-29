@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock, Pause, XCircle } from 'lucide-react';
+import { Briefcase, Building, Mail, Phone, MapPin, Save, Edit, Loader2, AlertTriangle, Eye, EyeOff, PlusCircle, Square, Lock, Pause, XCircle, **CheckCircle** } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext'; 
 
 // ===================================

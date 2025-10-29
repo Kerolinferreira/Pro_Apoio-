@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext"; // Deve existir e fornecer user, logout
 import NotificationBell from "./NotificationBell"; // Componente de notificação
