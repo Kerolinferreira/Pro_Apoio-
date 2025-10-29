@@ -44,15 +44,14 @@ class AuthController extends Controller
         $data = $request->validated();
 
         $email = $this->normEmail($data['email']);
-        $cpf   = $this->onlyDigits($data['cpf'] ?? '');
 
         $nivelEscolaridade = $data['nivel_escolaridade'] ?? $data['escolaridade'] ?? null;
         $cursoSuperior     = $data['curso_superior'] ?? $data['nome_curso'] ?? null;
         $instEnsino        = $data['instituicao_ensino'] ?? $data['nome_instituicao_ensino'] ?? null;
 
-        return DB::transaction(function () use ($data, $email, $cpf, $nivelEscolaridade, $cursoSuperior, $instEnsino) {
+        return DB::transaction(function () use ($data, $email, $nivelEscolaridade, $cursoSuperior, $instEnsino) {
             $endereco = Endereco::create([
-                'cep'              => $this->onlyDigits($data['cep']),
+                'cep'              => $data['cep'],
                 'logradouro'       => $data['logradouro'] ?? null,
                 'bairro'           => $data['bairro'] ?? null,
                 'cidade'           => $data['cidade'] ?? null,
@@ -75,8 +74,8 @@ class AuthController extends Controller
                 'id_usuario'          => $user->id,
                 'id_endereco'         => $endereco->id,
                 'nome_completo'       => $data['nome'],
-                'cpf'                 => $cpf,
-                'telefone'            => $this->onlyDigits($data['telefone'] ?? ''),
+                'cpf'                 => $data['cpf'],
+                'telefone'            => $data['telefone'],
                 'link_perfil'         => $data['link_perfil'] ?? null,
                 'nivel_escolaridade'  => $nivelEscolaridade,
                 'curso_superior'      => $cursoSuperior,
