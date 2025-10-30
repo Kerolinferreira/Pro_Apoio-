@@ -13,8 +13,8 @@ type InstituicaoFormData = {
     razao_social: string;
     cnpj: string;
     email: string; // Email de login
-    senha: string;
-    confirmar_senha: string;
+    password: string;
+    password_confirmation: string;
     codigo_inep: string; 
     tipo_instituicao: string; 
     niveis_oferecidos: string[]; 
@@ -57,7 +57,7 @@ const ESTADOS_OPCOES = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'M
 
 // Estado Inicial
 const initialInstituicaoState: InstituicaoFormData = {
-    nome_fantasia: '', razao_social: '', cnpj: '', email: '', senha: '', confirmar_senha: '',
+    nome_fantasia: '', razao_social: '', cnpj: '', email: '', password: '', password_confirmation: '',
     codigo_inep: '', tipo_instituicao: '', niveis_oferecidos: [], email_corporativo: '',
     celular_corporativo: '', telefone_fixo: '', nome_responsavel: '', funcao_responsavel: '',
     cep: '', logradouro: '', numero: '', bairro: '', cidade: '', estado: '',
@@ -117,8 +117,8 @@ const RegisterInstituicaoPage: React.FC = () => {
         if (!instituicaoForm.estado.trim()) e.estado = 'O Estado é obrigatório.';
 
         // 6. Segurança
-        if (!senhaValida(instituicaoForm.senha)) e.senha = 'Senha deve ter no mínimo oito caracteres com letras e números.';
-        if (instituicaoForm.senha !== instituicaoForm.confirmar_senha) e.confirmar_senha = 'As senhas não coincidem.';
+        if (!senhaValida(instituicaoForm.password)) e.password = 'Senha deve ter no mínimo oito caracteres com letras e números.';
+        if (instituicaoForm.password !== instituicaoForm.password_confirmation) e.password_confirmation = 'As senhas não coincidem.';
         
         return e;
     };
@@ -190,15 +190,14 @@ const RegisterInstituicaoPage: React.FC = () => {
             // Mapeamento e limpeza de máscaras antes do envio
             const payload = {
                 ...instituicaoForm,
-                nome: instituicaoForm.nome_fantasia, // Mapeamento nome_fantasia -> nome (Tabela User)
+                nome: instituicaoForm.nome_fantasia, // Mapeia nome_fantasia para 'nome' esperado pelo User
                 cnpj: instituicaoForm.cnpj.replace(/\D/g, ''),
                 cep: instituicaoForm.cep.replace(/\D/g, ''),
                 celular_corporativo: instituicaoForm.celular_corporativo.replace(/\D/g, ''),
                 telefone_fixo: instituicaoForm.telefone_fixo.replace(/\D/g, ''),
-                
-                // Mapeamento de arrays e exclusão de confirmação
-                confirmar_senha: undefined,
-                niveis_oferecidos: instituicaoForm.niveis_oferecidos, 
+                // Garante que o campo de confirmação não seja enviado
+                password_confirmation: instituicaoForm.password_confirmation,
+                termos_aceite: true, // Adicionado para passar na validação 'accepted'
             };
             
             // POST /auth/register/instituicao [cite: Documentação final.docx]
@@ -377,22 +376,22 @@ const RegisterInstituicaoPage: React.FC = () => {
                             
                             {/* Segurança */}
                             <div className="form-group mt-md">
-                                <label htmlFor="senha" className="form-label">Senha</label>
+                                <label htmlFor="password" className="form-label">Senha</label>
                                 <div className="form-input-icon-wrapper">
                                     <LockIcon size={20} className="form-icon" />
-                                    <input id="senha" name="senha" type="password" required value={instituicaoForm.senha} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.senha} autoComplete="new-password" />
+                                    <input id="password" name="password" type="password" required value={instituicaoForm.password} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.password} autoComplete="new-password" />
                                 </div>
-                                <ErrorText id="erro-senha" message={errors.senha} />
+                                <ErrorText id="erro-password" message={errors.password} />
                                 <p className="text-xs text-muted mt-xs">Mínimo 8 caracteres com letras e números.</p>
                             </div>
 
                             <div className="form-group mt-md">
-                                <label htmlFor="confirmar_senha" className="form-label">Confirmar Senha</label>
+                                <label htmlFor="password_confirmation" className="form-label">Confirmar Senha</label>
                                 <div className="form-input-icon-wrapper">
                                     <LockIcon size={20} className="form-icon" />
-                                    <input id="confirmar_senha" name="confirmar_senha" type="password" required value={instituicaoForm.confirmar_senha} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.confirmar_senha} autoComplete="new-password" />
+                                    <input id="password_confirmation" name="password_confirmation" type="password" required value={instituicaoForm.password_confirmation} onChange={handleInstituicaoChange} className="form-input with-icon" aria-invalid={!!errors.password_confirmation} autoComplete="new-password" />
                                 </div>
-                                <ErrorText id="erro-confirmar_senha" message={errors.confirmar_senha} />
+                                <ErrorText id="erro-confirmar_senha" message={errors.password_confirmation} />
                             </div>
                         </div>
                     </fieldset>

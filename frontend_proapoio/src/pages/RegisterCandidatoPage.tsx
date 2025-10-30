@@ -239,10 +239,8 @@ export default function RegisterCandidatoPage() {
             }
         } catch (error: any) {
             console.error('Erro de requisição:', error);
-            let erroMsg = 'Falha na comunicação com o servidor ou dados já cadastrados.';
             let erroMsg = 'Falha na comunicação com o servidor. Tente novamente mais tarde.';
 
-            if (error.response?.data?.errors) {
             // Erro de validação do Laravel (422)
             if (error.response?.status === 422 && error.response?.data?.errors) {
                 // Erros de Validação (422)
@@ -268,7 +266,6 @@ export default function RegisterCandidatoPage() {
                 // Se houver erros de campo, a mensagem principal é sobre corrigir os campos.
                 // Se não, usa a mensagem de erro geral que veio do backend (ex: 'CPF já cadastrado')
                 setMensagem(Object.keys(fieldErrors).length > 0 ? 'Corrija os campos destacados.' : erroMsg);
-            } 
             } else if (error.response?.data?.message) {
                 // Outros erros da API com uma mensagem específica (ex: 409 Conflict)
                 erroMsg = error.response.data.message;

@@ -72,6 +72,63 @@ const ErrorAlert: React.FC<{ message: string }> = ({ message }) => (
 
 
 // ===================================
+// COMPONENTE DE CAMPO DE SEÇÃO
+// ===================================
+
+const SectionField: React.FC<{ label: string, name: any, icon: React.ReactNode, type?: string, options?: string[], readonly?: boolean, formData: any, handleChange: any, handleAddressChange: any, handleCepBlur?: any, editMode: boolean }> = ({ label, name, icon, type = 'text', options, readonly = false, formData, handleChange, handleAddressChange, handleCepBlur, editMode }) => {
+    const { user } = useAuth();
+    const [instituicao, setInstituicao] = useState<Instituicao | null>(null);
+    const [formData, setFormData] = useState<Partial<Instituicao>>({});
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [editMode, setEditMode] = useState(false);
+    const isAddressField = (name as keyof Endereco) in (formData.endereco || {});
+    const value = isAddressField ? (formData.endereco?.[name as keyof Endereco] || '') : (formData[name as keyof Instituicao] || '');
+    const onChangeHandler = isAddressField ? handleAddressChange : handleChange;
+    const isDisabled = !editMode || readonly || (isAddressField && (name === 'logradouro' || name === 'bairro' || name === 'cidade'));
+
+    const InputComponent = type === 'textarea' ? 'textarea' : 'input';
+
+    return (
+        <div className="form-group">
+            <label htmlFor={name as string} className="form-label">{label}</label>
+            <div className="form-input-icon-wrapper">
+                {icon}
+                {type === 'select' ? (
+                    <select
+                        id={name as string}
+                        name={name as string}
+                        value={value as string}
+                        onChange={onChangeHandler as any}
+                        className="form-select with-icon"
+                        disabled={isDisabled}
+                    >
+                        <option value="">Selecione...</option>
+                        {options?.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                ) : (
+                    <InputComponent
+                        id={name as string}
+                        name={name as string}
+                        type={type === 'textarea' ? undefined : type}
+                        value={value as string}
+                        onChange={onChangeHandler as any}
+                        onBlur={name === 'cep' ? handleCepBlur : undefined}
+                        className={type === 'textarea' ? 'form-textarea with-icon pl-lg' : 'form-input with-icon'}
+                        disabled={isDisabled}
+                        required={!readonly}
+                        rows={type === 'textarea' ? 4 : undefined}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ===================================
 // PÁGINA PRINCIPAL
 // ===================================
 
@@ -151,8 +208,10 @@ const PerfilInstituicaoPage: React.FC = () => {
         const cep = e.target.value.replace(/\D/g, '');
         if (cep.length !== 8) return;
         // Lógica ViaCEP (similar ao Perfil Candidato)
+        // CORREÇÃO: Usar o proxy do backend em vez de chamada direta para evitar CORS.
         try {
             const response = await api.get(`https://viacep.com.br/ws/${cep}/json/`);
+            const response = await api.get(`/external/viacep/${cep}`);
             if (!response.data.erro) {
                 const data = response.data;
                 setFormData(prev => ({
@@ -205,54 +264,6 @@ const PerfilInstituicaoPage: React.FC = () => {
         </div>
     );
     
-    // --- FUNÇÃO DE RENDERIZAÇÃO DE CAMPO (Reutilizada) ---
-    const renderField = (label: string, name: keyof Instituicao | keyof Endereco, icon: React.ReactNode, type: string = 'text', options?: string[], readonly: boolean = false) => {
-        const isAddressField = (name as keyof Endereco) in (formData.endereco || {});
-        const value = isAddressField ? (formData.endereco?.[name as keyof Endereco] || '') : (formData[name as keyof Instituicao] || '');
-        const onChangeHandler = isAddressField ? handleAddressChange : handleChange;
-        // Desabilita campos editáveis se não estiver em modo de edição ou se forem campos fixos (CNPJ, Razão Social)
-        const isDisabled = !editMode || readonly || (isAddressField && (name === 'logradouro' || name === 'bairro' || name === 'cidade'));
-
-        const InputComponent = type === 'textarea' ? 'textarea' : 'input';
-
-        return (
-            <div className="form-group">
-                <label htmlFor={name as string} className="form-label">{label}</label>
-                <div className="form-input-icon-wrapper">
-                    {icon}
-                    {type === 'select' ? (
-                        <select
-                            id={name as string}
-                            name={name as string}
-                            value={value as string}
-                            onChange={onChangeHandler as any}
-                            className="form-select with-icon"
-                            disabled={isDisabled}
-                        >
-                            <option value="">Selecione...</option>
-                            {options?.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
-                    ) : (
-                        <InputComponent
-                            id={name as string}
-                            name={name as string}
-                            type={type === 'textarea' ? undefined : type}
-                            value={value as string}
-                            onChange={onChangeHandler as any}
-                            onBlur={name === 'cep' ? handleCepBlur : undefined}
-                            className={type === 'textarea' ? 'form-textarea' : 'form-input with-icon'}
-                            disabled={isDisabled}
-                            required={type !== 'complemento' && !readonly}
-                            rows={type === 'textarea' ? 4 : undefined}
-                        />
-                    )}
-                </div>
-            </div>
-        );
-    };
-
     // Renderização Condicional
     if (loading) return <LoadingSpinner />;
     if (error) return <ErrorAlert message={error} />;
@@ -283,15 +294,15 @@ const PerfilInstituicaoPage: React.FC = () => {
                     {/* SEÇÃO 1: DADOS INSTITUCIONAIS */}
                     <Section title="Identificação e Contato">
                         <div className="grid-2-col-lg">
-                            {renderField('Nome Fantasia', 'nome_fantasia', <Building size={20} />, 'text')}
-                            {renderField('Razão Social (Apenas leitura)', 'razao_social', <LockIcon size={20} />, 'text', undefined, true)}
-                            {renderField('CNPJ (Apenas leitura)', 'cnpj', <LockIcon size={20} />, 'text', undefined, true)}
-                            {renderField('Email', 'email', <Mail size={20} />, 'email')}
-                            {renderField('Telefone', 'telefone', <Phone size={20} />, 'tel')}
+                            <SectionField label="Nome Fantasia" name="nome_fantasia" icon={<Building size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Razão Social (Apenas leitura)" name="razao_social" icon={<LockIcon size={20} />} readonly formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="CNPJ (Apenas leitura)" name="cnpj" icon={<LockIcon size={20} />} readonly formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Email" name="email" icon={<Mail size={20} />} type="email" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Telefone" name="telefone" icon={<Phone size={20} />} type="tel" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                         </div>
                         
                         <div className="form-group mt-lg">
-                            {renderField('Descrição da Instituição e Requisitos', 'descricao', <Briefcase size={20} />, 'textarea')}
+                            <SectionField label="Descrição da Instituição e Requisitos" name="descricao" icon={<Briefcase size={20} />} type="textarea" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             <p className="text-sm text-muted mt-xs">Descreva a missão da instituição e quais são os requisitos gerais para agentes de apoio.</p>
                         </div>
                     </Section>
@@ -299,14 +310,14 @@ const PerfilInstituicaoPage: React.FC = () => {
                     {/* SEÇÃO 2: ENDEREÇO */}
                     <Section title="Endereço Principal">
                         <div className="grid-2-col-lg">
-                            {renderField('CEP', 'cep', <MapPin size={20} />, 'text')}
-                            {renderField('Logradouro', 'logradouro', <MapPin size={20} />, 'text')}
+                            <SectionField label="CEP" name="cep" icon={<MapPin size={20} />} handleCepBlur={handleCepBlur} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Logradouro" name="logradouro" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             
-                            {renderField('Número', 'numero', <MapPin size={20} />, 'text')}
-                            {renderField('Complemento (Opcional)', 'complemento', <MapPin size={20} />, 'text')}
+                            <SectionField label="Número" name="numero" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Complemento (Opcional)" name="complemento" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             
-                            {renderField('Bairro', 'bairro', <MapPin size={20} />, 'text')}
-                            {renderField('Cidade', 'cidade', <MapPin size={20} />, 'text')}
+                            <SectionField label="Bairro" name="bairro" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Cidade" name="cidade" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             
                             {/* Estado - Simulação de Select */}
                             <div className="form-group">
@@ -406,3 +417,53 @@ const PerfilInstituicaoPage: React.FC = () => {
 };
 
 export default PerfilInstituicaoPage;
+
+// ===================================
+// COMPONENTE DE CAMPO DE SEÇÃO (CORRIGIDO E MOVIDO PARA FORA)
+// ===================================
+
+const SectionField: React.FC<{ label: string, name: any, icon: React.ReactNode, type?: string, options?: string[], readonly?: boolean, formData: any, handleChange: any, handleAddressChange: any, handleCepBlur?: any, editMode: boolean }> = ({ label, name, icon, type = 'text', options, readonly = false, formData, handleChange, handleAddressChange, handleCepBlur, editMode }) => {
+    const isAddressField = (name as keyof Endereco) in (formData.endereco || {});
+    const value = isAddressField ? (formData.endereco?.[name as keyof Endereco] || '') : (formData[name as keyof Instituicao] || '');
+    const onChangeHandler = isAddressField ? handleAddressChange : handleChange;
+    const isDisabled = !editMode || readonly || (isAddressField && (name === 'logradouro' || name === 'bairro' || name === 'cidade'));
+
+    const InputComponent = type === 'textarea' ? 'textarea' : 'input';
+
+    return (
+        <div className="form-group">
+            <label htmlFor={name as string} className="form-label">{label}</label>
+            <div className="form-input-icon-wrapper">
+                {icon}
+                {type === 'select' ? (
+                    <select
+                        id={name as string}
+                        name={name as string}
+                        value={value as string}
+                        onChange={onChangeHandler as any}
+                        className="form-select with-icon"
+                        disabled={isDisabled}
+                    >
+                        <option value="">Selecione...</option>
+                        {options?.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                ) : (
+                    <InputComponent
+                        id={name as string}
+                        name={name as string}
+                        type={type === 'textarea' ? undefined : type}
+                        value={value as string}
+                        onChange={onChangeHandler as any}
+                        onBlur={name === 'cep' ? handleCepBlur : undefined}
+                        className={type === 'textarea' ? 'form-textarea with-icon pl-lg' : 'form-input with-icon'}
+                        disabled={isDisabled}
+                        required={!readonly}
+                        rows={type === 'textarea' ? 4 : undefined}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};

@@ -147,6 +147,7 @@ const BuscarVagasPage: React.FC = () => {
     remuneracaoMinFiltro,
     remuneracaoMaxFiltro,
   ]); // Dependências controlam quando a busca deve ser feita
+  // CORREÇÃO: Adicionado 'setSearchParams' ao array de dependências para seguir as regras do React Hooks.
 
   // Handlers para o formulário de busca/filtro
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

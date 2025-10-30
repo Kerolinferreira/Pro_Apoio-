@@ -119,8 +119,20 @@ const PerfilCandidatoPage: React.FC = () => {
         }
 
         try {
-            // PUT /candidatos/me/ [cite: Documentação final.docx]
+            // PUT /candidatos/me/ - Enviando apenas os campos editáveis
+            const payload = {
+                nome_completo: formData.nome_completo,
+                telefone: formData.telefone,
+                data_nascimento: formData.data_nascimento,
+                genero: formData.genero,
+                endereco: formData.endereco,
+                escolaridade: formData.escolaridade,
+                deficiencias_atuadas: formData.deficiencias_atuadas?.map(d => d.id), // Envia apenas os IDs
+            };
             await api.put(`/candidatos/me/`, formData);
+            // CORREÇÃO: Enviar o 'payload' preparado em vez do 'formData' completo.
+            const response = await api.put(`/candidatos/me/`, payload);
+            const updatedData = response.data; // Opcional: usar dados retornados pela API
             
             // Atualiza o estado principal
             setCandidato(formData as Candidato); 
