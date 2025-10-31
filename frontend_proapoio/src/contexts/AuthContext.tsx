@@ -42,10 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const parsedUser: AuthUser = JSON.parse(storedUser);
                 setUser(parsedUser);
-                // O interceptor de requisição em api.ts agora lida com o header.
+                // Garante que o token também esteja disponível separadamente para o interceptor
+                if (parsedUser.token && !localStorage.getItem('authToken')) {
+                    localStorage.setItem('authToken', parsedUser.token);
+                }
             } catch (e) {
                 console.error("Failed to parse stored user data:", e);
                 localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem('authToken');
             }
         }
         setLoading(false);
@@ -58,10 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      */
     const login = useCallback(async (email: string, password: string, options = { remember: true }) => {
         const response = await api.post('/auth/login', { email, password });
-        
-        const token = response.data.access_token;
-        const userData = response.data.user; 
-        
+
+        const token = response.data.token;
+        const userData = response.data.user;
+
         if (!token || !userData) {
             throw new Error("Resposta de login incompleta.");
         }
@@ -74,10 +78,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         setUser(loggedUser);
-        // O interceptor de requisição em api.ts agora lida com o header.
 
+        // Armazena o token separadamente para o interceptor de api.ts
         if (options.remember) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
+            localStorage.setItem('authToken', token);
         }
 
         return loggedUser;
@@ -91,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Limpa o estado local primeiro para uma resposta de UI imediata.
         setUser(null);
         localStorage.removeItem(STORAGE_KEY);
-        
+        localStorage.removeItem('authToken');
+
         // Redireciona para a página de login com um parâmetro que pode ser útil.
         navigate('/login?session=expired');
 

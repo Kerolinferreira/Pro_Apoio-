@@ -107,6 +107,47 @@ class InstituicaoProfileController extends Controller
     }
 
     /**
+     * Upload do logo da instituição (até 2MB).
+     * Salva o caminho em logo_url.
+     */
+    public function uploadLogo(Request $request)
+    {
+        $user = $request->user();
+        $instituicao = Instituicao::where('id_usuario', $user->id)->firstOrFail();
+
+        $request->validate([
+            'logo' => 'required|image|max:2048',
+        ]);
+
+        $path = $request->file('logo')->store('logos-instituicoes', 'public');
+        $instituicao->update(['logo_url' => $path]);
+
+        return response()->json(['logo_url' => $path]);
+    }
+
+    /**
+     * Troca de senha do usuário autenticado (instituição).
+     */
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            // mínimo 8, letras e números
+            'password'         => ['required','string','confirmed','min:8','regex:/^(?=.*[A-Za-z])(?=.*\d).+$/'],
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($data['current_password'], $user->senha_hash)) {
+            return response()->json(['message' => 'Senha atual incorreta.'], 400);
+        }
+
+        $user->update(['senha_hash' => \Illuminate\Support\Facades\Hash::make($data['password'])]);
+
+        return response()->json(['message' => 'Senha atualizada com sucesso.']);
+    }
+
+    /**
      * Exibe informações públicas de uma instituição.
      * Sem dados sensíveis.
      */

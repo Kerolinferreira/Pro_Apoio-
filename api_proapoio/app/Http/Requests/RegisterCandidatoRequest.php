@@ -78,6 +78,9 @@ class RegisterCandidatoRequest extends FormRequest
             'curso_superior'     => 'required_if:nivel_escolaridade,Superior Incompleto,Superior Completo,Pós-Graduação,Mestrado,Doutorado',
             'instituicao_ensino' => 'required_with:curso_superior',
 
+            // Experiência
+            'experiencia'    => 'required|string|min:20',
+
             // Outros
             'link_perfil'    => 'nullable|url',
             'termos_aceite'  => 'nullable|boolean',
@@ -97,6 +100,8 @@ class RegisterCandidatoRequest extends FormRequest
             'nivel_escolaridade.required'      => 'Informe o nível de escolaridade.',
             'curso_superior.required_if'       => 'O campo curso superior é obrigatório para o nível selecionado.',
             'instituicao_ensino.required_with' => 'Informe a instituição de ensino ao preencher o curso.',
+            'experiencia.required'             => 'Informe sua experiência.',
+            'experiencia.min'                  => 'A experiência deve ter no mínimo 20 caracteres.',
         ];
     }
 }
