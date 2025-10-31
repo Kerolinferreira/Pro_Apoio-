@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * @description Carrega o usuário da sessão anterior (local storage) ao montar.
      */
     useEffect(() => {
-        const storedUser = localStorage.getItem(STORAGE_KEY);
+        const storedUser = sessionStorage.getItem(STORAGE_KEY);
         if (storedUser) {
             try {
                 const parsedUser: AuthUser = JSON.parse(storedUser);
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // O interceptor de requisição em api.ts agora lida com o header.
             } catch (e) {
                 console.error("Failed to parse stored user data:", e);
-                localStorage.removeItem(STORAGE_KEY);
+                sessionStorage.removeItem(STORAGE_KEY);
             }
         }
         setLoading(false);
@@ -76,9 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(loggedUser);
         // O interceptor de requisição em api.ts agora lida com o header.
 
-        if (options.remember) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
-        }
 
         return loggedUser;
     }, []);
@@ -90,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = useCallback(() => {
         // Limpa o estado local primeiro para uma resposta de UI imediata.
         setUser(null);
-        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
         
         // Redireciona para a página de login com um parâmetro que pode ser útil.
         navigate('/login?session=expired');
