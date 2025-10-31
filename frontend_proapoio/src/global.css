@@ -1,54 +1,103 @@
+/* |--------------------------------------------------------------------------
+| GLOBAL CSS: DESIGN SYSTEM SEMÂNTICO
+|--------------------------------------------------------------------------
+| Este arquivo contém todo o CSS, migrado de classes utilitárias (Tailwind)
+| para classes semânticas (ex: .btn-primary, .card, .form-input) para
+| garantir consistência, modularidade e aderência às melhores práticas.
+|
+| Este arquivo final suporta todas as páginas do frontend.
+*/
+
+/* ============================== */
+/* 1. VARIÁVEIS DE COR E ESPAÇAMENTO (Foundation) */
+/* ============================== */
 :root {
-  --bg: #0b0b0b;
-  --fg: #f4f4f5;
-  --muted: #a1a1aa;
-  --primary: #3b82f6;
-  --error: #dc2626;
-  --success: #16a34a;
-  --radius: 0.5rem;
+  /* Cores de Marca (Blue/Brand) */
+  --color-primary: #3b82f6;      /* Ação principal (Blue-500) */
+  --color-primary-dark: #1d4ed8; /* Hover/Active (Blue-700) */
+  --color-brand: #2563eb;       /* Cor principal da marca (Blue-600) */
+
+  /* Cores Neutras (Gray/Zinc) */
+  --color-text-base: #18181b;    /* Texto principal (Zinc-900) */
+  --color-text-muted: #71717a;   /* Texto secundário/dicas (Zinc-600) */
+  --color-bg-page: #f4f4f5;      /* Fundo de página (Zinc-100) */
+  --color-bg-card: #ffffff;      /* Fundo de cartões/componentes (White) */
+  --color-hover: #f3f4f6;        /* Cor de fundo em hover (Gray-100) */
+  --color-border: #e4e4e7;       /* Borda sutil (Zinc-200) */
+  --color-border-dark: #d4d4d8;  /* Borda escura (Zinc-300) */
+
+  /* Cores de Feedback e Alerta */
+  --color-success: #16a34a;      /* Verde (Green-600) */
+  --color-error: #dc2626;        /* Vermelho (Red-600) */
+  --color-warning: #f59e0b;      /* Âmbar (Amber-500) */
+
+  /* Espaçamento (Baseado na escala de 4px) */
+  --spacing-xs: 0.5rem;    /* 8px (p-2) */
+  --spacing-sm: 0.75rem;   /* 12px (p-3) */
+  --spacing-md: 1rem;      /* 16px (p-4) */
+  --spacing-lg: 1.5rem;    /* 24px (p-6) */
+  --spacing-xl: 2rem;      /* 32px (p-8) */
+
+  /* Layout */
+  --border-radius: 0.5rem;      /* Padrão (rounded-lg) */
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* shadow-sm */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05); /* shadow-lg */
 }
 
-html,
-body,
-#root {
-  height: 100%;
+/* ============================== */
+/* 2. RESET & BASELINE (Acessibilidade) */
+/* ============================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid transparent;
+}
+
+html {
+  font-size: 100%;
 }
 
 body {
-  margin: 0;
-  background-color: var(--bg);
-  color: var(--fg);
+  min-height: 100vh;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-base);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-  font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-a {
-  color: var(--primary);
-  text-decoration: underline;
+/* Altura total para SPA */
+html, body, .page-wrapper {
+  height: 100%;
+  width: 100%;
 }
 
-a:hover,
-a:focus-visible {
-  text-decoration: none;
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
 }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
+/* Reset de Margens para elementos de bloco */
+h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
+    margin-block-start: 0;
+    margin-block-end: 0;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-*:focus {
-  outline: 3px solid var(--primary);
+/* Acessibilidade Focus Ring */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
+  border-radius: var(--border-radius);
 }
 
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Elemento para esconder visualmente, mas manter para leitores de tela. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -59,4 +108,865 @@ button:disabled {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ============================== */
+/* 3. TIPOGRAFIA SEMÂNTICA */
+/* ============================== */
+
+/* Títulos Principais */
+.heading-primary { 
+  font-size: 2.25rem; /* text-4xl */
+  line-height: 2.5rem;
+  font-weight: 800; /* font-extrabold */
+  color: var(--color-text-base);
+}
+
+.heading-secondary { 
+  font-size: 1.875rem; /* text-3xl */
+  line-height: 2.25rem;
+  font-weight: 700; /* font-bold */
+  color: var(--color-text-base);
+}
+
+/* Títulos de Seção / Card */
+.title-lg { 
+  font-size: 1.25rem; /* text-xl */
+  line-height: 1.75rem;
+  font-weight: 600; /* font-semibold */
+}
+
+.title-md { 
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600; 
+}
+
+/* Utilitários de Texto */
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+
+.text-muted { color: var(--color-text-muted); }
+.text-base-color { color: var(--color-text-base); }
+.text-center { text-align: center; }
+
+/* ============================== */
+/* 4. LAYOUT E UTILS COMPONENTIZADOS */
+/* ============================== */
+
+/* Container de Conteúdo */
+.container { 
+  width: 100%;
+  max-width: 1280px; /* max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+/* Cards (Contêineres de conteúdo principal) */
+.card { /* Card padrão (com sombra e padding grande) */
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xl);
+}
+
+.card-simple { /* Card menor (para listas ou passos) */
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-base);
+  padding: var(--spacing-md);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-simple:focus-within,
+.card-simple:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* shadow-md */
+    border-color: var(--color-border);
+}
+
+/* Contêineres de Autenticação */
+.auth-container { 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: var(--spacing-lg);
+}
+
+.card-auth { /* Card padrão de login/recuperação */
+    width: 100%;
+    max-width: 448px; /* max-w-md */
+    background-color: var(--color-bg-card);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-xl);
+    border: 1px solid var(--color-border-dark);
+}
+
+.card-auth-medium { 
+    composes: card-auth;
+    max-width: 700px;
+    padding: var(--spacing-xl);
+}
+
+.card-auth-large { /* Card para formulários de registro longos */
+    composes: card-auth;
+    max-width: 900px; /* max-w-2xl */
+}
+
+
+/* --- LAYOUT GRIDS --- */
+
+/* Grid de Formulário de 2 Colunas */
+.form-grid-2 { 
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+@media (min-width: 768px) {
+    .form-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Grid de Formulário de 3 Colunas (Endereço) */
+.form-grid-3 { 
+    composes: form-grid-2;
+}
+@media (min-width: 768px) {
+    .form-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .form-grid-3 > .col-span-3 {
+        grid-column: span 3 / span 3;
+    }
+}
+
+/* Grid de Detalhes da Vaga (2 Colunas) */
+.grid-2-col { 
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+@media (min-width: 768px) {
+    .grid-2-col {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+/* Grid de Detalhes de Perfil (2 Colunas para telas grandes) */
+.grid-2-col-lg { 
+    composes: grid-2-col;
+}
+@media (min-width: 1024px) {
+    .grid-2-col-lg {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Grid de 3 Colunas (para Recursos/Cards) */
+.grid-3-col { 
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+}
+@media (min-width: 768px) {
+    .grid-3-col {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Grid de 4 Passos (Fluxo) */
+.steps-grid-4 { 
+    composes: grid-3-col;
+    list-style: none;
+    padding: 0;
+}
+@media (min-width: 1024px) {
+    .steps-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Layout de FAQ (2 colunas em desktop) */
+.faq-grid {
+    display: grid;
+    gap: var(--spacing-md);
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+    .faq-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* --- ALINHAMENTO E ESPAÇAMENTO --- */
+
+/* Utilitários de Margem/Padding */
+.mb-xs { margin-bottom: 0.25rem !important; }
+.mb-sm { margin-bottom: 0.5rem !important; }
+.mb-md { margin-bottom: var(--spacing-md) !important; }
+.mb-lg { margin-bottom: var(--spacing-lg) !important; }
+.mb-xl { margin-bottom: var(--spacing-xl) !important; }
+.mt-xs { margin-top: 0.25rem !important; }
+.mt-sm { margin-top: 0.5rem !important; }
+.mt-md { margin-top: var(--spacing-md) !important; }
+.mt-lg { margin-top: var(--spacing-lg) !important; }
+.mt-xl { margin-top: var(--spacing-xl) !important; }
+.ml-xs { margin-left: 0.25rem; }
+.ml-sm { margin-left: 0.5rem; }
+.mx-md { margin-inline: var(--spacing-md); }
+
+.py-lg { padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg); }
+.py-xl { padding-top: var(--spacing-xl); padding-bottom: var(--spacing-xl); }
+
+/* Espaçamento Vertical entre elementos irmãos (space-y-md) */
+.space-y-xs > * + * { margin-top: 0.25rem !important; }
+.space-y-md > * + * { margin-top: var(--spacing-md) !important; }
+.space-y-lg > * + * { margin-top: var(--spacing-lg) !important; }
+
+
+/* --- FLEX LAYOUTS --- */
+
+/* Layout Flex Padrão (Colunas no Mobile, Row no Desktop) */
+.flex-group { 
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md); 
+}
+.flex-group-md-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+}
+@media (min-width: 768px) {
+    .flex-group-md-row {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--spacing-lg);
+    }
+}
+.flex-group-item {
+    display: flex;
+    align-items: center;
+}
+
+/* Botões de Ação */
+.flex-actions { /* Ações alinhadas à direita */
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+.flex-actions-end { /* O mesmo que .flex-actions */
+    composes: flex-actions;
+}
+
+.flex-actions-start { /* Ações alinhadas à esquerda (usado em cards) */
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    align-items: center;
+}
+.flex-actions-center { /* Ações centralizadas (usado em CTA) */
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+}
+
+/* Divisores e Componentes de Bloco */
+.border-bottom-divider { border-bottom: 1px solid var(--color-border); }
+.border-top-divider { border-top: 1px solid var(--color-border); }
+.section-divider { border-top: 1px solid var(--color-border); }
+.max-w-lg-content { max-width: 900px; }
+
+
+/* ============================== */
+/* 5. ELEMENTOS INTERATIVOS: BOTÕES E INPUTS */
+/* ============================== */
+
+/* Botão Base */
+.btn-base { 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1rem; 
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem; 
+    font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+    text-decoration: none;
+    outline: none;
+}
+.btn-base:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Botão Principal */
+.btn-primary { 
+    composes: btn-base;
+    background-color: var(--color-brand); 
+    color: var(--color-bg-card); 
+    border-color: var(--color-brand);
+}
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-dark); 
+    border-color: var(--color-primary-dark);
+}
+
+/* Botão Secundário */
+.btn-secondary { 
+    composes: btn-base;
+    background-color: var(--color-bg-card);
+    color: var(--color-text-base);
+    border: 1px solid var(--color-border-dark);
+    box-shadow: var(--shadow-base);
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-hover);
+    border-color: var(--color-text-muted);
+}
+
+/* Botões de Ícone e Tamanho */
+.btn-icon {
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem; 
+    font-size: 0.875rem;
+    line-height: 1.25;
+}
+.btn-lg { 
+    width: 100%;
+    padding: 0.75rem 1.5rem; 
+    font-size: 1rem;
+}
+@media (min-width: 640px) {
+    .btn-lg { width: auto; }
+}
+
+/* Botões Específicos */
+.btn-link, .text-link { /* Link como botão/ação de texto */
+    color: var(--color-brand);
+    text-decoration: underline;
+    background: transparent;
+    padding: 0.25rem 0;
+    font-weight: 500;
+}
+.btn-link:hover, .text-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: none;
+}
+.btn-link-clean {
+    color: var(--color-text-base);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    display: block; 
+    padding: 0;
+}
+.btn-link-clean:hover,
+.btn-link-clean:focus {
+    color: var(--color-brand);
+    text-decoration: underline;
+    outline: none; 
+}
+.btn-secondary-inverted { /* Botão branco no header azul */
+    composes: btn-base;
+    background-color: var(--color-bg-card); 
+    color: var(--color-primary-dark);
+    padding: 0.5rem 0.75rem; 
+    font-weight: 600;
+    box-shadow: var(--shadow-base);
+}
+.btn-brand-ring { 
+    border: 1px solid var(--color-brand);
+    color: var(--color-brand);
+}
+.btn-warning {
+    background-color: var(--color-warning);
+    color: var(--color-bg-card);
+    border-color: var(--color-warning);
+}
+.btn-error {
+    background-color: var(--color-error);
+    color: var(--color-bg-card);
+    border-color: var(--color-error);
+}
+
+/* --- ELEMENTOS DE FORMULÁRIO --- */
+
+.form-label { 
+    display: block;
+    font-size: 0.875rem; 
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--color-text-base);
+}
+.form-group {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-input, .form-select, .form-textarea {
+    display: block;
+    width: 100%;
+    padding: 0.625rem var(--spacing-sm); 
+    border: 1px solid var(--color-border-dark);
+    border-radius: var(--border-radius);
+    background-color: var(--color-bg-card);
+    color: var(--color-text-base);
+    transition: border-color 0.2s ease;
+    font-size: 1rem;
+    outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--color-brand);
+}
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Input com Ícone/Sufixo */
+.form-input-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.form-icon { 
+    position: absolute;
+    left: var(--spacing-sm); 
+    color: var(--color-text-muted);
+    pointer-events: none; 
+}
+.form-input.with-icon, .form-select.with-icon {
+    padding-left: 2.25rem; 
+}
+.form-input-suffix {
+    position: absolute;
+    right: 0;
+    height: 100%;
+    padding: 0 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.form-checkbox {
+    height: 1rem; 
+    width: 1rem; 
+    border: 1px solid var(--color-border-dark);
+    border-radius: 0.25rem; 
+    color: var(--color-brand);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.form-checkbox:checked {
+    background-color: var(--color-brand);
+    border-color: var(--color-brand);
+}
+.checkbox-label { 
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--color-text-base);
+}
+
+/* Fieldset Semântico */
+.fieldset-group {
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+}
+.fieldset-legend {
+    font-weight: 700;
+    padding-inline: var(--spacing-xs);
+    color: var(--color-brand);
+    margin-left: -0.5rem; 
+}
+
+
+/* ============================== */
+/* 6. ALERTS, BADGES E FEEDBACK */
+/* ============================== */
+
+/* Alertas */
+.alert { 
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    border-width: 1px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 1rem;
+}
+.alert-error { 
+    background-color: oklch(0.971 0.013 17.38); /* red-50 */
+    color: oklch(0.444 0.177 26.899); /* red-800 */
+    border-color: oklch(0.885 0.062 18.334); 
+}
+.alert-success { 
+    background-color: oklch(0.962 0.044 156.743); /* green-100 */
+    color: oklch(0.448 0.119 151.328); /* green-800 */
+    border-color: oklch(0.925 0.084 155.995);
+}
+.alert-warning { 
+    background-color: oklch(0.987 0.022 95.277); /* amber-50 */
+    color: oklch(0.414 0.112 45.904); /* amber-900 */
+    border-color: oklch(0.924 0.12 95.746); 
+}
+.alert-warning-compact { 
+    composes: alert;
+    background-color: oklch(0.987 0.022 95.277); 
+    color: var(--color-warning); 
+    border-color: oklch(0.924 0.12 95.746); 
+    padding: var(--spacing-sm);
+}
+
+/* Badges (Etiquetas) */
+.badge { 
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px; 
+    padding-inline: 0.5rem;
+    padding-block: 0.125rem; 
+    font-size: 0.75rem; 
+    font-weight: 500;
+    line-height: 1;
+    box-shadow: 0 0 0 1px var(--color-border);
+    gap: 0.25rem;
+}
+.badge-dot {
+    display: inline-block;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background-color: currentColor;
+}
+/* Cores dos Badges */
+.badge-green { /* ATIVA */
+    background-color: oklch(0.962 0.044 156.743); 
+    color: oklch(0.527 0.154 150.069); 
+    box-shadow: 0 0 0 1px oklch(0.792 0.209 151.711); 
+}
+.badge-yellow { /* EM ANÁLISE / PAUSADA */
+    background-color: oklch(0.973 0.071 103.193); 
+    color: oklch(0.554 0.135 66.442); 
+    box-shadow: 0 0 0 1px oklch(0.852 0.199 91.936); 
+}
+.badge-gray { /* FECHADA / ENVIADA / CANCELADA */
+    background-color: var(--color-bg-page); 
+    color: var(--color-text-muted);
+    box-shadow: 0 0 0 1px var(--color-border-dark);
+}
+.badge-brand { /* NOVA (Proposta) */
+    background-color: oklch(0.966 0.076 257.653); 
+    color: var(--color-brand);
+    box-shadow: 0 0 0 1px var(--color-brand);
+}
+.badge-info { /* VISUALIZADA (Proposta) */
+    background-color: oklch(0.973 0.003 264.542); 
+    color: var(--color-brand);
+    box-shadow: 0 0 0 1px var(--color-border);
+}
+.badge-success { /* ACEITA */
+    composes: badge-green;
+}
+.badge-error { /* RECUSADA */
+    background-color: oklch(0.971 0.013 17.38); 
+    color: oklch(0.444 0.177 26.899); 
+    box-shadow: 0 0 0 1px oklch(0.885 0.062 18.334); 
+}
+.badge-deficiencia { /* Badge específico para deficiências */
+    display: inline-block;
+    padding: 0.25rem 0.75rem; 
+    background-color: #ede9fe; /* purple-100 */
+    color: #6d28d9; /* purple-800 */
+    font-size: 0.875rem; 
+    font-weight: 500;
+    border-radius: 9999px; 
+    white-space: nowrap;
+}
+
+
+/* --- STATUS E SKELETON --- */
+
+.placeholder-card { 
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-card);
+}
+.placeholder-line { 
+    height: 1rem; 
+    background-color: var(--color-border); 
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-xs);
+}
+.placeholder-animate {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Status de Remoção/Mutação */
+.vaga-item { transition: opacity 0.3s ease; }
+.vaga-removing { opacity: 0.5; pointer-events: none; }
+.card-proposta[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
+
+/* Medidor de Senha */
+.pwd-strength-bar-bg { 
+    height: 0.25rem; 
+    border-radius: var(--border-radius);
+    background-color: var(--color-border);
+    overflow: hidden;
+}
+.pwd-strength-bar { 
+    height: 100%;
+    border-radius: var(--border-radius);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+.pwd-low { background-color: var(--color-error); }
+.pwd-medium { background-color: var(--color-warning); }
+.pwd-high { background-color: var(--color-success); }
+
+
+/* ============================== */
+/* 7. COMPONENTES E UTILITÁRIOS ESPECÍFICOS */
+/* ============================== */
+
+/* Landing Page Header */
+.header-primary { 
+    background-color: var(--color-primary-dark);
+    color: var(--color-bg-card);
+}
+.header-container { 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--spacing-md); 
+}
+.main-nav { 
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+.logo-icon { 
+    display: inline-block;
+    width: 0.5rem; 
+    height: 1.5rem; 
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: var(--border-radius);
+}
+.logo-text { 
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+.logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-bg-card);
+    text-decoration: none;
+}
+.footer-primary { 
+    background-color: var(--color-bg-page);
+    border-top: 1px solid var(--color-border);
+}
+.footer-content { 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--spacing-md); 
+}
+.footer-nav { 
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+/* Cards de Escolha de Cadastro */
+.card-choice { 
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    text-align: center;
+    background-color: var(--color-bg-card);
+    box-shadow: var(--shadow-base);
+}
+.card-choice:hover {
+    border-color: var(--color-brand);
+    box-shadow: var(--shadow-lg);
+}
+.card-choice-link { 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-base); 
+    text-decoration: none;
+    height: 100%;
+}
+.card-choice-icon {
+    color: var(--color-brand);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Componentes de Detalhe e Info */
+.info-display .flex-group-item, .info-item .flex-group-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.content-box-sm {
+    padding: var(--spacing-sm);
+    background-color: var(--color-hover);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+}
+
+/* Skip Link */
+.skip-link { 
+    position: absolute;
+    top: auto;
+    left: -10000px;
+    height: 1px;
+    overflow: hidden;
+    color: #1f2937; 
+}
+.skip-link:focus {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 9999;
+    height: auto;
+    width: auto;
+    padding: 0.5rem 0.75rem;
+    background-color: #fcd34d; 
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* ============================== */
+/* 6. ALERTS, BADGES E FEEDBACK - Adição de Erros de Formulário */
+/* ============================== */
+
+/* Estilo para campos de formulário inválidos */
+.form-input[aria-invalid="true"],
+.form-select[aria-invalid="true"],
+.form-textarea[aria-invalid="true"] {
+    border-color: var(--color-error);
+}
+
+/* Mensagem de erro para campos de formulário */
+.error-text {
+    color: var(--color-error);
+    font-size: 0.875rem; /* text-sm */
+    margin-top: 0.5rem; /* mt-2 */
+}
+
+
+/* ============================== */
+/* ADIÇÕES FINAIS AO GLOBAL.CSS (HEADER/FOOTER LOGADO) */
+/* ============================== */
+
+/* 4. LAYOUT E UTILS COMPONENTIZADOS - Header Logado */
+
+.header-logged { /* Header para área logada */
+    background-color: var(--color-bg-card); /* Fundo branco/claro */
+    border-bottom: 1px solid var(--color-border-dark);
+    box-shadow: var(--shadow-base);
+    z-index: 10;
+    position: sticky;
+    top: 0;
+}
+.header-logged .header-container { /* Alinhamento do container no header logado */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--spacing-md);
+}
+
+.main-nav-logged {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.nav-link-logged { /* Links de navegação logada */
+    composes: btn-base;
+    background: transparent;
+    color: var(--color-text-muted);
+    border: none;
+    padding: var(--spacing-sm);
+    transition: color 0.2s, background-color 0.2s;
+    font-weight: 500;
+}
+.nav-link-logged:hover, .nav-link-logged:focus {
+    background-color: var(--color-hover);
+    color: var(--color-brand);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+}
+.nav-link-logged svg {
+    color: inherit;
+}
+.nav-link-logged.btn-icon {
+    gap: 0.25rem;
+}
+
+/* Footer Logado */
+.footer-primary { 
+    background-color: var(--color-bg-page);
+    border-top: 1px solid var(--color-border);
+}
+.footer-content-logged {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--spacing-md);
+    width: 100%;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+}
+.footer-nav { 
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+/* Navbar Logo (Ajuste de cores para o header branco) */
+.header-logged .logo-text, .header-logged .logo-link {
+    color: var(--color-text-base);
+}
+.header-logged .logo-icon {
+    background-color: var(--color-brand);
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCustomPrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Candidato extends Model
 {
     use HasFactory;
+    use HasCustomPrimaryKey;
 
     /**
      * Nome da tabela associada ao modelo.

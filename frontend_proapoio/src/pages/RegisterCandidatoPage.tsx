@@ -1,506 +1,499 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import api from '../services/api';
+import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft, UserPlus } from 'lucide-react';
+import { maskCEP, maskCPF, maskPhone } from '../utils/masks';
+
+// ===================================
+// TIPOS E DEFINIÇÕES
+// ===================================
 
 type FormData = {
-  nome: string;
-  email: string;
-  senha: string;
-  confirmarSenha: string;
-  cep: string;
-  cidade: string;
-  estado: string;
-  escolaridade: string;
-  curso: string;
-  experiencia: string;
+    nome_completo: string;
+    email: string;
+    telefone: string;
+    cpf: string;
+    data_nascimento: string; // yyyy-mm-dd
+    password: string;
+    password_confirmation: string;
+    cep: string;
+    cidade: string;
+    estado: string;
+    escolaridade: string;
+    curso_superior: string;
+    instituicao_ensino: string; // Nome da instituição
+    experiencia: string; // Resumo da experiência
 };
 
 type FieldErrors = Partial<Record<keyof FormData, string>>;
 
 const ESCOLARIDADE_OPCOES = [
-  'Ensino Médio Incompleto',
-  'Ensino Médio Completo',
-  'Superior Incompleto',
-  'Superior Completo',
-  'Pós-Graduação',
-  'Mestrado',
-  'Doutorado',
+    'Fundamental Completo',
+    'Médio Completo',
+    'Superior Incompleto',
+    'Superior Completo',
+    'Pós-Graduação',
+    'Mestrado',
+    'Doutorado',
 ];
+const ESTADOS_OPCOES = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+
+// ===================================
+// COMPONENTES AUXILIARES DE FORMULÁRIO (Para evitar repetição no JSX)
+// ===================================
+
+const ErrorText: React.FC<{ id: string; message?: string }> = ({ id, message }) => (
+    message ? (
+        <p id={id} className="error-text">
+            {message}
+        </p>
+    ) : null
+);
+
+
+// ===================================
+// LÓGICA DO COMPONENTE PRINCIPAL
+// ===================================
 
 export default function RegisterCandidatoPage() {
-  const [formData, setFormData] = useState<FormData>({
-    nome: '',
-    email: '',
-    senha: '',
-    confirmarSenha: '',
-    cep: '',
-    cidade: '',
-    estado: '',
-    escolaridade: '',
-    curso: '',
-    experiencia: '',
-  });
-
-  const [mensagem, setMensagem] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const liveRef = useRef<HTMLDivElement>(null);
-  const alertRef = useRef<HTMLDivElement>(null);
-  const h1Ref = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    h1Ref.current?.focus();
-  }, []);
-
-  function announce(text: string) {
-    if (!liveRef.current) return;
-    liveRef.current.textContent = text;
-    window.setTimeout(() => {
-      if (liveRef.current && liveRef.current.textContent === text) {
-        liveRef.current.textContent = '';
-      }
-    }, 4000);
-  }
-
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const next = { ...prev, [name]: value };
-      // limpeza de erros por campo ao digitar
-      if (errors[name as keyof FormData]) {
-        const copy = { ...errors };
-        delete copy[name as keyof FormData];
-        setErrors(copy);
-      }
-      return next;
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState<FormData>({
+        nome_completo: '',
+        email: '',
+        telefone: '',
+        cpf: '',
+        data_nascimento: '', // yyyy-mm-dd
+        password: '',
+        password_confirmation: '',
+        cep: '',
+        cidade: '',
+        estado: '',
+        escolaridade: '',
+        curso_superior: '',
+        instituicao_ensino: '', // Nome da instituição
+        experiencia: '',
     });
-  }
 
-  function senhaValida(s: string) {
-    // mínimo 8, ao menos uma letra e um número
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,.?/~`]{8,}$/.test(s);
-  }
+    const [mensagem, setMensagem] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors] = useState<FieldErrors>({});
+    const liveRef = useRef<HTMLDivElement>(null);
+    const alertRef = useRef<HTMLDivElement>(null);
+    const h1Ref = useRef<HTMLHeadingElement>(null);
 
-  function validar(): FieldErrors {
-    const e: FieldErrors = {};
-    if (!formData.nome.trim()) e.nome = 'Informe o nome completo.';
-    if (!formData.email.trim()) e.email = 'Informe o e-mail.';
-    if (!senhaValida(formData.senha))
-      e.senha = 'Senha deve ter no mínimo oito caracteres com letras e números.';
-    if (formData.senha !== formData.confirmarSenha) e.confirmarSenha = 'As senhas não coincidem.';
-    const cepDigits = formData.cep.replace(/\D/g, '');
-    if (cepDigits.length !== 8) e.cep = 'CEP inválido. Use oito dígitos.';
-    if (!formData.cidade.trim()) e.cidade = 'Informe a cidade.';
-    if (!formData.estado.trim()) e.estado = 'Informe o estado.';
-    if (!formData.escolaridade) e.escolaridade = 'Selecione a escolaridade.';
-    const exigeCurso = formData.escolaridade.startsWith('Superior') || ['Pós-Graduação', 'Mestrado', 'Doutorado'].includes(formData.escolaridade);
-    if (exigeCurso && !formData.curso.trim()) e.curso = 'Informe o curso.';
-    if (!formData.experiencia.trim()) e.experiencia = 'Descreva ao menos uma experiência.';
-    return e;
-  }
+    useEffect(() => {
+        h1Ref.current?.focus();
+    }, []);
 
-  async function handleCepBlur() {
-    const digits = formData.cep.replace(/\D/g, '');
-    if (digits.length !== 8) {
-      setErrors((prev) => ({ ...prev, cep: 'CEP inválido. Use oito dígitos.' }));
-      announce('CEP inválido. Use oito dígitos.');
-      return;
-    }
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-      const data = await res.json();
-      if (data?.erro) {
-        setErrors((prev) => ({ ...prev, cep: 'CEP não encontrado.' }));
-        announce('CEP não encontrado.');
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        cidade: data.localidade || prev.cidade,
-        estado: data.uf || prev.estado,
-      }));
-      announce('Endereço preenchido pelo CEP.');
-    } catch {
-      announce('Falha ao consultar CEP.');
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setMensagem(null);
-
-    const eMap = validar();
-    setErrors(eMap);
-    if (Object.keys(eMap).length > 0) {
-      setMensagem('Corrija os campos destacados.');
-      setTimeout(() => alertRef.current?.focus(), 0);
-      return;
+    // Acessibilidade: anuncia mensagens para leitores de tela
+    function announce(text: string) {
+        if (liveRef.current) {
+            liveRef.current.textContent = text;
+        }
     }
 
-    setSubmitting(true);
-    try {
-      const resposta = await fetch('http://localhost:8000/api/auth/register/candidato', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+    function handleChange(
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    ) {
+        const { name, value } = e.target;
+        
+        let newValue = value;
+        // Aplicação de máscaras
+        if (name === 'cep') newValue = maskCEP(value);
+        if (name === 'cpf') newValue = maskCPF(value);
+        if (name === 'telefone') newValue = maskPhone(value);
 
-      if (resposta.ok) {
-        setMensagem('Cadastro realizado com sucesso.');
-        setFormData({
-          nome: '',
-          email: '',
-          senha: '',
-          confirmarSenha: '',
-          cep: '',
-          cidade: '',
-          estado: '',
-          escolaridade: '',
-          curso: '',
-          experiencia: '',
+        setFormData((prev) => {
+            const next = { ...prev, [name]: newValue };
+            // Limpa erros ao digitar
+            if (errors[name as keyof FormData]) {
+                const copy = { ...errors };
+                delete copy[name as keyof FormData];
+                setErrors(copy);
+            }
+            return next;
         });
-        setErrors({});
-        announce('Cadastro realizado com sucesso.');
-        setTimeout(() => alertRef.current?.focus(), 0);
-      } else {
-        let erroMsg = 'Erro ao cadastrar candidato.';
-        try {
-          const erro = await resposta.json();
-          if (erro?.message) erroMsg = erro.message;
-        } catch {}
-        setMensagem(erroMsg);
-        announce(erroMsg);
-        setTimeout(() => alertRef.current?.focus(), 0);
-      }
-    } catch {
-      setMensagem('Falha na comunicação com o servidor.');
-      announce('Falha na comunicação com o servidor.');
-      setTimeout(() => alertRef.current?.focus(), 0);
-    } finally {
-      setSubmitting(false);
     }
-  }
 
-  return (
-    <main
-      id="conteudo"
-      className="mx-auto max-w-2xl px-4 py-10"
-      aria-labelledby="titulo-cadastro-candidato"
-      role="main"
-    >
-      {/* Regiões vivas e alerta focável para leitores de tela */}
-      <div ref={liveRef} className="sr-only" aria-live="polite" aria-atomic="true" />
-      {mensagem && (
-        <div
-          ref={alertRef}
-          role="alert"
-          tabIndex={-1}
-          className={`mb-4 p-3 rounded outline-none ${
-            mensagem.includes('sucesso')
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-          }`}
-        >
-          {mensagem}
-        </div>
-      )}
+    function senhaValida(s: string) {
+        // Mínimo 8, ao menos uma letra e um número [cite: Documentação final.docx]
+        return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(s);
+    }
 
-      <header className="text-center mb-6">
-        <h1
-          id="titulo-cadastro-candidato"
-          className="text-3xl font-bold"
-          tabIndex={-1}
-          ref={h1Ref}
-        >
-          Cadastro de Candidato
-        </h1>
-        <p className="mt-2 text-zinc-700">Preencha suas informações para criar seu perfil.</p>
-      </header>
+    function validar(): FieldErrors {
+        const e: FieldErrors = {};
+        
+        if (formData.nome_completo.trim().length < 3) e.nome_completo = 'Nome completo é obrigatório (mínimo 3 caracteres).';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = 'E-mail inválido.';
+        
+        // Validação de campos obrigatórios com máscara
+        if (formData.telefone.replace(/\D/g, '').length < 10) e.telefone = 'Telefone inválido.';
+        if (formData.cpf.replace(/\D/g, '').length !== 11) e.cpf = 'CPF deve ter 11 dígitos.';
+        if (!formData.data_nascimento.trim()) e.data_nascimento = 'Informe a data de nascimento.';
+        
+        // Senha
+        if (!senhaValida(formData.password)) e.password = 'A senha deve ter no mínimo 8 caracteres com letras e números.';
+        if (formData.password !== formData.password_confirmation) e.password_confirmation = 'As senhas não coincidem.';
+        
+        // Endereço
+        if (formData.cep.replace(/\D/g, '').length !== 8) e.cep = 'CEP inválido.';
+        if (!formData.cidade.trim()) e.cidade = 'Informe a cidade.';
+        if (!formData.estado.trim()) e.estado = 'Informe o estado.';
+        
+        // Escolaridade Condicional
+        if (!formData.escolaridade) e.escolaridade = 'Selecione a escolaridade.';
+        const exigeCurso = formData.escolaridade.includes('Superior') || ['Pós-Graduação', 'Mestrado', 'Doutorado'].includes(formData.escolaridade);
+        if (exigeCurso) {
+            if (!formData.curso_superior.trim()) e.curso_superior = 'Informe o curso.';
+            if (!formData.instituicao_ensino.trim()) e.instituicao_ensino = 'Informe a instituição de ensino.';
+        }
+        
+        // Experiência
+        if (formData.experiencia.trim().length < 20) e.experiencia = 'Descreva sua experiência em mais detalhes (mínimo 20 caracteres).';
+        
+        return e;
+    }
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-        aria-label="Formulário de cadastro de candidato"
-        noValidate
-      >
-        <div>
-          <label htmlFor="nome" className="block font-semibold">
-            Nome completo
-          </label>
-          <input
-            id="nome"
-            name="nome"
-            type="text"
-            required
-            aria-invalid={!!errors.nome}
-            aria-describedby={errors.nome ? 'erro-nome' : undefined}
-            value={formData.nome}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-          {errors.nome && (
-            <p id="erro-nome" className="mt-1 text-sm text-red-700">
-              {errors.nome}
-            </p>
-          )}
-        </div>
+    async function handleCepBlur() {
+        const digits = formData.cep.replace(/\D/g, '');
+        if (digits.length !== 8) return; 
 
-        <div>
-          <label htmlFor="email" className="block font-semibold">
-            E-mail
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? 'erro-email' : 'ajuda-email'}
-            value={formData.email}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2"
-            autoComplete="email"
-          />
-          {!errors.email && (
-            <p id="ajuda-email" className="mt-1 text-xs text-zinc-600">
-              Use um e-mail válido. A verificação poderá ser solicitada.
-            </p>
-          )}
-          {errors.email && (
-            <p id="erro-email" className="mt-1 text-sm text-red-700">
-              {errors.email}
-            </p>
-          )}
-        </div>
+        try {
+            // Chamada à API ViaCEP [cite: Documentação final.docx]
+            const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+            const data = await res.json();
+            
+            if (data?.erro) {
+                setErrors((prev) => ({ ...prev, cep: 'CEP não encontrado.' }));
+                announce('CEP não encontrado.');
+                return;
+            }
+            // Preenche os campos (cidade, estado)
+            setFormData((prev) => ({
+                ...prev,
+                cidade: data.localidade || prev.cidade,
+                estado: data.uf || prev.estado,
+            }));
+            announce('Endereço preenchido automaticamente.');
+        } catch {
+            announce('Falha ao consultar CEP.');
+        }
+    }
 
-        <fieldset className="grid md:grid-cols-2 gap-4" aria-describedby="ajuda-senha">
-          <legend className="sr-only">Definição de senha</legend>
-          <div>
-            <label htmlFor="senha" className="block font-semibold">
-              Senha
-            </label>
-            <input
-              id="senha"
-              name="senha"
-              type="password"
-              required
-              aria-invalid={!!errors.senha}
-              aria-describedby={errors.senha ? 'erro-senha' : 'ajuda-senha'}
-              value={formData.senha}
-              onChange={handleChange}
-              className="mt-1 w-full rounded border px-3 py-2"
-              autoComplete="new-password"
-              inputMode="text"
-            />
-            {errors.senha ? (
-              <p id="erro-senha" className="mt-1 text-sm text-red-700">
-                {errors.senha}
-              </p>
-            ) : (
-              <p id="ajuda-senha" className="mt-1 text-xs text-zinc-600">
-                Mínimo de oito caracteres com letras e números.
-              </p>
-            )}
-          </div>
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setMensagem(null);
 
-          <div>
-            <label htmlFor="confirmarSenha" className="block font-semibold">
-              Confirmar senha
-            </label>
-            <input
-              id="confirmarSenha"
-              name="confirmarSenha"
-              type="password"
-              required
-              aria-invalid={!!errors.confirmarSenha}
-              aria-describedby={errors.confirmarSenha ? 'erro-confirmar' : undefined}
-              value={formData.confirmarSenha}
-              onChange={handleChange}
-              className="mt-1 w-full rounded border px-3 py-2"
-              autoComplete="new-password"
-            />
-            {errors.confirmarSenha && (
-              <p id="erro-confirmar" className="mt-1 text-sm text-red-700">
-                {errors.confirmarSenha}
-              </p>
-            )}
-          </div>
-        </fieldset>
+        const eMap = validar();
+        setErrors(eMap);
+        if (Object.keys(eMap).length > 0) {
+            const errorFields = Object.keys(eMap).map(key => {
+                const labels: Record<string, string> = {
+                    nome_completo: 'Nome completo',
+                    password: 'Senha',
+                    password_confirmation: 'Confirmar senha',
+                    curso_superior: 'Nome do Curso',
+                };
+                return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+            });
 
-        <div>
-          <label htmlFor="cep" className="block font-semibold">
-            CEP
-          </label>
-          <input
-            id="cep"
-            name="cep"
-            type="text"
-            inputMode="numeric"
-            maxLength={9}
-            placeholder="00000-000"
-            required
-            aria-invalid={!!errors.cep}
-            aria-describedby={errors.cep ? 'erro-cep' : 'ajuda-cep'}
-            value={formData.cep}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\D/g, '').slice(0, 8);
-              const masked = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw;
-              setFormData((prev) => ({ ...prev, cep: masked }));
-            }}
-            onBlur={handleCepBlur}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-          {errors.cep ? (
-            <p id="erro-cep" className="mt-1 text-sm text-red-700">
-              {errors.cep}
-            </p>
-          ) : (
-            <p id="ajuda-cep" className="text-xs text-zinc-600 mt-1">
-              Ao sair do campo, cidade e estado serão preenchidos automaticamente.
-            </p>
-          )}
-        </div>
+            const errorMessage = `Corrija os campos destacados: ${errorFields.join(', ')}.`;
+            setMensagem(errorMessage);
+            announce(errorMessage);
+            setTimeout(() => alertRef.current?.focus(), 100);
+            return;
+        }
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="cidade" className="block font-semibold">
-              Cidade
-            </label>
-            <input
-              id="cidade"
-              name="cidade"
-              type="text"
-              required
-              aria-invalid={!!errors.cidade}
-              aria-describedby={errors.cidade ? 'erro-cidade' : undefined}
-              value={formData.cidade}
-              onChange={handleChange}
-              className="mt-1 w-full rounded border px-3 py-2"
-            />
-            {errors.cidade && (
-              <p id="erro-cidade" className="mt-1 text-sm text-red-700">
-                {errors.cidade}
-              </p>
-            )}
-          </div>
+        setSubmitting(true);
+        try {
+            // Mapeamento: Chaves do front (ex: nome_completo) para chaves do back (ex: nome)
+            const payload = {
+                nome: formData.nome_completo,
+                email: formData.email,
+                telefone: formData.telefone.replace(/\D/g, ''), // Envia sem máscara
+                cpf: formData.cpf.replace(/\D/g, ''), // Envia sem máscara
+                data_nascimento: formData.data_nascimento,
+                password: formData.password,
+                password_confirmation: formData.password_confirmation, 
+                
+                cep: formData.cep.replace(/\D/g, ''), // Envia sem máscara
+                cidade: formData.cidade,
+                estado: formData.estado,
+                
+                nivel_escolaridade: formData.escolaridade, 
+                curso_superior: formData.curso_superior, 
+                instituicao_ensino: formData.instituicao_ensino, 
+                experiencia: formData.experiencia,
+            };
 
-          <div>
-            <label htmlFor="estado" className="block font-semibold">
-              Estado
-            </label>
-            <input
-              id="estado"
-              name="estado"
-              type="text"
-              required
-              aria-invalid={!!errors.estado}
-              aria-describedby={errors.estado ? 'erro-estado' : undefined}
-              value={formData.estado}
-              onChange={handleChange}
-              className="mt-1 w-full rounded border px-3 py-2"
-            />
-            {errors.estado && (
-              <p id="erro-estado" className="mt-1 text-sm text-red-700">
-                {errors.estado}
-              </p>
-            )}
-          </div>
-        </div>
+            // POST /auth/register/candidato [cite: Documentação final.docx]
+            const resposta = await api.post('/auth/register/candidato', payload);
 
-        <div>
-          <label htmlFor="escolaridade" className="block font-semibold">
-            Escolaridade
-          </label>
-          <select
-            id="escolaridade"
-            name="escolaridade"
-            required
-            aria-invalid={!!errors.escolaridade}
-            aria-describedby={errors.escolaridade ? 'erro-escolaridade' : 'ajuda-escolaridade'}
-            value={formData.escolaridade}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2"
-          >
-            <option value="">Selecione</option>
-            {ESCOLARIDADE_OPCOES.map((op) => (
-              <option key={op} value={op}>
-                {op}
-              </option>
-            ))}
-          </select>
-          {errors.escolaridade ? (
-            <p id="erro-escolaridade" className="mt-1 text-sm text-red-700">
-              {errors.escolaridade}
-            </p>
-          ) : (
-            <p id="ajuda-escolaridade" className="mt-1 text-xs text-zinc-600">
-              Se escolher nível superior, informe também o curso.
-            </p>
-          )}
-        </div>
+            if (resposta.status === 201 || resposta.status === 200) {
+                setMensagem('Cadastro realizado com sucesso. Você será redirecionado para o login.');
+                announce('Cadastro realizado com sucesso.');
+                // Redireciona após 2 segundos
+                setTimeout(() => navigate('/login?success=candidato'), 2000); 
+            } else {
+                setMensagem('Erro inesperado no servidor. Tente novamente.');
+            }
+        } catch (error: any) {
+            console.error('Erro de requisição:', error);
+            let erroMsg = 'Falha na comunicação com o servidor. Tente novamente mais tarde.';
 
-        {/* Campo curso condicional */}
-        {(formData.escolaridade.startsWith('Superior') ||
-          ['Pós-Graduação', 'Mestrado', 'Doutorado'].includes(formData.escolaridade)) && (
-          <div>
-            <label htmlFor="curso" className="block font-semibold">
-              Curso
-            </label>
-            <input
-              id="curso"
-              name="curso"
-              type="text"
-              required
-              aria-invalid={!!errors.curso}
-              aria-describedby={errors.curso ? 'erro-curso' : undefined}
-              value={formData.curso}
-              onChange={handleChange}
-              className="mt-1 w-full rounded border px-3 py-2"
-            />
-            {errors.curso && (
-              <p id="erro-curso" className="mt-1 text-sm text-red-700">
-                {errors.curso}
-              </p>
-            )}
-          </div>
-        )}
+            // Erro de validação do Laravel (422)
+            if (error.response?.status === 422 && error.response?.data?.errors) {
+                // Erros de Validação (422)
+                const laravelErrors = error.response.data.errors;
+                const fieldErrors: FieldErrors = {};
+                
+                // Mapeamento de erros do Laravel para campos do React
+                Object.entries(laravelErrors).forEach(([key, messages]) => {
+                    const msg = Array.isArray(messages) ? messages[0] : 'Erro de validação.';
+                    
+                    const keyMap: Record<string, keyof FormData> = {
+                        'nome': 'nome_completo',
+                        'nivel_escolaridade': 'escolaridade',
+                    };
 
-        <div>
-          <label htmlFor="experiencia" className="block font-semibold">
-            Descreva sua experiência
-          </label>
-          <textarea
-            id="experiencia"
-            name="experiencia"
-            rows={3}
-            required
-            aria-invalid={!!errors.experiencia}
-            aria-describedby={errors.experiencia ? 'erro-experiencia' : 'ajuda-experiencia'}
-            value={formData.experiencia}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-          {errors.experiencia ? (
-            <p id="erro-experiencia" className="mt-1 text-sm text-red-700">
-              {errors.experiencia}
-            </p>
-          ) : (
-            <p id="ajuda-experiencia" className="mt-1 text-xs text-zinc-600">
-              Informe pelo menos uma experiência com alunos com deficiência.
-            </p>
-          )}
-        </div>
+                    const formKey = keyMap[key] || key;
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-blue-700 text-white px-4 py-3 font-semibold shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-60"
-          aria-busy={submitting}
-          aria-disabled={submitting}
-        >
-          {submitting ? 'Enviando…' : 'Criar conta'}
-        </button>
-      </form>
-    </main>
-  );
+                    if (formKey in formData) (fieldErrors as any)[formKey] = msg;
+                    else erroMsg = msg; // Mensagem geral (ex: 'O email informado já existe.') se não mapear
+                });
+                
+                setErrors(fieldErrors);
+                // Se houver erros de campo, a mensagem principal é sobre corrigir os campos.
+                // Se não, usa a mensagem de erro geral que veio do backend (ex: 'CPF já cadastrado')
+                setMensagem(Object.keys(fieldErrors).length > 0 ? 'Corrija os campos destacados.' : erroMsg);
+            } else if (error.response?.data?.message) {
+                // Outros erros da API com uma mensagem específica (ex: 409 Conflict)
+                erroMsg = error.response.data.message;
+                setMensagem(erroMsg);
+            }
+            announce(erroMsg);
+            setTimeout(() => alertRef.current?.focus(), 0);
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    const exigeCurso = formData.escolaridade.includes('Superior') || ['Pós-Graduação', 'Mestrado', 'Doutorado'].includes(formData.escolaridade);
+
+    return (
+        // Usa 'auth-container' e 'card-auth' para o layout centralizado, com largura maior (max-w-2xl)
+        <main className="auth-container" aria-labelledby="titulo-cadastro-candidato"> 
+            
+            <div className="card-auth-large">
+                
+                <h1
+                    id="titulo-cadastro-candidato"
+                    className="heading-secondary mb-md text-center"
+                    tabIndex={-1}
+                    ref={h1Ref}
+                >
+                    Cadastro de Agente de Apoio
+                </h1>
+                <p className="text-sm text-muted text-center mb-lg">
+                    Preencha suas informações pessoais e qualificações. Todos os campos são obrigatórios.
+                </p>
+
+                {/* Alerta de Mensagem */}
+                {mensagem && (
+                    <div
+                        ref={alertRef}
+                        role="alert"
+                        tabIndex={-1}
+                        className={`alert ${mensagem.includes('sucesso') ? 'alert-success' : 'alert-error'} mb-md`}
+                    >
+                        <AlertTriangle size={20} className="inline mr-sm" />
+                        {mensagem}
+                    </div>
+                )}
+                <div ref={liveRef} className="sr-only" aria-live="polite" />
+                
+                <form
+                    onSubmit={handleSubmit}
+                    className="space-y-lg" // Espaçamento grande entre seções
+                    aria-label="Formulário de cadastro de candidato"
+                    noValidate
+                >
+                    {/* SEÇÃO: DADOS PESSOAIS E CONTA */}
+                    <fieldset className="fieldset-group">
+                        <legend className="title-md fieldset-legend">1. Informações Pessoais e de Acesso</legend>
+                        
+                        {/* 2 Colunas */}
+                        <div className="form-grid-2">
+                            <div className="form-group">
+                                <label htmlFor="nome_completo" className="form-label">Nome completo</label>
+                                <div className="form-input-icon-wrapper">
+                                    <User size={20} className="form-icon" />
+                                    <input id="nome_completo" name="nome_completo" type="text" required value={formData.nome_completo} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.nome_completo} aria-describedby={errors.nome_completo ? 'erro-nome_completo' : undefined} />
+                                </div>
+                                <ErrorText id="erro-nome_completo" message={errors.nome_completo} />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label htmlFor="email" className="form-label">E-mail</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Mail size={20} className="form-icon" />
+                                    <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.email} aria-describedby={errors.email ? 'erro-email' : undefined} autoComplete="email" />
+                                </div>
+                                <ErrorText id="erro-email" message={errors.email} />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="telefone" className="form-label">Telefone</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Phone size={20} className="form-icon" />
+                                    <input id="telefone" name="telefone" type="tel" required value={formData.telefone} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.telefone} aria-describedby={errors.telefone ? 'erro-telefone' : undefined} />
+                                </div>
+                                <ErrorText id="erro-telefone" message={errors.telefone} />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label htmlFor="cpf" className="form-label">CPF</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Lock size={20} className="form-icon" />
+                                    <input id="cpf" name="cpf" type="text" required value={formData.cpf} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.cpf} aria-describedby={errors.cpf ? 'erro-cpf' : undefined} inputMode="numeric" />
+                                </div>
+                                <ErrorText id="erro-cpf" message={errors.cpf} />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label htmlFor="data_nascimento" className="form-label">Data de Nascimento</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Calendar size={20} className="form-icon" />
+                                    <input id="data_nascimento" name="data_nascimento" type="date" required value={formData.data_nascimento} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.data_nascimento} aria-describedby={errors.data_nascimento ? 'erro-data_nascimento' : undefined} />
+                                </div>
+                                <ErrorText id="erro-data_nascimento" message={errors.data_nascimento} />
+                            </div>
+
+                        </div>
+                        
+                        {/* Senha */}
+                        <div className="form-grid-2 mt-md">
+                            <div className="form-group">
+                                <label htmlFor="password" className="form-label">Senha</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Lock size={20} className="form-icon" />
+                                    <input id="password" name="password" type="password" required value={formData.password} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.password} aria-describedby={errors.password ? 'erro-password' : 'ajuda-senha'} autoComplete="new-password" />
+                                </div>
+                                <ErrorText id="erro-password" message={errors.password} />
+                                <p id="ajuda-senha" className="text-xs text-muted mt-xs">Mínimo 8 caracteres com letras e números.</p>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="password_confirmation" className="form-label">Confirmar senha</label>
+                                <div className="form-input-icon-wrapper">
+                                    <Lock size={20} className="form-icon" />
+                                    <input id="password_confirmation" name="password_confirmation" type="password" required value={formData.password_confirmation} onChange={handleChange} className="form-input with-icon" aria-invalid={!!errors.password_confirmation} aria-describedby={errors.password_confirmation ? 'erro-confirmar' : undefined} autoComplete="new-password" />
+                                </div>
+                                <ErrorText id="erro-confirmar" message={errors.password_confirmation} />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {/* SEÇÃO: ENDEREÇO */}
+                    <fieldset className="fieldset-group">
+                        <legend className="title-md fieldset-legend">2. Endereço</legend>
+                        
+                        <div className="form-grid-3">
+                            <div className="form-group col-span-3">
+                                <label htmlFor="cep" className="form-label">CEP</label>
+                                <div className="form-input-icon-wrapper">
+                                    <MapPin size={20} className="form-icon" />
+                                    <input id="cep" name="cep" type="text" inputMode="numeric" maxLength={10} required value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} className="form-input with-icon" aria-invalid={!!errors.cep} aria-describedby={errors.cep ? 'erro-cep' : 'ajuda-cep'} placeholder="00000-000" />
+                                </div>
+                                <ErrorText id="erro-cep" message={errors.cep} />
+                                <p id="ajuda-cep" className="text-xs text-muted mt-xs">Ao sair do campo, cidade e estado serão preenchidos.</p>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="cidade" className="form-label">Cidade</label>
+                                <div className="form-input-icon-wrapper">
+                                    <input id="cidade" name="cidade" type="text" required value={formData.cidade} onChange={handleChange} className="form-input" aria-invalid={!!errors.cidade} aria-describedby={errors.cidade ? 'erro-cidade' : undefined} />
+                                </div>
+                                <ErrorText id="erro-cidade" message={errors.cidade} />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="estado" className="form-label">Estado</label>
+                                <div className="form-input-icon-wrapper">
+                                    <input id="estado" name="estado" type="text" required value={formData.estado} onChange={handleChange} className="form-input" aria-invalid={!!errors.estado} aria-describedby={errors.estado ? 'erro-estado' : undefined} />
+                                </div>
+                                <ErrorText id="erro-estado" message={errors.estado} />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {/* SEÇÃO: QUALIFICAÇÃO */}
+                    <fieldset className="fieldset-group">
+                        <legend className="title-md fieldset-legend">3. Qualificação e Experiência</legend>
+                        
+                        <div className="form-group">
+                            <label htmlFor="escolaridade" className="form-label">Nível de Escolaridade</label>
+                            <div className="form-input-icon-wrapper">
+                                <GraduationCap size={20} className="form-icon" />
+                                <select id="escolaridade" name="escolaridade" required value={formData.escolaridade} onChange={handleChange} className="form-select with-icon" aria-invalid={!!errors.escolaridade} aria-describedby={errors.escolaridade ? 'erro-escolaridade' : 'ajuda-escolaridade'}>
+                                    <option value="">Selecione</option>
+                                    {ESCOLARIDADE_OPCOES.map((op) => (<option key={op} value={op}>{op}</option>))}
+                                </select>
+                            </div>
+                            <ErrorText id="erro-escolaridade" message={errors.escolaridade} />
+                            <p id="ajuda-escolaridade" className="text-xs text-muted mt-xs">Se escolher nível superior ou acima, os campos de curso abaixo se tornarão obrigatórios.</p>
+                        </div>
+                        
+                        {/* Campos curso e instituição condicional */}
+                        {exigeCurso && (
+                            <div className='form-grid-2 mt-md'>
+                                <div className="form-group">
+                                    <label htmlFor="curso_superior" className="form-label">Nome do Curso</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <input id="curso_superior" name="curso_superior" type="text" required={exigeCurso} value={formData.curso_superior} onChange={handleChange} className="form-input" aria-invalid={!!errors.curso_superior} aria-describedby={errors.curso_superior ? 'erro-curso' : undefined} />
+                                    </div>
+                                    <ErrorText id="erro-curso" message={errors.curso_superior} />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label htmlFor="instituicao_ensino" className="form-label">Instituição de Ensino</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <input id="instituicao_ensino" name="instituicao_ensino" type="text" required={exigeCurso} value={formData.instituicao_ensino} onChange={handleChange} className="form-input" aria-invalid={!!errors.instituicao_ensino} aria-describedby={errors.instituicao_ensino ? 'erro-instituicao_ensino' : undefined} />
+                                    </div>
+                                    <ErrorText id="erro-instituicao_ensino" message={errors.instituicao_ensino} />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="form-group mt-md">
+                            <label htmlFor="experiencia" className="form-label">Descreva sua experiência</label>
+                            <textarea id="experiencia" name="experiencia" rows={4} required value={formData.experiencia} onChange={handleChange} className="form-textarea" aria-invalid={!!errors.experiencia} aria-describedby={errors.experiencia ? 'erro-experiencia' : 'ajuda-experiencia'} />
+                            <ErrorText id="erro-experiencia" message={errors.experiencia} />
+                            <p id="ajuda-experiencia" className="text-xs text-muted mt-xs">Informe pelo menos uma experiência relevante com alunos com deficiência (mínimo 20 caracteres).</p>
+                        </div>
+                    </fieldset>
+
+                    {/* BOTÃO DE SUBMISSÃO */}
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="btn-primary w-full btn-lg mt-xl"
+                        aria-busy={submitting}
+                        aria-disabled={submitting}
+                    >
+                        {submitting ? <Loader2 size={24} className="icon-spin mr-sm" /> : <UserPlus size={24} className="mr-sm" />}
+                        {submitting ? 'Criando Conta…' : 'Criar Conta de Agente de Apoio'}
+                    </button>
+                </form>
+                
+                {/* Link para voltar ao seletor de perfil */}
+                <div className='mt-md text-center'>
+                    <Link to="/register" className="btn-link text-sm btn-icon" type="button">
+                        <ArrowLeft size={16} className="mr-xs" /> Voltar para a escolha de perfil
+                    </Link>
+                </div>
+                
+            </div>
+        </main>
+    );
 }

@@ -1,105 +1,77 @@
-// src/components/NotificationBell.tsx
-import { useEffect, useRef, useState } from 'react'
-import api from '../services/api'
+import React, { useState } from 'react';
+import { Bell, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import api from '../services/api'; // Usado para buscar notificações
 
+// Simulação de tipo de notificação
+interface Notification {
+    id: number;
+    mensagem: string;
+    read: boolean;
+    link: string;
+}
+
+/**
+ * @component NotificationBell
+ * @description Botão de notificação que exibe um sino e um contador de notificações não lidas.
+ * Ao clicar, exibe um painel (simulado) com as notificações.
+ */
 export default function NotificationBell() {
-  const [count, setCount] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const liveRef = useRef<HTMLParagraphElement>(null)
+    const [isOpen, setIsOpen] = useState(false);
+    // Simulação de dados de notificação
+    const [notifications, setNotifications] = useState<Notification[]>([
+        { id: 1, mensagem: "Nova proposta recebida!", read: false, link: "/minhas-propostas" },
+        { id: 2, mensagem: "Sua vaga 'Auxiliar de Sala' foi pausada.", read: true, link: "/perfil/instituicao" },
+    ]);
 
-  // Mantém o valor mais recente de count sem recriar efeitos
-  const countRef = useRef(count)
-  useEffect(() => {
-    countRef.current = count
-  }, [count])
+    const unreadCount = notifications.filter(n => !n.read).length;
 
-  useEffect(() => {
-    // Ambiente sem DOM (SSR/testes)
-    if (typeof window === 'undefined' || typeof document === 'undefined') return
+    // TODO: Implementar fetch real de notificações GET /notifications
 
-    let active = true
-    let controller: AbortController | null = null
-    let intervalId: number | null = null
+    const togglePanel = () => setIsOpen(prev => !prev);
+    
+    // Marca a notificação como lida (simulação)
+    const handleRead = (id: number) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    };
 
-    async function fetchNotifications() {
-      if (!active) return
-      if (loading) return
-      if (typeof document !== 'undefined' && document.hidden) return
+    return (
+        <div className="notification-wrapper">
+            <button
+                onClick={togglePanel}
+                className="btn-icon btn-sm btn-secondary notification-button"
+                aria-label={`Você tem ${unreadCount} notificações não lidas`}
+                aria-expanded={isOpen}
+            >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                    <span className="notification-badge" aria-hidden="true">
+                        {unreadCount}
+                    </span>
+                )}
+            </button>
 
-      setLoading(true)
-      controller = typeof AbortController !== 'undefined' ? new AbortController() : null
-
-      try {
-        const cfg = controller ? { signal: controller.signal } : {}
-        const res = await api.get('/notificacoes', cfg as any)
-        const data = Array.isArray(res.data) ? res.data : res.data?.data || []
-        if (!active) return
-
-        const newCount = data.filter((n: any) => !n?.lida).length
-        if (newCount !== countRef.current) {
-          setCount(newCount)
-          if (newCount > 0 && liveRef.current) {
-            const plural = newCount > 1
-            liveRef.current.textContent = `${newCount} nova${plural ? 's' : ''} notificação${plural ? 'es' : ''}.`
-            // limpa mensagem após curto período
-            window.setTimeout(() => {
-              if (liveRef.current) liveRef.current.textContent = ''
-            }, 1500)
-          }
-        }
-      } catch {
-        // silencioso por design
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    // primeira busca imediata
-    fetchNotifications()
-
-    // polling a cada 60s
-    intervalId = window.setInterval(fetchNotifications, 60000)
-
-    // atualiza ao voltar a aba
-    const onVisible = () => {
-      if (typeof document !== 'undefined' && !document.hidden) fetchNotifications()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-
-    return () => {
-      active = false
-      if (controller) controller.abort()
-      if (intervalId) window.clearInterval(intervalId)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [loading])
-
-  async function marcarComoLidas() {
-    if (countRef.current === 0) return
-    try {
-      await api.post('/notificacoes/marcar-como-lidas')
-      setCount(0)
-    } catch {
-      // silencioso
-    }
-  }
-
-  return (
-    <div className="relative inline-block">
-      <p ref={liveRef} className="sr-only" aria-live="polite" />
-      <button
-        type="button"
-        onClick={marcarComoLidas}
-        aria-label={count > 0 ? `${count} notificações novas` : 'Sem novas notificações'}
-        className="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 p-1"
-      >
-        <span aria-hidden>🔔</span>
-        {count > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full text-xs px-1 animate-pulse">
-            {count}
-          </span>
-        )}
-      </button>
-    </div>
-  )
+            {/* Painel Dropdown de Notificações (Simulação) */}
+            {isOpen && (
+                <div className="notification-panel card">
+                    <h3 className="title-md border-bottom-divider pb-xs mb-xs">Notificações</h3>
+                    
+                    {notifications.length === 0 ? (
+                        <p className="text-sm text-muted">Nenhuma nova notificação.</p>
+                    ) : (
+                        <ul className="space-y-xs">
+                            {notifications.map(n => (
+                                <li key={n.id} className={`notification-item ${!n.read ? 'notification-unread' : ''}`} onClick={() => handleRead(n.id)}>
+                                    <Link to={n.link} className="notification-link">
+                                        {n.mensagem}
+                                        {!n.read && <span className="notification-dot" />}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 }

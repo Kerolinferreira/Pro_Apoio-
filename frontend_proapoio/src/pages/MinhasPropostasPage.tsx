@@ -1,10 +1,20 @@
+import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react'
 import api from '../services/api'
 import { Link } from 'react-router-dom'
+import { CheckCircle, XCircle, Send, Clock, User, Briefcase, Mail, Phone, Loader2, AlertTriangle, ArrowLeft, Zap } from 'lucide-react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+
+// ===================================
+// TIPOS DE DADOS
+// ===================================
 
 interface EntidadePublica {
   id: number
-  nome?: string
+  nome?: string // nome_fantasia (Instituição) ou nome_completo (Candidato)
+  // Adicionado URL de perfil para Link
+  perfilUrl?: string 
 }
 
 interface VagaResumo {
@@ -21,21 +31,220 @@ interface Proposta {
   candidato?: EntidadePublica
   instituicao?: EntidadePublica
   created_at?: string
-  // Opcional no contrato: indica se o destinatário já visualizou
   visualizada?: boolean
 }
 
 interface Contatos {
   email?: string
   telefone?: string
-  // Mostrar nome completo apenas após aceite (sem CPF)
   nomeCompleto?: string
-  // Não exibir CPF por ser altamente sensível
 }
 
-export default function MinhasPropostasPage() {
-  // Aba padrão: Recebidas (Caixa de Entrada) — doc “Aba 1: Propostas Recebidas”
-  const [tab, setTab] = useState<'enviadas' | 'recebidas'>('recebidas')
+// ===================================
+// MAPAS E UTILITÁRIOS
+// ===================================
+
+// Mapeamento de Status para Badge (Refatorado para usar classes globais)
+const statusMap = {
+  aceita: { label: 'Aceita', cls: 'badge-success', icon: <CheckCircle size={14} /> },
+  recusada: { label: 'Recusada', cls: 'badge-error', icon: <XCircle size={14} /> },
+  cancelada: { label: 'Cancelada', cls: 'badge-gray', icon: <XCircle size={14} /> },
+  pendente: { label: 'Em Análise', cls: 'badge-yellow', icon: <Clock size={14} /> },
+  visualizada: { label: 'Visualizada', cls: 'badge-info', icon: <Clock size={14} /> },
+  nova: { label: 'Nova', cls: 'badge-brand', icon: <Zap size={14} /> }, // Novo badge para propostas novas
+  enviada: { label: 'Enviada', cls: 'badge-gray', icon: <Send size={14} /> }
+} as const;
+
+/**
+ * @function getPropostaStatus
+ * @description Retorna o badge correto baseado no status e na aba (contexto de visualização).
+ */
+const getPropostaStatus = (p: Proposta, tab: 'enviadas' | 'recebidas') => {
+  if (p.status !== 'pendente') {
+    return statusMap[p.status];
+  }
+  
+  if (tab === 'enviadas') {
+    // Candidato: Pendente -> Enviada ou Visualizada
+    return p.visualizada ? statusMap.visualizada : statusMap.enviada;
+  }
+  
+  // Instituição: Pendente -> Nova ou Visualizada
+  return p.visualizada ? statusMap.visualizada : statusMap.nova;
+};
+
+/**
+ * @function formatRelativa
+ * @description Formata a data de forma relativa.
+ */
+function formatRelativa(iso?: string) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  const dias = Math.floor(diff / 86400000);
+  if (dias <= 0) return 'hoje';
+  if (dias === 1) return 'há 1 dia';
+  return `há ${dias} dias`;
+}
+
+// ===================================
+// CARD DA PROPOSTA
+// ===================================
+
+interface PropostaCardProps {
+    proposta: Proposta;
+    tab: 'enviadas' | 'recebidas';
+    contatos: Contatos | undefined;
+    mutatingId: number | null;
+    aceitar: (id: number) => void;
+    recusar: (id: number) => void;
+    cancelar: (id: number) => void;
+}
+
+const PropostaCard: React.FC<PropostaCardProps> = React.memo(({
+    proposta: p,
+    tab,
+    contatos,
+    mutatingId,
+    aceitar,
+    recusar,
+    cancelar,
+}) => {
+    const badge = getPropostaStatus(p, tab);
+    const titulo = p.vaga?.titulo || `Proposta #${p.id}`;
+    
+    // Define a entidade (quem é o alvo ou remetente)
+    const entidade: EntidadePublica | undefined = tab === 'enviadas' ? p.instituicao : p.candidato;
+    const labelEntidade = tab === 'enviadas' ? 'Destino' : 'Remetente';
+    
+    // Define o URL de perfil (se existir)
+    const perfilUrl = tab === 'enviadas' 
+        ? `/instituicoes/${entidade?.id}` 
+        : `/candidatos/${entidade?.id}`;
+    
+    const isMutating = mutatingId === p.id;
+
+    return (
+        <li className="card-simple card-proposta" aria-busy={isMutating}>
+            <article aria-labelledby={`h-prop-${p.id}`}>
+                {/* Cabeçalho e Status */}
+                <div className="flex-group-md-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    
+                    <div className="flex-group" style={{ gap: '0.25rem', flexGrow: 1 }}>
+                        {/* Título da Vaga */}
+                        <h2 id={`h-prop-${p.id}`} className="title-md text-base-color">
+                            {titulo}
+                        </h2>
+                        
+                        {/* Remetente/Destino */}
+                        <p className="text-sm text-muted flex-group-item">
+                            {tab === 'recebidas' ? <User size={16} className="mr-xs" /> : <Briefcase size={16} className="mr-xs" />}
+                            {labelEntidade}: 
+                            {entidade ? (
+                                <Link to={perfilUrl} className="btn-link ml-xs" style={{ whiteSpace: 'nowrap' }}>
+                                    {entidade.nome || 'Perfil'}
+                                </Link>
+                            ) : (
+                                <span className="ml-xs">Não Informado</span>
+                            )}
+                        </p>
+                    </div>
+
+                    {/* Badge de Status */}
+                    <div className={`badge ${badge.cls} flex-group-item`} style={{ gap: '0.25rem' }}>
+                        {badge.icon}
+                        {badge.label}
+                    </div>
+                </div>
+                
+                {/* Data e Link da Vaga */}
+                <div className="section-divider mt-md pt-sm">
+                    <p className="text-sm text-muted">
+                        {tab === 'recebidas' ? 'Recebida' : 'Enviada'} {formatRelativa(p.created_at)}
+                    </p>
+                    {p.vaga?.id && (
+                        <p className="text-sm mt-xs">
+                            <Link to={`/vagas/${p.vaga.id}`} className="btn-link text-sm" aria-label={`Ver detalhes da vaga ${titulo}`}>
+                                Ver Detalhes da Vaga
+                            </Link>
+                        </p>
+                    )}
+                </div>
+
+                {/* Mensagem */}
+                <div className="mt-md">
+                    <p className="text-sm text-muted"><span className="font-semibold">Mensagem:</span></p>
+                    <p className="text-base mt-xs text-base-color mensagem-proposta">{p.mensagem}</p>
+                </div>
+
+                {/* Ações (Aceitar / Recusar / Cancelar) */}
+                {p.status === 'pendente' && (
+                    <div className="mt-md pt-sm section-divider flex-actions-start">
+                        {/* AÇÕES DE RECEPTOR: Recebidas e Pendente */}
+                        {tab === 'recebidas' && (
+                            <>
+                                <button
+                                    onClick={() => aceitar(p.id)}
+                                    className="btn-primary btn-sm"
+                                    disabled={isMutating}
+                                >
+                                    {isMutating ? <Loader2 size={16} className="icon-spin mr-xs" /> : <CheckCircle size={16} className="mr-xs" />}
+                                    {isMutating ? 'Processando...' : 'Aceitar'}
+                                </button>
+                                <button
+                                    onClick={() => recusar(p.id)}
+                                    className="btn-secondary btn-sm btn-warning"
+                                    disabled={isMutating}
+                                >
+                                    Recusar
+                                </button>
+                            </>
+                        )}
+
+                        {/* AÇÃO DE INICIADOR: Enviadas e Pendente */}
+                        {tab === 'enviadas' && (
+                            <button
+                                onClick={() => cancelar(p.id)}
+                                className="btn-secondary btn-sm btn-error"
+                                disabled={isMutating}
+                            >
+                                {isMutating ? <Loader2 size={16} className="icon-spin mr-xs" /> : <XCircle size={16} className="mr-xs" />}
+                                Cancelar Proposta
+                            </button>
+                        )}
+                    </div>
+                )}
+                
+                {/* Contatos (Apenas se Aceita) */}
+                {p.status === 'aceita' && contatos && (
+                    <div className="mt-md pt-sm section-divider info-box-contact">
+                        <p className="title-md text-success-color mb-xs">Contatos Liberados!</p>
+                        <p className="text-sm text-muted mb-xs">
+                            Parabéns! Suas informações de contato foram compartilhadas.
+                            Por favor, finalize a comunicação para a contratação fora da plataforma.
+                        </p>
+                        <ul className="space-y-xs text-base-color">
+                            {contatos.nomeCompleto && <li className="flex-group-item"><User size={16} className="mr-xs" /> Nome: <span className="font-semibold ml-xs">{contatos.nomeCompleto}</span></li>}
+                            {contatos.email && <li className="flex-group-item"><Mail size={16} className="mr-xs" /> Email: <span className="font-semibold ml-xs">{contatos.email}</span></li>}
+                            {contatos.telefone && <li className="flex-group-item"><Phone size={16} className="mr-xs" /> Telefone: <span className="font-semibold ml-xs">{contatos.telefone}</span></li>}
+                        </ul>
+                    </div>
+                )}
+            </article>
+        </li>
+    );
+});
+
+
+// ===================================
+// PÁGINA PRINCIPAL
+// ===================================
+
+const MinhasPropostasPage: React.FC = () => {
+  // Aba padrão: Recebidas (Instituição) ou Enviadas (Candidato).
+  // Se houver AuthContext, o valor inicial deve ser derivado do tipo de usuário.
+  // Como não temos o AuthContext aqui, mantemos 'recebidas' (para simular Instituição).
+  const [tab, setTab] = useState<'enviadas' | 'recebidas'>('recebidas') 
   const [propostas, setPropostas] = useState<Proposta[]>([])
   const [contacts, setContacts] = useState<Record<number, Contatos>>({})
   const [loading, setLoading] = useState<boolean>(false)
@@ -46,33 +255,21 @@ export default function MinhasPropostasPage() {
 
   const liveRef = useRef<HTMLDivElement>(null)
 
-  // Rótulos alinhados à doc:
-  // Enviadas: Enviada, Visualizada, Aceita, Recusada
-  // Recebidas: Nova ou Visualizada, Aceita, Recusada
-  const statusBadge = useMemo(() => {
-    return (p: Proposta) => {
-      if (p.status === 'aceita') return { label: 'Aceita', cls: 'bg-green-100 text-green-800 ring-green-300' }
-      if (p.status === 'recusada') return { label: 'Recusada', cls: 'bg-red-100 text-red-800 ring-red-300' }
-      if (p.status === 'cancelada') return { label: 'Cancelada', cls: 'bg-gray-100 text-gray-800 ring-gray-300' }
-      // pendente
-      if (tab === 'enviadas') {
-        return p.visualizada
-          ? { label: 'Visualizada', cls: 'bg-blue-100 text-blue-800 ring-blue-300' }
-          : { label: 'Enviada', cls: 'bg-zinc-100 text-zinc-800 ring-zinc-300' }
-      }
-      // recebidas
-      return p.visualizada
-        ? { label: 'Visualizada', cls: 'bg-blue-100 text-blue-800 ring-blue-300' }
-        : { label: 'Nova', cls: 'bg-yellow-100 text-yellow-800 ring-yellow-300' }
-    }
-  }, [tab])
+  // Acessibilidade das abas (tablist)
+  const tabs: Array<{ key: 'enviadas' | 'recebidas'; label: string; desc: string }> = useMemo(() => [
+    { key: 'recebidas', label: 'Propostas Recebidas', desc: 'Propostas enviadas a você' },
+    { key: 'enviadas', label: 'Propostas Enviadas', desc: 'Propostas que você iniciou' },
+  ], []);
 
+
+  // --- EFEITO DE BUSCA ---
   useEffect(() => {
     let abort = new AbortController()
     async function fetchPropostas(reset = true) {
       setLoading(true)
       setError(null)
       try {
+        // GET /propostas?tipo={tab} [cite: Documentação final.docx]
         const response = await api.get('/propostas', {
           params: { tipo: tab, page: reset ? 1 : page },
           signal: abort.signal as any,
@@ -82,48 +279,68 @@ export default function MinhasPropostasPage() {
         const nextHasMore: boolean = !!(payload?.hasMore ?? (items.length >= 10))
         setHasMore(nextHasMore)
         setPropostas((prev) => (reset ? items : [...prev, ...items]))
+        setLoading(false)
+        
+        // Announce results
+        if (liveRef.current && items.length > 0 && reset) {
+            liveRef.current.textContent = `${items.length} propostas carregadas na aba ${tab === 'recebidas' ? 'Recebidas' : 'Enviadas'}.`
+        }
+
       } catch (e: any) {
         if (e?.name !== 'CanceledError' && e?.message !== 'canceled') {
-          setError('Falha ao carregar propostas.')
-          setPropostas([])
+          console.error('Falha ao carregar propostas:', e);
+          setError('Falha ao carregar propostas. Tente novamente.');
+          setPropostas([]);
+          setLoading(false);
+          if (liveRef.current) liveRef.current.textContent = 'Erro ao carregar propostas.';
         }
-      } finally {
-        setLoading(false)
-      }
+      } 
     }
+    
+    // Reset e busca ao mudar a aba
     setPage(1)
     setContacts({})
     fetchPropostas(true)
     return () => abort.abort()
   }, [tab])
 
+  // --- PAGINAÇÃO ---
   async function loadMore() {
     const next = page + 1
     setPage(next)
+    setLoading(true); // Controla o loading do botão
     try {
       const response = await api.get('/propostas', { params: { tipo: tab, page: next } })
       const payload = response.data?.data ?? response.data
       const items: Proposta[] = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : []
       setHasMore(!!(payload?.hasMore ?? (items.length >= 10)))
       setPropostas((prev) => [...prev, ...items])
+      if (liveRef.current) liveRef.current.textContent = `${items.length} propostas adicionais carregadas.`;
     } catch {
       setHasMore(false)
+    } finally {
+        setLoading(false);
     }
   }
 
-  // Ações com otimização e anúncio em aria-live
+  // --- AÇÕES ---
+
   async function aceitar(id: number) {
-    // Confirmação obrigatória — após aceitar, contato é liberado
-    if (!window.confirm('Você tem certeza que deseja aceitar esta proposta? Suas informações de contato serão compartilhadas.')) {
-      return
-    }
+    // TODO: Implementar Modal de Confirmação customizado (Substitui window.confirm)
+    const confirmed = window.confirm('Você tem certeza que deseja aceitar esta proposta? Suas informações de contato serão compartilhadas.');
+    if (!confirmed) return;
+    
     setMutatingId(id)
     try {
+      // PUT /propostas/{id}/aceitar [cite: Documentação final.docx]
       await api.put(`/propostas/${id}/aceitar`)
       setPropostas((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'aceita' } : p)))
-      announce(`Proposta ${id} aceita.`)
-      const resp = await api.get(`/propostas/${id}`)
-      const c: Contatos | undefined = resp.data?.contatos
+      announce(`Proposta ${id} aceita. Contatos carregados.`)
+      
+      // Busca e armazena os contatos após aceite
+      // GET /propostas/{id} (doc permite pegar detalhes/contatos) [cite: Documentação final.docx]
+      const resp = await api.get(`/propostas/${id}`) 
+      const c: Contatos | undefined = resp.data?.contatos // Supondo que contatos venham em 'contatos'
       if (c) setContacts((prev) => ({ ...prev, [id]: c }))
     } catch {
       announce(`Não foi possível aceitar a proposta ${id}.`)
@@ -133,14 +350,16 @@ export default function MinhasPropostasPage() {
   }
 
   async function recusar(id: number) {
-    // Confirmação com mensagem opcional simplificada
-    if (!window.confirm('Confirmar recusa desta proposta?')) {
-      return
-    }
+    // TODO: Implementar Modal de Recusa customizado (Substitui window.confirm)
+    const confirmed = window.confirm('Confirmar recusa desta proposta?');
+    if (!confirmed) return;
+    
     setMutatingId(id)
     try {
+      // PUT /propostas/{id}/recusar [cite: Documentação final.docx]
       await api.put(`/propostas/${id}/recusar`)
-      // Nas "Recebidas", remover da lista após recusa (arquivar)
+      
+      // Se for "Recebidas", remove da lista (arquiva)
       setPropostas((prev) =>
         tab === 'recebidas' ? prev.filter((p) => p.id !== id) : prev.map((p) => (p.id === id ? { ...p, status: 'recusada' } : p))
       )
@@ -153,12 +372,16 @@ export default function MinhasPropostasPage() {
   }
 
   async function cancelar(id: number) {
-    // Cancelar apenas para iniciador enquanto pendente/visualizada
+     // TODO: Implementar Modal de Cancelamento customizado
+    const confirmed = window.confirm('Confirmar cancelamento da proposta?');
+    if (!confirmed) return;
+    
     setMutatingId(id)
     try {
+      // DELETE /propostas/{id} [cite: Documentação final.docx]
       await api.delete(`/propostas/${id}`)
-      setPropostas((prev) => prev.filter((p) => p.id !== id))
-      announce(`Proposta ${id} cancelada e removida da lista.`)
+      setPropostas((prev) => prev.filter((p) => p.id !== id)) // Remove da lista
+      announce(`Proposta ${id} cancelada e removida.`)
     } catch {
       announce(`Não foi possível cancelar a proposta ${id}.`)
     } finally {
@@ -169,205 +392,129 @@ export default function MinhasPropostasPage() {
   function announce(msg: string) {
     if (liveRef.current) {
       liveRef.current.textContent = msg
-      // limpa a mensagem depois para não confundir leitores
-      setTimeout(() => {
-        if (liveRef.current) liveRef.current.textContent = ''
-      }, 1500)
     }
   }
-
-  function formatRelativa(iso?: string) {
-    if (!iso) return null
-    const d = new Date(iso)
-    const diff = Date.now() - d.getTime()
-    const dias = Math.floor(diff / 86400000)
-    if (dias <= 0) return 'hoje'
-    if (dias === 1) return 'há 1 dia'
-    return `há ${dias} dias`
-  }
-
-  // Acessibilidade das abas (tablist)
-  const tabs: Array<{ key: 'enviadas' | 'recebidas'; label: string; desc: string }> = [
-    { key: 'recebidas', label: 'Recebidas', desc: 'Propostas que você precisa decidir' },
-    { key: 'enviadas', label: 'Enviadas', desc: 'Propostas que você iniciou' },
-  ]
+  
+  // --- RENDERIZAÇÃO ---
+  
+  const isInitialLoading = loading && page === 1;
 
   return (
-    <div className="p-4 mx-auto max-w-5xl">
-      <div
-        ref={liveRef}
-        role="status"
-        aria-live="polite"
-        className="sr-only"
-      />
+    <div className="page-wrapper">
+      <Header />
+      <main className="container py-lg">
+        
+        {/* Título e Live Region */}
+        <header className="mb-md">
+            <h1 className="heading-secondary">Minhas Propostas</h1>
+            <p className="text-sm text-muted">Contatos só aparecem após a proposta ser aceita.</p>
+        </header>
 
-      <header className="mb-4">
-        <h1 className="text-2xl font-extrabold">Minhas propostas</h1>
-        <p className="text-sm text-zinc-600">Contatos só aparecem após a proposta ser aceita.</p>
-      </header>
+        {/* Live region para feedback de acessibilidade */}
+        <div ref={liveRef} role="status" aria-live="polite" className="sr-only" />
 
-      {/* Abas acessíveis */}
-      <div role="tablist" aria-label="Tipo de propostas" className="inline-flex rounded-lg ring-1 ring-zinc-300 overflow-hidden">
-        {tabs.map((t, i) => (
-          <button
-            key={t.key}
-            role="tab"
-            aria-selected={tab === t.key}
-            aria-controls={`painel-${t.key}`}
-            id={`aba-${t.key}`}
-            onClick={() => setTab(t.key)}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length
-                setTab(tabs[next].key)
-                const el = document.getElementById(`aba-${tabs[next].key}`)
-                el?.focus()
-              }
-            }}
-            className={`px-4 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${
-              tab === t.key ? 'bg-blue-700 text-white' : 'bg-white text-zinc-800'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <p className="sr-only" id="descricao-abas">Use setas esquerda e direita para alternar.</p>
-
-      {/* Painel da aba */}
-      <section
-        role="tabpanel"
-        id={`painel-${tab}`}
-        aria-labelledby={`aba-${tab}`}
-        className="mt-4"
-      >
-        {/* Estados de carregamento e erro */}
-        {loading && (
-          <ul className="space-y-2" aria-busy="true">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <li key={i} className="animate-pulse border rounded p-3">
-                <div className="h-4 bg-zinc-200 rounded w-1/3 mb-2" />
-                <div className="h-3 bg-zinc-200 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-zinc-200 rounded w-2/3" />
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {error && !loading && (
-          <div className="rounded border border-red-200 bg-red-50 p-3 text-red-800">
-            {error} <button onClick={() => setTab(tab)} className="underline">Tentar novamente</button>
-          </div>
-        )}
-
-        {!loading && !error && propostas.length === 0 && (
-          <div className="rounded border p-6 text-center">
-            <p>Não há propostas {tab}.</p>
-            {tab === 'enviadas' ? (
-              <p className="text-sm text-zinc-600 mt-1">Você pode <Link to="/vagas" className="underline">explorar vagas</Link> e enviar uma proposta.</p>
-            ) : (
-              <p className="text-sm text-zinc-600 mt-1">Quando alguém enviar uma proposta, ela aparecerá aqui.</p>
-            )}
-          </div>
-        )}
-
-        {!loading && !error && propostas.length > 0 && (
-          <ul className="space-y-3" role="list">
-            {propostas.map((p) => {
-              const badge = statusBadge(p)
-              const titulo = p.vaga?.titulo || `Proposta #${p.id}`
-              const origem = tab === 'enviadas' ? p.instituicao?.nome || 'Instituição' : p.candidato?.nome || 'Candidato'
-              return (
-                <li key={p.id} className="border rounded p-3 bg-white shadow-sm">
-                  <article aria-labelledby={`h-prop-${p.id}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 id={`h-prop-${p.id}`} className="font-semibold text-zinc-900">
-                        {titulo}
-                      </h2>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ring-1 ${badge.cls}`}>
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-current" aria-hidden />
-                        {badge.label}
-                      </span>
-                    </div>
-                    <p className="text-sm text-zinc-600 mt-1">
-                      {tab === 'recebidas' ? 'Remetente' : 'Destino'}: {origem}
-                    </p>
-                    {p.vaga?.id && (
-                      <p className="text-sm mt-1">
-                        <Link to={`/vagas/${p.vaga.id}`} className="underline" aria-label={`Ver detalhes da vaga ${titulo}`}>
-                          Ver detalhes da Vaga
-                        </Link>
-                      </p>
-                    )}
-                    {p.created_at && (
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {tab === 'recebidas' ? 'Recebida' : 'Enviada'} {formatRelativa(p.created_at)}
-                      </p>
-                    )}
-                    <p className="mt-2"><span className="font-medium">Mensagem:</span> {p.mensagem}</p>
-
-                    {/* INÍCIO: Ações para Resposta (Recebidas) ou Cancelamento (Enviadas) */}
-                    <div className="mt-3 flex flex-wrap gap-2" aria-label={`Ações para proposta ${p.id}`}>
-                      {/* AÇÕES DE RECEPTOR: Somente na aba Recebidas e se status for pendente */}
-                      {tab === 'recebidas' && p.status === 'pendente' && (
-                        <>
-                          <button
-                            onClick={() => aceitar(p.id)}
-                            className="rounded bg-green-700 text-white px-3 py-1.5 text-sm disabled:opacity-60"
-                            disabled={mutatingId === p.id}
-                          >
-                            Aceitar
-                          </button>
-                          <button
-                            onClick={() => recusar(p.id)}
-                            className="rounded bg-amber-700 text-white px-3 py-1.5 text-sm disabled:opacity-60"
-                            disabled={mutatingId === p.id}
-                          >
-                            Recusar
-                          </button>
-                        </>
-                      )}
-
-                      {/* AÇÃO DE INICIADOR: Somente na aba Enviadas e se status for pendente */}
-                      {tab === 'enviadas' && p.status === 'pendente' && (
-                        <button
-                          onClick={() => cancelar(p.id)}
-                          className="rounded bg-red-700 text-white px-3 py-1.5 text-sm disabled:opacity-60"
-                          disabled={mutatingId === p.id}
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                    </div>
-                    {/* FIM */}
-
-                    {/* Contatos apenas quando aceita e carregados. Não mostrar CPF. */}
-                    {p.status === 'aceita' && contacts[p.id] && (
-                      <div className="mt-3 border-t pt-2" aria-label="Informações de contato após aceitação">
-                        <p className="font-semibold">Informações de Contato</p>
-                        {contacts[p.id].nomeCompleto && <p>Nome completo: {contacts[p.id].nomeCompleto}</p>}
-                        {contacts[p.id].email && <p>Email: {contacts[p.id].email}</p>}
-                        {contacts[p.id].telefone && <p>Telefone: {contacts[p.id].telefone}</p>}
-                      </div>
-                    )}
-                  </article>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-
-        {!loading && hasMore && (
-          <div className="mt-4 flex justify-center">
+        {/* Abas acessíveis */}
+        <div role="tablist" aria-label="Tipo de propostas" className="tabs-container mb-lg">
+          {tabs.map((t, i) => (
             <button
-              onClick={loadMore}
-              className="rounded bg-blue-700 text-white px-4 py-2 text-sm"
+              key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
+              aria-controls={`painel-${t.key}`}
+              id={`aba-${t.key}`}
+              onClick={() => setTab(t.key)}
+              // Navegação por setas para acessibilidade (opcional)
+              onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                      const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length
+                      setTab(tabs[next].key)
+                      const el = document.getElementById(`aba-${tabs[next].key}`)
+                      el?.focus()
+                  }
+              }}
+              className={tab === t.key ? 'tab-button tab-active' : 'tab-button'}
             >
-              Carregar mais
+              {t.label}
             </button>
-          </div>
-        )}
-      </section>
+          ))}
+        </div>
+
+        {/* Painel da aba */}
+        <section
+          role="tabpanel"
+          id={`painel-${tab}`}
+          aria-labelledby={`aba-${tab}`}
+          className="mt-4"
+        >
+          
+          {/* Esqueleto de Carregamento Inicial */}
+          {isInitialLoading && (
+            <ul className="space-y-md" aria-busy="true">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li key={i} className="placeholder-card">
+                    <div className="placeholder-line placeholder-animate" style={{ width: '40%' }} />
+                    <div className="placeholder-line placeholder-animate" style={{ width: '70%', height: '0.75rem', marginTop: 'var(--spacing-xs)' }} />
+                    <div className="placeholder-line placeholder-animate" style={{ width: '50%', height: '0.75rem', marginTop: 'var(--spacing-xs)' }} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Estado de Erro */}
+          {error && !isInitialLoading && (
+            <div className="alert alert-error">
+              <AlertTriangle size={20} className="mr-sm" />
+              {error} <button onClick={() => setTab(tab)} className="btn-link">Tentar novamente</button>
+            </div>
+          )}
+
+          {/* Estado Vazio */}
+          {!loading && !error && propostas.length === 0 && (
+            <div className="alert alert-warning text-center">
+              <p className="font-semibold">Não há propostas {tab === 'enviadas' ? 'enviadas' : 'recebidas'}.</p>
+              {tab === 'enviadas' ? (
+                <p className="text-sm text-muted mt-xs">Você pode <Link to="/vagas" className="btn-link text-sm">explorar vagas</Link> e enviar uma proposta.</p>
+              ) : (
+                <p className="text-sm text-muted mt-xs">Quando alguém enviar uma proposta, ela aparecerá aqui.</p>
+              )}
+            </div>
+          )}
+
+          {/* Lista de Propostas */}
+          {!isInitialLoading && !error && propostas.length > 0 && (
+            <ul className="space-y-md" role="list">
+              {propostas.map((p) => (
+                <PropostaCard
+                    key={p.id}
+                    proposta={p}
+                    tab={tab}
+                    contatos={contacts[p.id]}
+                    mutatingId={mutatingId}
+                    aceitar={aceitar}
+                    recusar={recusar}
+                    cancelar={cancelar}
+                />
+              ))}
+            </ul>
+          )}
+
+          {/* Carregar Mais (Paginação) */}
+          {!isInitialLoading && hasMore && (
+            <div className="mt-lg flex-actions-center">
+              <button
+                onClick={loadMore}
+                className="btn-primary"
+                disabled={loading && page > 1}
+              >
+                {loading && page > 1 ? <Loader2 size={16} className="icon-spin mr-xs" /> : null}
+                {loading && page > 1 ? 'Carregando…' : 'Carregar mais propostas'}
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
+      <Footer />
     </div>
   )
 }
+export default MinhasPropostasPage;

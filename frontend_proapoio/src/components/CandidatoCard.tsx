@@ -20,22 +20,27 @@ function CandidatoCardBase({ candidato }: Props) {
     deficiencias = [],
   } = candidato;
 
+  // Formata a lista de deficiências para exibição
   const listaDef = deficiencias.length
     ? deficiencias.map(d => d?.nome).filter(Boolean).join(', ')
     : 'Não informado';
 
+  // O card usa a classe 'card-simple' (fundo, borda, sombra e padding definidos globalmente)
   return (
     <article
-      className="border rounded p-3 bg-white shadow-sm"
+      className="card-simple"
       aria-label={`Candidato ${nome_completo}`}
       data-testid="candidato-card"
     >
-      <h3 className="font-medium">{nome_completo}</h3>
-      <p className="text-sm">{escolaridade}</p>
-      <p className="text-sm">
+      {/* Classe title-md para o nome e mb-xs para espaçamento */}
+      <h3 className="title-md mb-xs">{nome_completo}</h3>
+      
+      {/* text-sm e text-muted para informações secundárias */}
+      <p className="text-sm text-muted">{escolaridade}</p>
+      <p className="text-sm text-muted">
         {cidade} - {estado}
       </p>
-      <p className="text-sm">
+      <p className="text-sm text-muted">
         Deficiências: {listaDef}
       </p>
     </article>

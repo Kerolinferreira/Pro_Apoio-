@@ -25,13 +25,26 @@ class RegisterCandidatoRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
+        $payload = [
             'email'               => mb_strtolower(trim((string) $this->input('email'))),
             'nivel_escolaridade'  => $this->input('nivel_escolaridade', $this->input('escolaridade')),
             'curso_superior'      => $this->input('curso_superior', $this->input('nome_curso')),
             'instituicao_ensino'  => $this->input('instituicao_ensino', $this->input('nome_instituicao_ensino')),
             'termos_aceite'       => filter_var($this->input('termos_aceite', false), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        ];
+
+        // Adicionar a normalização dos campos com máscara
+        if ($this->has('cpf')) {
+            $payload['cpf'] = preg_replace('/[^0-9]/', '', (string) $this->input('cpf'));
+        }
+        if ($this->has('cep')) {
+            $payload['cep'] = preg_replace('/[^0-9]/', '', (string) $this->input('cep'));
+        }
+        if ($this->has('telefone')) {
+            $payload['telefone'] = preg_replace('/[^0-9]/', '', (string) $this->input('telefone'));
+        }
+
+        $this->merge($payload);
     }
 
     /**

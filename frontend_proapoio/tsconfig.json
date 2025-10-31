@@ -32,7 +32,8 @@
         "src/styles/*"
       ]
     },
-    "strict": true
+    "strict": true,
+    "types": ["vite/client"]
   },
   "include": [
     "src"
