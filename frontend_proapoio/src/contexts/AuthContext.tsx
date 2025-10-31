@@ -34,10 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const navigate = useNavigate();
 
     /**
-     * @description Carrega o usuário da sessão anterior (local storage) ao montar.
+     * @description Carrega o usuário da sessão anterior ao montar.
+     * Usa sessionStorage para dados do usuário (mais seguro contra XSS).
      */
     useEffect(() => {
-        const storedUser = localStorage.getItem(STORAGE_KEY);
+        const storedUser = sessionStorage.getItem(STORAGE_KEY);
         if (storedUser) {
             try {
                 const parsedUser: AuthUser = JSON.parse(storedUser);
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } catch (e) {
                 console.error("Failed to parse stored user data:", e);
-                localStorage.removeItem(STORAGE_KEY);
+                sessionStorage.removeItem(STORAGE_KEY);
                 localStorage.removeItem('authToken');
             }
         }
@@ -59,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * @async
      * @function login
      * @description Realiza o login na API e armazena os dados do usuário.
+     * Usa sessionStorage para dados do usuário (segurança contra XSS).
+     * Armazena token separadamente em localStorage para o interceptor da API.
      */
     const login = useCallback(async (email: string, password: string, options = { remember: true }) => {
         const response = await api.post('/auth/login', { email, password });
@@ -79,11 +82,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(loggedUser);
 
-        // Armazena o token separadamente para o interceptor de api.ts
-        if (options.remember) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
-            localStorage.setItem('authToken', token);
-        }
+        // Armazena dados do usuário em sessionStorage (mais seguro)
+        // e token separadamente em localStorage para o interceptor funcionar
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
+        localStorage.setItem('authToken', token);
 
         return loggedUser;
     }, []);
@@ -91,11 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     /**
      * @function logout
      * @description Limpa a sessão local e redireciona. Chamado pelo usuário ou pelo interceptor 401.
+     * Remove dados de ambos sessionStorage e localStorage.
      */
     const logout = useCallback(() => {
         // Limpa o estado local primeiro para uma resposta de UI imediata.
         setUser(null);
-        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem('authToken');
 
         // Redireciona para a página de login com um parâmetro que pode ser útil.
@@ -113,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLogoutCallback(logout);
     }, [logout]);
 
-    if (loading) return null; 
+    if (loading) return null;
 
     return (
         <AuthContext.Provider

@@ -108,18 +108,43 @@ class InstituicaoProfileController extends Controller
 
     /**
      * Upload do logo da instituição (até 2MB).
-     * Salva o caminho em logo_url.
+     * Salva o caminho em logo_url com validação robusta de segurança.
      */
     public function uploadLogo(Request $request)
     {
         $user = $request->user();
         $instituicao = Instituicao::where('id_usuario', $user->id)->firstOrFail();
 
+        // Validação robusta de imagem
         $request->validate([
-            'logo' => 'required|image|max:2048',
+            'logo' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048', // 2MB
+                'dimensions:min_width=100,min_height=100,max_width=4000,max_height=4000',
+            ],
         ]);
 
-        $path = $request->file('logo')->store('logos-instituicoes', 'public');
+        $file = $request->file('logo');
+
+        // Validação adicional de MIME type real (não apenas extensão)
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            return response()->json(['message' => 'Tipo de arquivo inválido.'], 400);
+        }
+
+        // Remove logo antigo se existir
+        if ($instituicao->logo_url) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($instituicao->logo_url);
+        }
+
+        // Gera nome seguro e único para o arquivo
+        $extension = $file->getClientOriginalExtension();
+        $filename = 'instituicao_' . $instituicao->id . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
+
+        $path = $file->storeAs('logos-instituicoes', $filename, 'public');
         $instituicao->update(['logo_url' => $path]);
 
         return response()->json(['logo_url' => $path]);

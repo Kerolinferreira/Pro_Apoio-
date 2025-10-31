@@ -83,18 +83,43 @@ class CandidatoProfileController extends Controller
 
     /**
      * Upload da foto do candidato (até 2MB).
-     * Salva o caminho em foto_url.
+     * Salva o caminho em foto_url com validação robusta de segurança.
      */
     public function uploadFoto(Request $request)
     {
         $user = $request->user();
         $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
 
+        // Validação robusta de imagem
         $request->validate([
-            'foto' => 'required|image|max:2048',
+            'foto' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048', // 2MB
+                'dimensions:min_width=100,min_height=100,max_width=4000,max_height=4000',
+            ],
         ]);
 
-        $path = $request->file('foto')->store('fotos-candidatos', 'public');
+        $file = $request->file('foto');
+
+        // Validação adicional de MIME type real (não apenas extensão)
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            return response()->json(['message' => 'Tipo de arquivo inválido.'], 400);
+        }
+
+        // Remove foto antiga se existir
+        if ($candidato->foto_url) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($candidato->foto_url);
+        }
+
+        // Gera nome seguro e único para o arquivo
+        $extension = $file->getClientOriginalExtension();
+        $filename = 'candidato_' . $candidato->id . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
+
+        $path = $file->storeAs('fotos-candidatos', $filename, 'public');
         $candidato->update(['foto_url' => $path]);
 
         return response()->json(['foto_url' => $path]);
