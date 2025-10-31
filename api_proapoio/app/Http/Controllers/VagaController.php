@@ -20,10 +20,11 @@ class VagaController extends Controller
             ->with('instituicao')
             ->where('status', 'ABERTA');
 
-        if ($term = trim((string) $request->input('q'))) {
-            $q->where('titulo_vaga', 'like', "%{$term}%");
-        }
-
+            if ($term = trim((string) $request->input('q'))) {
+                // Limita o tamanho do termo para evitar abuso
+                if (strlen($term) > 100) {
+                    return $this->error('Termo muito longo.', 400);
+                }
         if ($cidade = trim((string) $request->input('cidade'))) {
             $q->where('cidade', $cidade);
         }

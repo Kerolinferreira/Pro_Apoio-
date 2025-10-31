@@ -31,12 +31,23 @@ class CandidatoFinderController extends Controller
 
         // 1. Filtro por termo de pesquisa (nome, bio, habilidades, etc.)
         if ($request->has('termo')) {
-            $termo = $request->input('termo');
-            $query->where(function ($q) use ($termo) {
-                $q->where('nome_completo', 'like', "%{$termo}%")
-                  ->orWhere('bio', 'like', "%{$termo}%");
-                
-                // Exemplo de busca em habilidades (se existir tabela/campo)
+            $termo = trim((string) $request->input('termo'));
+        
+            // Limita o tamanho do termo
+            if (strlen($termo) > 100) {
+                return $this->error('Termo de busca muito longo.', 400);
+            }
+        
+            // Escapa caracteres curingas do LIKE
+            $safeTermo = str_replace(['%', '_'], ['\\%', '\\_'], $termo);
+        
+            // Usa binding seguro e ESCAPE para proteger a consulta
+            $query->where(function ($q) use ($safeTermo) {
+                $q->whereRaw("nome_completo LIKE ? ESCAPE '\\'", ["%{$safeTermo}%"])
+                  ->orWhereRaw("bio LIKE ? ESCAPE '\\'", ["%{$safeTermo}%"]);
+            });
+        }
+                        // Exemplo de busca em habilidades (se existir tabela/campo)
                 // ->orWhereHas('habilidades', function ($sq) use ($termo) {
                 //     $sq->where('nome', 'like', "%{$termo}%");
                 // });
