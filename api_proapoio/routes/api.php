@@ -1,3 +1,4 @@
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -25,11 +26,14 @@ use App\Http\Controllers\ExternalApiController;
 Route::prefix('auth')->group(function () {
     Route::post('/register/candidato', [AuthController::class, 'registerCandidato']);
     Route::post('/register/instituicao', [AuthController::class, 'registerInstituicao']);
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-});
 
+    // Protege endpoints críticos com rate limit (5 requisições por minuto)
+    Route::middleware('throttle:5,1')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    });
+});
 // --- 2. ROTAS PÚBLICAS GERAIS ---
 
 // Vagas (Busca e Detalhes)
@@ -90,14 +94,15 @@ Route::middleware('auth:api')->group(function () {
 
     // Propostas
     Route::prefix('propostas')->group(function () {
-        Route::get('/', [PropostaController::class, 'index']);
-        Route::post('/', [PropostaController::class, 'store']); // Enviar proposta
-        Route::get('/{id}', [PropostaController::class, 'show'])->whereNumber('id');
-        Route::put('/{id}/aceitar', [PropostaController::class, 'accept'])->whereNumber('id');
-        Route::put('/{id}/recusar', [PropostaController::class, 'reject'])->whereNumber('id');
-        Route::delete('/{id}', [PropostaController::class, 'destroy'])->whereNumber('id'); // Cancelar proposta
-    });
+    Route::get('/', [PropostaController::class, 'index']);
+    Route::get('/{id}', [PropostaController::class, 'show'])->whereNumber('id');
+    Route::put('/{id}/aceitar', [PropostaController::class, 'accept'])->whereNumber('id');
+    Route::put('/{id}/recusar', [PropostaController::class, 'reject'])->whereNumber('id');
+    Route::delete('/{id}', [PropostaController::class, 'destroy'])->whereNumber('id');
 
+    // Limita o envio de propostas: no máximo 10 por minuto por usuário autenticado
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/', [PropostaController::class, 'store']);
     // Notificações
     Route::get('/notificacoes', [NotificationController::class, 'index']);
     Route::post('/notificacoes/marcar-como-lidas', [NotificationController::class, 'markRead']);
