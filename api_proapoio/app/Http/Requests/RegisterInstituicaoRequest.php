@@ -41,8 +41,13 @@ class RegisterInstituicaoRequest extends FormRequest
         // 3. Normaliza Níveis Oferecidos (garante que é uma string JSON se for um array)
         if ($this->has('niveis_oferecidos')) {
             $niv = $this->input('niveis_oferecidos');
+            // Se for um array, codifica para JSON.
             if (is_array($niv)) {
                 $payload['niveis_oferecidos'] = json_encode($niv, JSON_UNESCAPED_UNICODE);
+            // Se já for uma string, decodifica e recodifica para garantir a formatação correta.
+            } elseif (is_string($niv) && ($decoded = json_decode($niv, true)) !== null) {
+                // Isso garante que a string final esteja sempre no formato esperado (sem escapes desnecessários).
+                $payload['niveis_oferecidos'] = json_encode($decoded, JSON_UNESCAPED_UNICODE);
             }
         }
 

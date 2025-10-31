@@ -125,15 +125,20 @@ class RegisterInstituicaoRequestTest extends TestCase
     /**
      * @test
      * @description Verifica se a mensagem de erro customizada para CNPJ único é retornada.
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
      */
     public function it_returns_custom_message_for_unique_cnpj_rule(): void
     {
-        // Simulando um CNPJ que já existe no banco de dados
-        // A regra 'unique' precisa de uma conexão com o banco para funcionar,
-        // então este teste é mais adequado para um teste de Feature.
-        // No entanto, podemos testar se a mensagem está definida no request.
-        $messages = $this->request->messages();
-        $this->assertEquals('CNPJ já cadastrado.', $messages['cnpj.unique']);
+        // Mock da facade Validator para forçar a falha da regra 'unique'
+        \Illuminate\Support\Facades\Validator::shouldReceive('make')->andReturnUsing(function ($data, $rules, $messages) {
+            $validator = \Illuminate\Support\Facades\Validator::getFacadeRoot()->make($data, $rules, $messages);
+            $validator->errors()->add('cnpj', $messages['cnpj.unique']);
+            return $validator;
+        });
+
+        $validator = Validator::make(['cnpj' => '51.363.225/0001-07'], $this->request->rules(), $this->request->messages());
+        $this->assertEquals('CNPJ já cadastrado.', $validator->errors()->first('cnpj'));
     }
 
     /**
