@@ -45,9 +45,11 @@ Route::get('/vagas/{id}', [VagaController::class, 'showPublic'])->whereNumber('i
 Route::get('/candidatos/{id}', [CandidatoFinderController::class, 'show'])->whereNumber('id');
 Route::get('/instituicoes/{id}', [InstituicaoProfileController::class, 'showPublic'])->whereNumber('id');
 
-// APIs Externas
-Route::get('/external/viacep/{cep}', [ExternalApiController::class, 'viacep']);
-Route::get('/external/receitaws/{cnpj}', [ExternalApiController::class, 'receitaws']);
+// APIs Externas (com rate limiting agressivo para prevenir abuso)
+Route::middleware('throttle:10,60')->group(function () {
+    Route::get('/external/viacep/{cep}', [ExternalApiController::class, 'viacep']);
+    Route::get('/external/receitaws/{cnpj}', [ExternalApiController::class, 'receitaws']);
+});
 
 
 // --- 3. ROTAS PROTEGIDAS POR JWT ---
@@ -95,15 +97,18 @@ Route::middleware('auth:api')->group(function () {
 
     // Propostas
     Route::prefix('propostas')->group(function () {
-    Route::get('/', [PropostaController::class, 'index']);
-    Route::get('/{id}', [PropostaController::class, 'show'])->whereNumber('id');
-    Route::put('/{id}/aceitar', [PropostaController::class, 'accept'])->whereNumber('id');
-    Route::put('/{id}/recusar', [PropostaController::class, 'reject'])->whereNumber('id');
-    Route::delete('/{id}', [PropostaController::class, 'destroy'])->whereNumber('id');
+        Route::get('/', [PropostaController::class, 'index']);
+        Route::get('/{id}', [PropostaController::class, 'show'])->whereNumber('id');
+        Route::put('/{id}/aceitar', [PropostaController::class, 'accept'])->whereNumber('id');
+        Route::put('/{id}/recusar', [PropostaController::class, 'reject'])->whereNumber('id');
+        Route::delete('/{id}', [PropostaController::class, 'destroy'])->whereNumber('id');
 
-    // Limita o envio de propostas: no máximo 10 por minuto por usuário autenticado
-    Route::middleware('throttle:10,1')->group(function () {
-        Route::post('/', [PropostaController::class, 'store']);
+        // Limita o envio de propostas: no máximo 10 por minuto por usuário autenticado
+        Route::middleware('throttle:10,1')->group(function () {
+            Route::post('/', [PropostaController::class, 'store']);
+        });
+    });
+
     // Notificações
     Route::get('/notificacoes', [NotificationController::class, 'index']);
     Route::post('/notificacoes/marcar-como-lidas', [NotificationController::class, 'markRead']);

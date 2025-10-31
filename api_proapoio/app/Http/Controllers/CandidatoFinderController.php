@@ -47,12 +47,6 @@ class CandidatoFinderController extends Controller
                   ->orWhereRaw("bio LIKE ? ESCAPE '\\'", ["%{$safeTermo}%"]);
             });
         }
-                        // Exemplo de busca em habilidades (se existir tabela/campo)
-                // ->orWhereHas('habilidades', function ($sq) use ($termo) {
-                //     $sq->where('nome', 'like', "%{$termo}%");
-                // });
-            });
-        }
 
         // 2. Filtro por Escolaridade (Front-end envia como lista separada por vírgula)
         if ($request->has('escolaridade')) {
@@ -105,7 +99,9 @@ class CandidatoFinderController extends Controller
             }
         }
 
-        $candidatos = $query->get();
+        // Paginação obrigatória para prevenir DoS
+        $perPage = $this->safePerPage($request, 20);
+        $candidatos = $query->paginate($perPage);
 
         // Formatação dos dados de resposta, se necessário (ocultar senhas, formatar datas, etc.)
         return response()->json($candidatos, 200);
