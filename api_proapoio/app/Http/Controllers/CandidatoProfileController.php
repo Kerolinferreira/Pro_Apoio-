@@ -206,11 +206,11 @@ class CandidatoProfileController extends Controller
         $user = $request->user();
         $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
 
-        $exp = ExperienciaProfissional::where('id_experiencia_profissional', $id)
+        $experiencia = ExperienciaProfissional::where('id_experiencia_profissional', $id)
             ->where('id_candidato', $candidato->id)
             ->firstOrFail();
 
-        $exp->delete();
+        $experiencia->delete();
 
         return response()->json(['message' => 'Experiência profissional removida.']);
     }
@@ -233,9 +233,9 @@ class CandidatoProfileController extends Controller
 
         $data['id_candidato'] = $candidato->id;
 
-        $exp = ExperienciaPessoal::create($data);
+        $experiencia = ExperienciaPessoal::create($data);
 
-        return response()->json($exp, 201);
+        return response()->json($experiencia, 201);
     }
 
     /** Remove experiência pessoal. */
@@ -244,11 +244,11 @@ class CandidatoProfileController extends Controller
         $user = $request->user();
         $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
 
-        $exp = ExperienciaPessoal::where('id_experiencia_pessoal', $id)
+        $experiencia = ExperienciaPessoal::where('id_experiencia_pessoal', $id)
             ->where('id_candidato', $candidato->id)
             ->firstOrFail();
 
-        $exp->delete();
+        $experiencia->delete();
 
         return response()->json(['message' => 'Experiência pessoal removida.']);
     }

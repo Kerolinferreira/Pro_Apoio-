@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Models\Proposta;
 use App\Models\Vaga;
+use App\Enums\PropostaStatus;
+use App\Enums\TipoUsuario;
 
 class PropostaController extends Controller
 {
@@ -27,15 +29,15 @@ class PropostaController extends Controller
             }
             $candidatoId = $user->candidato->id;
 
-            $q = Proposta::with(['vaga.instituicao', 'candidato'])
+            $query = Proposta::with(['vaga.instituicao', 'candidato'])
                 ->where('id_candidato', $candidatoId)
                 ->when($tipo === 'recebidas',
-                    fn($qq) => $qq->where('iniciador', 'INSTITUICAO'),
-                    fn($qq) => $qq->where('iniciador', 'CANDIDATO')
+                    fn($subQuery) => $subQuery->where('iniciador', 'INSTITUICAO'),
+                    fn($subQuery) => $subQuery->where('iniciador', 'CANDIDATO')
                 )
                 ->latest();
 
-            return $q->paginate($perPage)->appends($request->query());
+            return $query->paginate($perPage)->appends($request->query());
         }
 
         // INSTITUICAO
@@ -45,15 +47,15 @@ class PropostaController extends Controller
         $instituicaoId = $user->instituicao->id;
         $vagaIds = Vaga::where('id_instituicao', $instituicaoId)->pluck('id_vaga');
 
-        $q = Proposta::with(['vaga.instituicao', 'candidato'])
+        $query = Proposta::with(['vaga.instituicao', 'candidato'])
             ->whereIn('id_vaga', $vagaIds)
             ->when($tipo === 'recebidas',
-                fn($qq) => $qq->where('iniciador', 'CANDIDATO'),
-                fn($qq) => $qq->where('iniciador', 'INSTITUICAO')
+                fn($subQuery) => $subQuery->where('iniciador', 'CANDIDATO'),
+                fn($subQuery) => $subQuery->where('iniciador', 'INSTITUICAO')
             )
             ->latest();
 
-        return $q->paginate($perPage)->appends($request->query());
+        return $query->paginate($perPage)->appends($request->query());
     }
 
     /**
@@ -86,7 +88,7 @@ class PropostaController extends Controller
         $data = $proposta->toArray();
 
         // contatos apenas quando ACEITA
-        if ($proposta->status === 'ACEITA') {
+        if ($proposta->status === PropostaStatus::ACEITA) {
             if ($isCandidato) {
                 // mostrar dados da instituição ao candidato
                 $instUser = optional($proposta->vaga)->instituicao->user ?? null;
@@ -160,7 +162,7 @@ class PropostaController extends Controller
             'id_candidato'   => $data['id_candidato'],
             'mensagem'       => strip_tags($data['mensagem']),
             'iniciador'      => $iniciador,     // CANDIDATO | INSTITUICAO
-            'status'         => 'ENVIADA',      // enum maiúsculo
+            'status'         => PropostaStatus::ENVIADA,
             'data_envio'     => now(),
         ]);
 
@@ -194,7 +196,7 @@ class PropostaController extends Controller
         // Envolver em transação para garantir consistência
         $contatos = \Illuminate\Support\Facades\DB::transaction(function() use ($proposta, $request, $user) {
             $proposta->update([
-                'status'            => 'ACEITA',
+                'status'            => PropostaStatus::ACEITA,
                 'data_resposta'     => now(),
                 'mensagem_resposta' => strip_tags($request->input('mensagem_resposta', '')),
             ]);
@@ -244,7 +246,7 @@ class PropostaController extends Controller
         if (!$canReject) return $this->forbidden();
 
         $proposta->update([
-            'status'            => 'RECUSADA',
+            'status'            => PropostaStatus::RECUSADA,
             'data_resposta'     => now(),
             'mensagem_resposta' => strip_tags($request->input('mensagem_resposta', '')),
         ]);
@@ -268,7 +270,7 @@ class PropostaController extends Controller
 
         if (!$isInitiator) return $this->forbidden();
 
-        if (in_array($proposta->status, ['ACEITA', 'RECUSADA'], true)) {
+        if (in_array($proposta->status, [PropostaStatus::ACEITA, PropostaStatus::RECUSADA], true)) {
             return $this->unprocessable('Proposta já finalizada.');
         }
 

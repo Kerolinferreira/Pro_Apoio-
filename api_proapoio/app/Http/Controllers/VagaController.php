@@ -16,7 +16,7 @@ class VagaController extends Controller
     {
         $perPage = $this->safePerPage($request, 10);
 
-        $q = Vaga::query()
+        $query = Vaga::query()
             ->with('instituicao')
             ->where('status', 'ABERTA');
 
@@ -26,16 +26,16 @@ class VagaController extends Controller
                     return $this->error('Termo muito longo.', 400);
                 }
         if ($cidade = trim((string) $request->input('cidade'))) {
-            $q->where('cidade', $cidade);
+            $query->where('cidade', $cidade);
         }
 
         if ($regime = trim((string) $request->input('regime'))) {
-            $q->where('regime_contratacao', strtoupper($regime));
+            $query->where('regime_contratacao', strtoupper($regime));
         }
 
-        $q->orderByDesc('id_vaga');
+        $query->orderByDesc('id_vaga');
 
-        return $q->paginate($perPage)->appends($request->query());
+        return $query->paginate($perPage)->appends($request->query());
     }
 
     /**
@@ -63,9 +63,13 @@ class VagaController extends Controller
             return $this->forbidden('Apenas instituições podem criar vagas.');
         }
 
+        $anoAtual = (int)date('Y');
+        $anoMinimo = $anoAtual - 100; // Máximo 100 anos atrás
+        $anoMaximo = $anoAtual; // Até o ano atual
+
         $data = $request->validate([
             'aluno_nascimento_mes'    => 'nullable|integer|min:1|max:12',
-            'aluno_nascimento_ano'    => 'nullable|integer|min:1900|max:2100',
+            'aluno_nascimento_ano'    => "nullable|integer|min:{$anoMinimo}|max:{$anoMaximo}",
             'deficiencia_ids'         => 'nullable|array',
             'deficiencia_ids.*'       => 'integer|exists:deficiencias,id_deficiencia',
             'necessidades_descricao'  => 'nullable|string|max:2000',
@@ -166,10 +170,14 @@ class VagaController extends Controller
             ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
 
+        $anoAtual = (int)date('Y');
+        $anoMinimo = $anoAtual - 100; // Máximo 100 anos atrás
+        $anoMaximo = $anoAtual; // Até o ano atual
+
         $data = $request->validate([
             'status'                 => 'nullable|string|in:ABERTA,PAUSADA,FECHADA',
             'aluno_nascimento_mes'   => 'nullable|integer|min:1|max:12',
-            'aluno_nascimento_ano'   => 'nullable|integer|min:1900|max:2100',
+            'aluno_nascimento_ano'   => "nullable|integer|min:{$anoMinimo}|max:{$anoMaximo}",
             'deficiencia_ids'        => 'nullable|array',
             'deficiencia_ids.*'      => 'integer|exists:deficiencias,id_deficiencia',
             'necessidades_descricao' => 'nullable|string|max:2000',
