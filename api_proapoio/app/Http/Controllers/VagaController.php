@@ -78,16 +78,24 @@ class VagaController extends Controller
             'estado'                  => 'nullable|string|size:2',
         ]);
 
-        $data['id_instituicao']     = optional($user->instituicao)->id;
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+        $data['id_instituicao']     = $user->instituicao->id;
         $data['status']             = 'ABERTA';
         $data['regime_contratacao'] = strtoupper($data['regime_contratacao']);
         $data['tipo_remuneracao']   = strtoupper($data['tipo_remuneracao']);
 
-        $vaga = Vaga::create(collect($data)->except('deficiencia_ids')->toArray());
+        // Envolver em transação para garantir consistência
+        $vaga = DB::transaction(function() use ($data) {
+            $vaga = Vaga::create(collect($data)->except('deficiencia_ids')->toArray());
 
-        if (!empty($data['deficiencia_ids'])) {
-            $vaga->deficiencias()->sync($data['deficiencia_ids']);
-        }
+            if (!empty($data['deficiencia_ids'])) {
+                $vaga->deficiencias()->sync($data['deficiencia_ids']);
+            }
+
+            return $vaga;
+        });
 
         return response()->json($vaga->load('deficiencias'), 201);
     }
@@ -103,12 +111,18 @@ class VagaController extends Controller
             return $this->forbidden();
         }
 
-        $vagas = Vaga::where('id_instituicao', optional($user->instituicao)->id ?? 0)
-            ->withCount('propostas')
-            ->orderByDesc('id_vaga')
-            ->get();
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
 
-        return response()->json($vagas);
+        // Adicionar paginação
+        $perPage = $this->safePerPage($request, 15);
+
+        $query = Vaga::where('id_instituicao', $user->instituicao->id)
+            ->withCount('propostas')
+            ->orderByDesc('id_vaga');
+
+        return response()->json($query->paginate($perPage));
     }
 
     /**
@@ -122,8 +136,12 @@ class VagaController extends Controller
             return $this->forbidden();
         }
 
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+
         $vaga = Vaga::where('id_vaga', $id)
-            ->where('id_instituicao', optional($user->instituicao)->id ?? 0)
+            ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
 
         return response()->json($vaga);
@@ -140,8 +158,12 @@ class VagaController extends Controller
             return $this->forbidden();
         }
 
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+
         $vaga = Vaga::where('id_vaga', $id)
-            ->where('id_instituicao', optional($user->instituicao)->id ?? 0)
+            ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
 
         $data = $request->validate([
@@ -186,8 +208,12 @@ class VagaController extends Controller
             return $this->forbidden();
         }
 
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+
         $vaga = Vaga::where('id_vaga', $id)
-            ->where('id_instituicao', optional($user->instituicao)->id ?? 0)
+            ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
 
         $vaga->update(['status' => 'PAUSADA']);
@@ -205,8 +231,12 @@ class VagaController extends Controller
             return $this->forbidden();
         }
 
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+
         $vaga = Vaga::where('id_vaga', $id)
-            ->where('id_instituicao', optional($user->instituicao)->id ?? 0)
+            ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
 
         $vaga->update(['status' => 'FECHADA']);

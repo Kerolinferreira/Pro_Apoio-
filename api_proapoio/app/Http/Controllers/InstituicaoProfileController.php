@@ -59,7 +59,17 @@ class InstituicaoProfileController extends Controller
             'numero'             => 'nullable|string',
             'complemento'        => 'nullable|string',
             'ponto_referencia'   => 'nullable|string',
+
+            // Senha atual para validar alteração de dados sensíveis
+            'current_password'   => 'required_with:cnpj,email_corporativo|string',
         ]);
+
+        // Validar senha atual se estiver alterando CNPJ ou email corporativo
+        if (isset($data['current_password'])) {
+            if (!\Illuminate\Support\Facades\Hash::check($data['current_password'], $user->senha_hash)) {
+                return response()->json(['message' => 'Senha incorreta'], 400);
+            }
+        }
 
         // Normalizações de dígitos
         if (isset($data['cnpj']))               $data['cnpj']               = $this->onlyDigits($data['cnpj']);

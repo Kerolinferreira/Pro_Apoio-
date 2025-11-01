@@ -49,7 +49,16 @@ class CandidatoProfileController extends Controller
             'curso_superior'      => 'nullable|string',
             'instituicao_ensino'  => 'nullable|string',
             'status'              => 'nullable|string',
+            // Senha atual para validar alteração de dados sensíveis
+            'current_password'    => 'required_with:cpf,telefone|string',
         ]);
+
+        // Validar senha atual se estiver alterando CPF ou telefone
+        if (isset($data['current_password'])) {
+            if (!Hash::check($data['current_password'], $user->senha_hash)) {
+                return response()->json(['message' => 'Senha incorreta'], 400);
+            }
+        }
 
         // normalizações
         if (isset($data['telefone'])) $data['telefone'] = preg_replace('/\D+/', '', $data['telefone']);
@@ -148,40 +157,45 @@ class CandidatoProfileController extends Controller
             return response()->json(['message' => 'O campo experiencias deve ser um array de objetos.'], 422);
         }
 
-        $criadas = [];
+        // Envolver em transação para garantir consistência
+        $criadas = \Illuminate\Support\Facades\DB::transaction(function() use ($experienciasPayload, $candidato) {
+            $criadas = [];
 
-        foreach ($experienciasPayload as $expData) {
-            // mapear chaves do front para o schema da tabela
-            $mapped = [
-                'idade_aluno'                 => $expData['idade_aluno'] ?? null,
-                'tempo_experiencia'           => $expData['tempo_experiencia'] ?? ($expData['tempo'] ?? null),
-                'interesse_mesma_deficiencia' => array_key_exists('candidatar_mesma_deficiencia', $expData)
-                    ? (bool)$expData['candidatar_mesma_deficiencia']
-                    : (bool)($expData['interesse_mesma_deficiencia'] ?? false),
-                'descricao'                   => $expData['comentario'] ?? ($expData['descricao'] ?? null),
-                'deficiencia_ids'             => $expData['deficiencia_ids'] ?? [],
-            ];
+            foreach ($experienciasPayload as $expData) {
+                // mapear chaves do front para o schema da tabela
+                $mapped = [
+                    'idade_aluno'                 => $expData['idade_aluno'] ?? null,
+                    'tempo_experiencia'           => $expData['tempo_experiencia'] ?? ($expData['tempo'] ?? null),
+                    'interesse_mesma_deficiencia' => array_key_exists('candidatar_mesma_deficiencia', $expData)
+                        ? (bool)$expData['candidatar_mesma_deficiencia']
+                        : (bool)($expData['interesse_mesma_deficiencia'] ?? false),
+                    'descricao'                   => strip_tags($expData['comentario'] ?? ($expData['descricao'] ?? '')),
+                    'deficiencia_ids'             => $expData['deficiencia_ids'] ?? [],
+                ];
 
-            // validação por item
-            $validated = validator($mapped, [
-                'idade_aluno'                 => 'nullable|integer|min:0|max:120',
-                'tempo_experiencia'           => 'nullable|string|max:255',
-                'interesse_mesma_deficiencia' => 'nullable|boolean',
-                'descricao'                   => 'nullable|string|max:1000',
-                'deficiencia_ids'             => 'nullable|array',
-                'deficiencia_ids.*'           => 'integer|exists:deficiencias,id_deficiencia',
-            ])->validate();
+                // validação por item
+                $validated = validator($mapped, [
+                    'idade_aluno'                 => 'nullable|integer|min:0|max:120',
+                    'tempo_experiencia'           => 'nullable|string|max:255',
+                    'interesse_mesma_deficiencia' => 'nullable|boolean',
+                    'descricao'                   => 'nullable|string|max:1000',
+                    'deficiencia_ids'             => 'nullable|array',
+                    'deficiencia_ids.*'           => 'integer|exists:deficiencias,id_deficiencia',
+                ])->validate();
 
-            $validated['id_candidato'] = $candidato->id;
+                $validated['id_candidato'] = $candidato->id;
 
-            $experiencia = ExperienciaProfissional::create(collect($validated)->except('deficiencia_ids')->toArray());
+                $experiencia = ExperienciaProfissional::create(collect($validated)->except('deficiencia_ids')->toArray());
 
-            if (!empty($validated['deficiencia_ids'])) {
-                $experiencia->deficiencias()->sync($validated['deficiencia_ids']);
+                if (!empty($validated['deficiencia_ids'])) {
+                    $experiencia->deficiencias()->sync($validated['deficiencia_ids']);
+                }
+
+                $criadas[] = $experiencia->load('deficiencias');
             }
 
-            $criadas[] = $experiencia->load('deficiencias');
-        }
+            return $criadas;
+        });
 
         return response()->json(count($criadas) === 1 ? $criadas[0] : $criadas, 201);
     }
@@ -211,6 +225,11 @@ class CandidatoProfileController extends Controller
             'interesse_atuar' => 'nullable|boolean',
             'descricao'       => 'nullable|string|max:1000',
         ]);
+
+        // Sanitizar descricao
+        if (isset($data['descricao'])) {
+            $data['descricao'] = strip_tags($data['descricao']);
+        }
 
         $data['id_candidato'] = $candidato->id;
 

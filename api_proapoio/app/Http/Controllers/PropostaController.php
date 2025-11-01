@@ -22,7 +22,10 @@ class PropostaController extends Controller
         $perPage = $this->safePerPage($request, 10);
 
         if (($user->tipo_usuario ?? '') === 'CANDIDATO') {
-            $candidatoId = optional($user->candidato)->id ?? 0;
+            if (!$user->candidato) {
+                return $this->forbidden('Candidato não encontrado.');
+            }
+            $candidatoId = $user->candidato->id;
 
             $q = Proposta::with(['vaga.instituicao', 'candidato'])
                 ->where('id_candidato', $candidatoId)
@@ -36,7 +39,10 @@ class PropostaController extends Controller
         }
 
         // INSTITUICAO
-        $instituicaoId = optional($user->instituicao)->id ?? 0;
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+        $instituicaoId = $user->instituicao->id;
         $vagaIds = Vaga::where('id_instituicao', $instituicaoId)->pluck('id_vaga');
 
         $q = Proposta::with(['vaga.instituicao', 'candidato'])
@@ -65,10 +71,13 @@ class PropostaController extends Controller
 
         // autorização básica: precisa ser candidato envolvido OU instituição dona da vaga
         $isCandidato = ($user->tipo_usuario ?? '') === 'CANDIDATO'
-            && optional($user->candidato)->id === $proposta->id_candidato;
+            && $user->candidato
+            && $user->candidato->id === $proposta->id_candidato;
 
         $isInstituicao = ($user->tipo_usuario ?? '') === 'INSTITUICAO'
-            && optional($user->instituicao)->id === optional($proposta->vaga)->id_instituicao;
+            && $user->instituicao
+            && $proposta->vaga
+            && $user->instituicao->id === $proposta->vaga->id_instituicao;
 
         if (!$isCandidato && !$isInstituicao) {
             return $this->forbidden();
@@ -128,13 +137,18 @@ class PropostaController extends Controller
         $iniciador = $user->tipo_usuario ?? '';
 
         if ($iniciador === 'CANDIDATO') {
-            $cid = optional($user->candidato)->id;
-            if ($cid !== (int)$data['id_candidato']) {
+            if (!$user->candidato) {
+                return $this->forbidden('Candidato não encontrado.');
+            }
+            if ($user->candidato->id !== (int)$data['id_candidato']) {
                 throw ValidationException::withMessages(['id_candidato' => 'Candidato inválido.']);
             }
         } elseif ($iniciador === 'INSTITUICAO') {
+            if (!$user->instituicao) {
+                return $this->forbidden('Instituição não encontrada.');
+            }
             $vaga = Vaga::where('id_vaga', $data['id_vaga'])->firstOrFail();
-            if ((int)$vaga->id_instituicao !== (int)optional($user->instituicao)->id) {
+            if ((int)$vaga->id_instituicao !== (int)$user->instituicao->id) {
                 throw ValidationException::withMessages(['id_vaga' => 'Vaga não pertence à instituição.']);
             }
         } else {
@@ -144,7 +158,7 @@ class PropostaController extends Controller
         $proposta = Proposta::create([
             'id_vaga'        => $data['id_vaga'],
             'id_candidato'   => $data['id_candidato'],
-            'mensagem'       => $data['mensagem'],
+            'mensagem'       => strip_tags($data['mensagem']),
             'iniciador'      => $iniciador,     // CANDIDATO | INSTITUICAO
             'status'         => 'ENVIADA',      // enum maiúsculo
             'data_envio'     => now(),
@@ -171,35 +185,38 @@ class PropostaController extends Controller
         $recebidaPorInstituicao = $proposta->iniciador === 'CANDIDATO';
 
         $canAccept =
-            ($recebidaPorCandidato && ($user->tipo_usuario === 'CANDIDATO') && optional($user->candidato)->id === $proposta->id_candidato)
+            ($recebidaPorCandidato && ($user->tipo_usuario === 'CANDIDATO') && $user->candidato && $user->candidato->id === $proposta->id_candidato)
             ||
-            ($recebidaPorInstituicao && ($user->tipo_usuario === 'INSTITUICAO') && optional($user->instituicao)->id === optional($proposta->vaga)->id_instituicao);
+            ($recebidaPorInstituicao && ($user->tipo_usuario === 'INSTITUICAO') && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
 
         if (!$canAccept) return $this->forbidden();
 
-        $proposta->update([
-            'status'            => 'ACEITA',
-            'data_resposta'     => now(),
-            'mensagem_resposta' => $request->input('mensagem_resposta'),
-        ]);
+        // Envolver em transação para garantir consistência
+        $contatos = \Illuminate\Support\Facades\DB::transaction(function() use ($proposta, $request, $user) {
+            $proposta->update([
+                'status'            => 'ACEITA',
+                'data_resposta'     => now(),
+                'mensagem_resposta' => strip_tags($request->input('mensagem_resposta', '')),
+            ]);
 
-        // contatos da outra parte (para UX imediata, embora o front busque em GET /propostas/{id})
-        if ($user->tipo_usuario === 'CANDIDATO') {
-            $instUser = optional($proposta->vaga)->instituicao->user ?? null;
-            $contatos = [
-                'email'    => $instUser->email ?? null,
-                'telefone' => optional($proposta->vaga->instituicao)->celular_corporativo
-                              ?? optional($proposta->vaga->instituicao)->telefone_fixo
-                              ?? null,
-            ];
-        } else {
-            $candUser = optional($proposta->candidato)->user ?? null;
-            $contatos = [
-                'email'    => $candUser->email ?? null,
-                'telefone' => optional($proposta->candidato)->telefone ?? null,
-                'cpf'      => optional($proposta->candidato)->cpf ?? null,
-            ];
-        }
+            // contatos da outra parte (para UX imediata, embora o front busque em GET /propostas/{id})
+            if ($user->tipo_usuario === 'CANDIDATO') {
+                $instUser = optional($proposta->vaga)->instituicao->user ?? null;
+                return [
+                    'email'    => $instUser->email ?? null,
+                    'telefone' => optional($proposta->vaga->instituicao)->celular_corporativo
+                                  ?? optional($proposta->vaga->instituicao)->telefone_fixo
+                                  ?? null,
+                ];
+            } else {
+                $candUser = optional($proposta->candidato)->user ?? null;
+                return [
+                    'email'    => $candUser->email ?? null,
+                    'telefone' => optional($proposta->candidato)->telefone ?? null,
+                    'cpf'      => optional($proposta->candidato)->cpf ?? null,
+                ];
+            }
+        });
 
         return response()->json([
             'message'  => 'Proposta aceita',
@@ -220,16 +237,16 @@ class PropostaController extends Controller
         $recebidaPorInstituicao = $proposta->iniciador === 'CANDIDATO';
 
         $canReject =
-            ($recebidaPorCandidato && ($user->tipo_usuario === 'CANDIDATO') && optional($user->candidato)->id === $proposta->id_candidato)
+            ($recebidaPorCandidato && ($user->tipo_usuario === 'CANDIDATO') && $user->candidato && $user->candidato->id === $proposta->id_candidato)
             ||
-            ($recebidaPorInstituicao && ($user->tipo_usuario === 'INSTITUICAO') && optional($user->instituicao)->id === optional($proposta->vaga)->id_instituicao);
+            ($recebidaPorInstituicao && ($user->tipo_usuario === 'INSTITUICAO') && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
 
         if (!$canReject) return $this->forbidden();
 
         $proposta->update([
             'status'            => 'RECUSADA',
             'data_resposta'     => now(),
-            'mensagem_resposta' => $request->input('mensagem_resposta'),
+            'mensagem_resposta' => strip_tags($request->input('mensagem_resposta', '')),
         ]);
 
         return response()->json(['message' => 'Proposta recusada']);
@@ -245,9 +262,9 @@ class PropostaController extends Controller
         $proposta = Proposta::with('vaga')->findOrFail($id);
 
         $isInitiator =
-            ($proposta->iniciador === 'CANDIDATO'   && ($user->tipo_usuario === 'CANDIDATO')   && optional($user->candidato)->id === $proposta->id_candidato)
+            ($proposta->iniciador === 'CANDIDATO'   && ($user->tipo_usuario === 'CANDIDATO')   && $user->candidato && $user->candidato->id === $proposta->id_candidato)
             ||
-            ($proposta->iniciador === 'INSTITUICAO' && ($user->tipo_usuario === 'INSTITUICAO') && optional($user->instituicao)->id === optional($proposta->vaga)->id_instituicao);
+            ($proposta->iniciador === 'INSTITUICAO' && ($user->tipo_usuario === 'INSTITUICAO') && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
 
         if (!$isInitiator) return $this->forbidden();
 
