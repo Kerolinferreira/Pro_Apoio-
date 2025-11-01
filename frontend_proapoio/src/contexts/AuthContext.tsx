@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setLogoutCallback } from '../services/api';
+import { logger } from '../utils/logger';
 
 export interface AuthUser {
   id: number;
@@ -53,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           sessionStorage.setItem('authToken', parsedUser.token);
         }
       } catch (e) {
-        console.error('Failed to parse stored user data:', e);
+        logger.error('Failed to parse stored user data:', e);
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem('authToken');
         sessionStorage.removeItem(STORAGE_KEY);
@@ -119,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // tenta avisar o backend
     api.post('/auth/logout').catch((e) => {
-      console.warn(
+      logger.warn(
         'Backend logout call failed, but local session is cleared.',
         e
       );
