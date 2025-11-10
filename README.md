@@ -33,7 +33,7 @@ Este sistema atua como uma **Plataforma de Conexão (Marketplace)**, estruturada
 
 ### Contexto Acadêmico
 
-* **Instituição:** *ATEC Itapetininga*
+* **Instituição:** *FATEC Itapetininga*
 * **Disciplina/Módulo:** *Trabalho de Graduação*
 * **Semestre/Ano:** * 2025/2*
 
