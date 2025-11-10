@@ -29,7 +29,9 @@
 
 O **Pro Apoio** é um projeto de software desenvolvido com o objetivo de mitigar a lacuna existente entre a demanda por **Agentes de Apoio Escolar** qualificados e a oferta de profissionais para instituições de ensino. O projeto visa centralizar e otimizar o processo de contratação, essencial para garantir a **inclusão plena** de estudantes com deficiência (PcD) conforme as diretrizes da Lei Brasileira de Inclusão (Lei nº 13.146/2015).
 
-Este sistema atua como uma **Plataforma de Conexão (Marketplace)**, estruturada para atender às necessidades específicas do ambiente educacional.
+Este sistema atua como uma Plataforma de Matchmaking Profissional, estruturada para conectar Agentes de Apoio escolar com Instituições de Ensino de forma otimizada.
+
+
 
 ### Contexto Acadêmico
 
