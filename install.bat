@@ -8,7 +8,6 @@ REM - Se tudo estiver pronto, inicia os servidores.
 REM
 REM Uso: install.bat
 REM
-REM Autor: Claude Code & Gemini
 REM Data: 2025-11-10
 REM ################################################################################
 
