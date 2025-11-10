@@ -36,28 +36,7 @@ echo.
 REM PHP
 where php >nul 2>&1
 if %errorlevel% equ 0 (
-    for /f "tokens=2 delims= " %%i in ('php -v ^| findstr /C:"PHP"') do (
-        set PHP_VERSION=%%i
-        echo [OK] PHP %%i encontrado
-        REM Verificar versao minima (8.1)
-        for /f "tokens=1,2 delims=." %%a in ("%%i") do (
-            set PHP_MAJOR=%%a
-            set PHP_MINOR=%%b
-        )
-        if !PHP_MAJOR! LSS 8 (
-            echo [ERRO] PHP 8.1+ e necessario. Versao atual: %%i
-            echo Baixe em: https://windows.php.net/download/
-            pause
-            exit /b 1
-        )
-        if !PHP_MAJOR! EQU 8 if !PHP_MINOR! LSS 1 (
-            echo [ERRO] PHP 8.1+ e necessario. Versao atual: %%i
-            echo Baixe em: https://windows.php.net/download/
-            pause
-            exit /b 1
-        )
-        goto :composer_check
-    )
+    echo [OK] PHP encontrado
 ) else (
     echo [ERRO] PHP nao encontrado. Instale PHP 8.1+ antes de continuar.
     echo Baixe em: https://windows.php.net/download/
@@ -65,7 +44,6 @@ if %errorlevel% equ 0 (
     exit /b 1
 )
 
-:composer_check
 REM Composer
 where composer >nul 2>&1
 if %errorlevel% equ 0 (
@@ -80,22 +58,7 @@ if %errorlevel% equ 0 (
 REM Node.js
 where node >nul 2>&1
 if %errorlevel% equ 0 (
-    for /f "tokens=*" %%i in ('node --version') do (
-        set NODE_VERSION=%%i
-        echo [OK] Node.js %%i encontrado
-        REM Verificar versao minima (18)
-        set NODE_VER=%%i
-        set NODE_VER=!NODE_VER:v=!
-        for /f "tokens=1 delims=." %%a in ("!NODE_VER!") do (
-            set NODE_MAJOR=%%a
-        )
-        if !NODE_MAJOR! LSS 18 (
-            echo [ERRO] Node.js 18+ e necessario. Versao atual: %%i
-            echo Baixe em: https://nodejs.org/
-            pause
-            exit /b 1
-        )
-    )
+    echo [OK] Node.js encontrado
 ) else (
     echo [ERRO] Node.js nao encontrado. Instale Node.js 18+ antes de continuar.
     echo Baixe em: https://nodejs.org/
@@ -106,9 +69,7 @@ if %errorlevel% equ 0 (
 REM npm
 where npm >nul 2>&1
 if %errorlevel% equ 0 (
-    for /f "tokens=*" %%i in ('npm --version') do (
-        echo [OK] npm %%i encontrado
-    )
+    echo [OK] npm encontrado
 ) else (
     echo [ERRO] npm nao encontrado. Instale npm antes de continuar.
     pause
@@ -266,12 +227,9 @@ REM --- FINALIZACAO ---
 echo [PASSO 11/11] Verificando configuracao do banco de dados...
 cd api_proapoio
 set "DB_CONFIGURED=0"
-findstr /R /C:"^DB_DATABASE=.*[^[:space:]]" .env >nul
+findstr /C:"DB_DATABASE=" .env | findstr /V /C:"DB_DATABASE=your_database" | findstr /V /C:"DB_DATABASE=$" >nul
 if %errorlevel% equ 0 (
-    findstr /R /C:"^DB_DATABASE=your_database" .env >nul
-    if %errorlevel% neq 0 (
-        set "DB_CONFIGURED=1"
-    )
+    set "DB_CONFIGURED=1"
 )
 
 if "%DB_CONFIGURED%"=="1" (
@@ -329,19 +287,27 @@ if "%SETUP_COMPLETE%"=="1" (
         echo ===============================================================
         echo.
         echo [INFO] Iniciando servidor do Backend (API) em uma nova janela...
-        start "ProApoio - Backend" cmd /c "cd api_proapoio && php artisan serve"
+        start "ProApoio - Backend" cmd /c "cd /d %~dp0api_proapoio && php artisan serve"
 
         echo [INFO] Aguardando 3 segundos para o backend iniciar...
         timeout /t 3 /nobreak >nul
 
         echo [INFO] Iniciando servidor do Frontend em uma nova janela...
-        start "ProApoio - Frontend" cmd /c "cd frontend_proapoio && npm run dev -- --port 5174"
+        start "ProApoio - Frontend" cmd /c "cd /d %~dp0frontend_proapoio && npm run dev -- --port 5174"
 
         echo.
         echo [OK] Servidores iniciados. Verifique as novas janelas do terminal.
         echo    - Backend (API) em: http://127.0.0.1:8000
         echo    - Frontend em: http://localhost:5174
         echo.
+    ) else (
+        echo ===============================================================
+        echo.
+        echo      CONFIGURACAO INCOMPLETA. CONFIGURE O BANCO DE DADOS.
+        echo.
+        echo ===============================================================
+        echo.
+    )
 ) else (
     echo ===============================================================
     echo.

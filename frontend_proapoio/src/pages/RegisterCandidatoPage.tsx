@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft, UserPlus } from 'lucide-react';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks';
 import { ESCOLARIDADE_OPTIONS, ESTADOS_BRASILEIROS } from '../constants/options';
@@ -55,6 +56,15 @@ const ErrorText: React.FC<{ id: string; message?: string }> = ({ id, message }) 
 
 export default function RegisterCandidatoPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    // Redireciona para dashboard se já estiver logado
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, navigate]);
+
     const [formData, setFormData] = useState<FormData>({
         nome_completo: '',
         email: '',

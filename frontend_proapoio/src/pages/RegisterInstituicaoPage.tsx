@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Building, Lock as LockIcon, Mail, Phone, MapPin, User, Briefcase, GraduationCap, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { maskCEP, maskCNPJ, maskPhone, maskFixo } from '../utils/masks';
 import { ESTADOS_BRASILEIROS } from '../constants/options';
@@ -85,6 +86,15 @@ function senhaValida(s: string) {
 
 const RegisterInstituicaoPage: React.FC = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    // Redireciona para dashboard se já estiver logado
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, navigate]);
+
     const [instituicaoForm, setInstituicaoForm] = useState(initialInstituicaoState);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<FieldErrors>({});

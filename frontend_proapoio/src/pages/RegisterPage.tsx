@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { User, Building, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -11,8 +12,17 @@ import Footer from '../components/Footer';
  */
 export default function RegisterPage() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const successType = searchParams.get('success'); // 'candidato' ou 'instituicao'
     const successRef = useRef<HTMLDivElement>(null);
+
+    // Redireciona para dashboard se já estiver logado
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, navigate]);
 
     // Foca no alerta de sucesso após o cadastro
     useEffect(() => {

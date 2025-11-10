@@ -22,12 +22,29 @@ class InstituicaoProfileController extends Controller
         $user = $request->user();
 
         $instituicao = Instituicao::where('id_usuario', $user->id)
-            ->with('endereco')
+            ->with(['endereco', 'vagas' => function($query) {
+                $query->select('id_vaga', 'id_instituicao', 'titulo_vaga', 'cidade', 'regime_contratacao', 'status', 'created_at')
+                      ->orderBy('created_at', 'desc');
+            }])
             ->firstOrFail();
 
         // Adicionar email do usuário para compatibilidade com frontend
         $data = $instituicao->toArray();
         $data['email'] = $user->email;
+
+        // Mapear vagas para formato esperado pelo frontend
+        if (isset($data['vagas'])) {
+            $data['vagas'] = array_map(function($vaga) {
+                return [
+                    'id' => $vaga['id_vaga'],
+                    'titulo_vaga' => $vaga['titulo_vaga'],
+                    'cidade' => $vaga['cidade'] ?? 'Não especificado',
+                    'regime_contratacao' => $vaga['regime_contratacao'] ?? 'Não especificado',
+                    'status' => $vaga['status'],
+                    'data_publicacao' => $vaga['created_at'],
+                ];
+            }, $data['vagas']);
+        }
 
         return response()->json($data);
     }

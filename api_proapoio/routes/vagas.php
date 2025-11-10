@@ -16,17 +16,15 @@ use App\Http\Controllers\VagaSalvaController;
 
 // Rotas públicas
 Route::get('/vagas', [VagaController::class, 'index'])->name('vagas.index');
-Route::get('/vagas/{id}', [VagaController::class, 'showPublic'])
-    ->whereNumber('id')
-    ->name('vagas.show');
 
 // Rotas protegidas (requer autenticação)
 Route::middleware('jwt')->group(function () {
 
     // Criação e gerenciamento de vagas (SOMENTE Instituições)
     Route::middleware('instituicao')->group(function () {
-        Route::post('/vagas', [VagaController::class, 'store'])->name('vagas.store');
+        // IMPORTANTE: Rotas específicas ANTES de rotas dinâmicas
         Route::get('/vagas/minhas', [VagaController::class, 'minhas'])->name('vagas.minhas');
+        Route::post('/vagas', [VagaController::class, 'store'])->name('vagas.store');
         Route::get('/vagas/minhas/{id}', [VagaController::class, 'show'])
             ->whereNumber('id')
             ->name('vagas.minhas.show');
@@ -57,3 +55,8 @@ Route::middleware('jwt')->group(function () {
             ->name('vagas.unsave');
     });
 });
+
+// Rota pública para visualizar vaga (DEVE vir DEPOIS das rotas protegidas específicas)
+Route::get('/vagas/{id}', [VagaController::class, 'showPublic'])
+    ->whereNumber('id')
+    ->name('vagas.show');

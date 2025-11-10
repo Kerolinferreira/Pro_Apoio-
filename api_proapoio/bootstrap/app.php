@@ -16,8 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Registrar middlewares de segregação de permissões por tipo de usuário
+        // Registrar middlewares de autenticação e autorização
         $middleware->alias([
+            'jwt' => \App\Http\Middleware\JwtMiddleware::class,
             'candidato' => \App\Http\Middleware\EnsureCandidato::class,
             'instituicao' => \App\Http\Middleware\EnsureInstituicao::class,
         ]);

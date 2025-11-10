@@ -156,16 +156,16 @@ class VagaController extends Controller
             'deficiencia_ids'         => 'nullable|array',
             'deficiencia_ids.*'       => 'integer|exists:deficiencias,id_deficiencia',
             'necessidades_descricao'  => 'nullable|string|max:2000',
-            'descricao'               => 'required|string',
+            'descricao'               => 'nullable|string|max:2000',
             'carga_horaria_semanal'   => 'nullable|integer|min:1|max:60',
             'regime_contratacao'      => 'nullable|string|max:30',
             'valor_remuneracao'       => 'nullable|numeric|min:0',
             'remuneracao'             => 'nullable|numeric|min:0',
             'tipo_remuneracao'        => 'nullable|string|max:30',
-            'titulo_vaga'             => 'nullable|string|max:255',
-            'titulo'                  => 'required|string|min:3|max:255',
-            'tipo'                    => 'required|string',
-            'modalidade'              => 'required|string',
+            'titulo_vaga'             => 'required|string|min:3|max:255',
+            'titulo'                  => 'nullable|string|min:3|max:255',
+            'tipo'                    => 'nullable|string',
+            'modalidade'              => 'nullable|string',
             'cidade'                  => 'nullable|string|max:120',
             'estado'                  => 'nullable|string|size:2',
         ], [
@@ -175,24 +175,29 @@ class VagaController extends Controller
             'aluno_nascimento_ano.max' => 'Ano de nascimento inválido.',
             'deficiencia_ids.*.exists' => 'Uma ou mais deficiências selecionadas são inválidas.',
             'necessidades_descricao.max' => 'A descrição de necessidades não pode ter mais de 2000 caracteres.',
-            'descricao.required' => 'Por favor, informe a descrição da vaga.',
             'descricao.max' => 'A descrição não pode ter mais de 2000 caracteres.',
-            'tipo.required' => 'Por favor, informe o tipo da vaga.',
-            'modalidade.required' => 'Por favor, informe a modalidade da vaga.',
             'carga_horaria_semanal.min' => 'A carga horária semanal deve ser de pelo menos 1 hora.',
             'carga_horaria_semanal.max' => 'A carga horária semanal não pode ser maior que 60 horas.',
             'valor_remuneracao.min' => 'O valor da remuneração deve ser maior ou igual a zero.',
             'remuneracao.min' => 'O valor da remuneração deve ser maior ou igual a zero.',
+            'titulo_vaga.required' => 'Por favor, informe o título da vaga.',
+            'titulo_vaga.min' => 'O título da vaga deve ter pelo menos 3 caracteres.',
             'titulo_vaga.max' => 'O título da vaga não pode ter mais de 255 caracteres.',
-            'titulo.required' => 'Por favor, informe o título da vaga.',
             'titulo.min' => 'O título da vaga deve ter pelo menos 3 caracteres.',
             'titulo.max' => 'O título da vaga não pode ter mais de 255 caracteres.',
             'estado.size' => 'O estado deve ter exatamente 2 caracteres.',
         ]);
 
-        // Mapear campos alternativos
+        // Mapear campos alternativos e garantir compatibilidade
         if (!isset($data['titulo_vaga']) && isset($data['titulo'])) {
             $data['titulo_vaga'] = $data['titulo'];
+        }
+        if (!isset($data['titulo']) && isset($data['titulo_vaga'])) {
+            $data['titulo'] = $data['titulo_vaga'];
+        }
+        // Garantir que ambos os campos titulo estejam preenchidos
+        if (isset($data['titulo_vaga'])) {
+            $data['titulo'] = $data['titulo_vaga'];
         }
         if (!isset($data['valor_remuneracao']) && isset($data['remuneracao'])) {
             $data['valor_remuneracao'] = $data['remuneracao'];
@@ -241,14 +246,29 @@ class VagaController extends Controller
             return $this->forbidden('Instituição não encontrada.');
         }
 
-        // Adicionar paginação
-        $perPage = $this->safePerPage($request, 15);
-
-        $query = Vaga::where('id_instituicao', $user->instituicao->id)
+        $vagas = Vaga::where('id_instituicao', $user->instituicao->id)
             ->withCount('propostas')
-            ->orderByDesc('id_vaga');
+            ->orderByDesc('id_vaga')
+            ->get();
 
-        return response()->json($query->paginate($perPage));
+        // Mapear para formato esperado pelo frontend
+        $vagasMapeadas = $vagas->map(function ($vaga) {
+            return [
+                'id' => $vaga->id_vaga,
+                'titulo' => $vaga->titulo_vaga,
+                'descricao' => $vaga->descricao,
+                'tipo' => $vaga->tipo,
+                'modalidade' => $vaga->modalidade,
+                'remuneracao' => $vaga->valor_remuneracao,
+                'cidade' => $vaga->cidade,
+                'estado' => $vaga->estado,
+                'status' => $vaga->status,
+                'data_criacao' => $vaga->created_at ? $vaga->created_at->toISOString() : null,
+                'numero_propostas' => $vaga->propostas_count ?? 0,
+            ];
+        });
+
+        return response()->json($vagasMapeadas);
     }
 
     /**
