@@ -1,13 +1,15 @@
 @echo off
 REM ################################################################################
-REM SCRIPT DE INSTALACAO AUTOMATIZADA - PRO APOIO (WINDOWS)
+REM SCRIPT DE INSTALACAO E EXECUCAO AUTOMATIZADA - PRO APOIO (WINDOWS)
 REM
-REM Este script automatiza a instalacao e configuracao do projeto Pro Apoio
+REM Este script automatiza a instalacao, configuracao e execucao do projeto.
+REM - Verifica se os passos ja foram executados.
+REM - Se tudo estiver pronto, inicia os servidores.
 REM
 REM Uso: install.bat
 REM
-REM Autor: Claude Code
-REM Data: 2025-11-08
+REM Autor: Claude Code & Gemini
+REM Data: 2025-11-10
 REM ################################################################################
 
 setlocal enabledelayedexpansion
@@ -16,15 +18,20 @@ color 0B
 echo.
 echo ===============================================================
 echo.
-echo            INSTALACAO AUTOMATIZADA - PRO APOIO
+echo      INSTALACAO E EXECUCAO AUTOMATIZADA - PRO APOIO
 echo.
-echo   Este script ira configurar o projeto do zero
+echo   Este script ira verificar e configurar o projeto.
+echo   Se a configuracao ja estiver completa, os servidores
+echo   serao iniciados.
 echo.
 echo ===============================================================
 echo.
 
+REM Variavel de controle. 1 = tudo pronto, 0 = algo foi instalado
+set "SETUP_COMPLETE=1"
+
 REM Verificar pre-requisitos
-echo [PASSO 1/10] Verificando pre-requisitos...
+echo [PASSO 1/11] Verificando pre-requisitos...
 echo.
 
 REM PHP
@@ -81,171 +88,184 @@ if %errorlevel% equ 0 (
 echo.
 echo.
 
-REM Configurar backend
-echo [PASSO 2/10] Instalando dependencias do backend (Composer)...
+REM --- BACKEND ---
 cd api_proapoio
-call composer install --quiet
-if %errorlevel% neq 0 (
-    echo [ERRO] Falha ao instalar dependencias do backend
-    pause
-    exit /b 1
+
+echo [PASSO 2/11] Verificando dependencias do backend (Composer)...
+if not exist vendor (
+    echo [INFO] Diretorio 'vendor' nao encontrado. Instalando dependencias...
+    set "SETUP_COMPLETE=0"
+    call composer install --quiet
+    if %errorlevel% neq 0 (
+        echo [ERRO] Falha ao instalar dependencias do backend (Composer).
+        pause
+        exit /b 1
+    )
+    echo [OK] Dependencias do backend (Composer) instaladas.
+) else (
+    echo [OK] Dependencias do backend (Composer) ja instaladas.
 )
-echo [OK] Dependencias do backend instaladas
 echo.
 
-REM Configurar .env do backend
-echo [PASSO 3/10] Configurando arquivo .env do backend...
+echo [PASSO 3/11] Verificando dependencias do backend (NPM)...
+if not exist node_modules (
+    echo [INFO] Diretorio 'node_modules' nao encontrado. Instalando dependencias...
+    set "SETUP_COMPLETE=0"
+    call npm install --silent
+    if %errorlevel% neq 0 (
+        echo [ERRO] Falha ao instalar dependencias do backend (NPM).
+        pause
+        exit /b 1
+    )
+    echo [OK] Dependencias do backend (NPM) instaladas.
+) else (
+    echo [OK] Dependencias do backend (NPM) ja instaladas.
+)
+echo.
+
+echo [PASSO 4/11] Verificando arquivo .env do backend...
 if not exist .env (
+    echo [INFO] Arquivo .env nao encontrado. Criando...
+    set "SETUP_COMPLETE=0"
     if exist .env.example (
         copy .env.example .env >nul
-        echo [OK] Arquivo .env criado a partir de .env.example
+        echo [OK] Arquivo .env criado a partir de .env.example.
     ) else (
-        echo [AVISO] Arquivo .env.example nao encontrado
-        echo Voce precisara criar o arquivo .env manualmente
+        echo [AVISO] .env.example nao encontrado. Voce precisara criar o .env manualmente.
     )
 ) else (
-    echo [AVISO] Arquivo .env ja existe, pulando...
+    echo [OK] Arquivo .env do backend ja existe.
 )
 echo.
 
-REM Gerar chaves
-echo [PASSO 4/10] Gerando chaves de seguranca...
-call php artisan key:generate --quiet
-if %errorlevel% neq 0 (
-    echo [ERRO] Falha ao gerar chave da aplicacao
-) else (
-    echo [OK] Chave da aplicacao gerada
-)
-
-REM Tentar gerar chave JWT
-call php artisan jwt:secret --quiet >nul 2>&1
+echo [PASSO 5/11] Verificando chave de seguranca do backend...
+findstr /R /C:"^APP_KEY=s*$" .env >nul
 if %errorlevel% equ 0 (
-    echo [OK] Chave JWT gerada
+    echo [INFO] Chave de seguranca (APP_KEY) nao definida. Gerando...
+    set "SETUP_COMPLETE=0"
+    call php artisan key:generate --quiet
+    if %errorlevel% neq 0 (
+        echo [ERRO] Falha ao gerar chave da aplicacao.
+    ) else (
+        echo [OK] Chave da aplicacao gerada com sucesso.
+    )
 ) else (
-    echo [AVISO] Comando jwt:secret nao encontrado (pode nao estar instalado)
+    echo [OK] Chave de seguranca (APP_KEY) ja definida.
 )
 echo.
 
-REM Storage link
-echo [PASSO 5/10] Criando link simbolico para storage...
-call php artisan storage:link --quiet >nul 2>&1
+echo [PASSO 6/11] Verificando chave JWT...
+call php artisan jwt:secret --quiet --force >nul 2>&1
 if %errorlevel% equ 0 (
-    echo [OK] Link de storage configurado
+    echo [OK] Chave JWT (re)gerada.
 ) else (
-    echo [AVISO] Link ja existe ou falhou
+    echo [AVISO] Comando jwt:secret nao encontrado ou falhou.
 )
 echo.
 
-REM Permissoes (Windows)
-echo [PASSO 6/10] Configurando permissoes de storage...
+echo [PASSO 7/11] Verificando link de storage...
+if not exist public\storage (
+    echo [INFO] Link de storage nao encontrado. Criando...
+    set "SETUP_COMPLETE=0"
+    call php artisan storage:link --quiet >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [OK] Link de storage configurado.
+    ) else (
+        echo [AVISO] Falha ao criar link de storage.
+    )
+) else (
+    echo [OK] Link de storage ja existe.
+)
+echo.
+
+echo [PASSO 8/11] Verificando permissoes de storage (Windows)...
 icacls storage /grant Everyone:F /t /q >nul 2>&1
 icacls bootstrap\cache /grant Everyone:F /t /q >nul 2>&1
-echo [OK] Permissoes configuradas
+echo [OK] Permissoes de storage verificadas/aplicadas.
 echo.
 
-REM Migrations
-echo [PASSO 7/10] Executando migrations do banco de dados...
-echo.
-echo ATENCAO: Certifique-se de que o banco de dados esta criado e configurado no .env
-echo.
-set /p run_migrations="Deseja executar as migrations agora? (s/n): "
-if /i "%run_migrations%"=="s" (
-    call php artisan migrate --force
+REM --- FRONTEND ---
+cd ..\frontend_proapoio
+
+echo [PASSO 9/11] Verificando dependencias do frontend (NPM)...
+if not exist node_modules (
+    echo [INFO] Diretorio 'node_modules' do frontend nao encontrado. Instalando...
+    set "SETUP_COMPLETE=0"
+    call npm install --silent
     if %errorlevel% neq 0 (
-        echo [ERRO] Falha ao executar migrations
-        echo Verifique a configuracao do banco de dados no .env
-    ) else (
-        echo [OK] Migrations executadas
-        echo.
-        set /p run_seeders="Deseja executar os seeders para dados de teste? (s/n): "
-        if /i "!run_seeders!"=="s" (
-            call php artisan db:seed --force
-            if %errorlevel% neq 0 (
-                echo [ERRO] Falha ao executar seeders
-            ) else (
-                echo [OK] Seeders executados
-            )
-        ) else (
-            echo [AVISO] Seeders nao executados
-        )
+        echo [ERRO] Falha ao instalar dependencias do frontend.
+        pause
+        exit /b 1
     )
+    echo [OK] Dependencias do frontend instaladas.
 ) else (
-    echo [AVISO] Migrations nao executadas - voce precisara executar manualmente:
-    echo   cd api_proapoio
-    echo   php artisan migrate
+    echo [OK] Dependencias do frontend ja instaladas.
 )
 echo.
 
-REM Limpar cache
-echo [PASSO 8/10] Limpando cache...
-call php artisan config:clear --quiet >nul 2>&1
-call php artisan cache:clear --quiet >nul 2>&1
-call php artisan route:clear --quiet >nul 2>&1
-call php artisan view:clear --quiet >nul 2>&1
-echo [OK] Cache limpo
-echo.
-
-REM Voltar para raiz e configurar frontend
-cd ..
-
-echo [PASSO 9/10] Instalando dependencias do frontend (npm)...
-cd frontend_proapoio
-call npm install --silent
-if %errorlevel% neq 0 (
-    echo [ERRO] Falha ao instalar dependencias do frontend
-    pause
-    exit /b 1
-)
-echo [OK] Dependencias do frontend instaladas
-echo.
-
-REM Configurar .env do frontend
-echo [PASSO 10/10] Configurando arquivo .env do frontend...
+echo [PASSO 10/11] Verificando arquivo .env do frontend...
 if not exist .env (
+    echo [INFO] Arquivo .env do frontend nao encontrado. Criando...
+    set "SETUP_COMPLETE=0"
     (
-        echo VITE_API_URL=http://localhost:8000/api
+        echo VITE_API_URL=http://127.0.0.1:8000/api
         echo VITE_APP_NAME="Pro Apoio"
     ) > .env
-    echo [OK] Arquivo .env do frontend criado
+    echo [OK] Arquivo .env do frontend criado com a URL da API.
 ) else (
-    echo [AVISO] Arquivo .env do frontend ja existe, pulando...
+    echo [OK] Arquivo .env do frontend ja existe.
 )
+echo.
 
 cd ..
 
+REM --- FINALIZACAO ---
+echo [PASSO 11/11] Finalizando...
 echo.
-echo ===============================================================
-echo.
-echo              INSTALACAO CONCLUIDA COM SUCESSO!
-echo.
-echo ===============================================================
-echo.
-echo.
-echo PROXIMOS PASSOS:
-echo.
-echo 1. Configure o banco de dados no arquivo: api_proapoio\.env
-echo    - DB_CONNECTION=mysql
-echo    - DB_HOST=127.0.0.1
-echo    - DB_PORT=3306
-echo    - DB_DATABASE=proapoio
-echo    - DB_USERNAME=seu_usuario
-echo    - DB_PASSWORD=sua_senha
-echo.
-echo 2. Execute as migrations (se ainda nao executou):
-echo    cd api_proapoio
-echo    php artisan migrate
-echo.
-echo 3. Inicie o backend em um terminal:
-echo    cd api_proapoio
-echo    php artisan serve
-echo.
-echo 4. Inicie o frontend em outro terminal:
-echo    cd frontend_proapoio
-echo    npm run dev
-echo.
-echo 5. Acesse no navegador:
-echo    http://localhost:5174
-echo.
-echo Boa sorte com o projeto Pro Apoio!
-echo.
+
+if "%SETUP_COMPLETE%"=="1" (
+    echo ===============================================================
+    echo.
+    echo      SETUP JA ESTA COMPLETO. INICIANDO SERVIDORES...
+    echo.
+    echo ===============================================================
+    echo.
+    echo [INFO] Iniciando servidor do Backend (API) em uma nova janela...
+    start "ProApoio - Backend" cmd /c "cd api_proapoio && php artisan serve"
+    
+    echo [INFO] Iniciando servidor do Frontend em uma nova janela...
+    start "ProApoio - Frontend" cmd /c "cd frontend_proapoio && npm run dev"
+    
+    echo.
+    echo [OK] Servidores iniciados. Verifique as novas janelas do terminal.
+    echo    - Backend (API) em: http://127.0.0.1:8000
+    echo    - Frontend em: http://localhost:5173 (ou outra porta indicada)
+    echo.
+) else (
+    echo ===============================================================
+    echo.
+    echo      INSTALACAO CONCLUIDA! AGORA FALTAM PASSOS MANUAIS.
+    echo.
+    echo ===============================================================
+    echo.
+    echo.
+    echo PROXIMOS PASSOS:
+    echo.
+    echo 1. CRIE UM BANCO DE DADOS (ex: 'proapoio').
+    echo.
+    echo 2. CONFIGURE O BANCO DE DADOS no arquivo: api_proapoio\.env
+    echo    - DB_DATABASE=proapoio
+    echo    - DB_USERNAME=seu_usuario
+    echo    - DB_PASSWORD=sua_senha
+    echo.
+    echo 3. EXECUTE AS MIGRATIONS (apos configurar o .env):
+    echo    cd api_proapoio
+    echo    php artisan migrate
+    echo.
+    echo 4. INICIE OS SERVIDORES (execute em terminais separados):
+    echo    - Backend: cd api_proapoio && php artisan serve
+    echo    - Frontend: cd frontend_proapoio && npm run dev
+    echo.
+)
+
 pause

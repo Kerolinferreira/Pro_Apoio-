@@ -1,6 +1,8 @@
-# 🎓 PRO APOIO - Plataforma de Conexão para Agentes de Apoio Escolar
+# PRO APOIO: Plataforma de Conexão para Agentes de Apoio Escolar
 
-**Pro Apoio** é uma plataforma que conecta profissionais qualificados (agentes de apoio) com instituições de ensino que necessitam de suporte especializado para alunos com deficiência.
+## Promovendo Inclusão e Acessibilidade na Educação
+
+[![Licença](https://img.shields.io/badge/Licen%C3%A7a-MIT-green)](LICENSE)
 
 [![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
@@ -10,405 +12,171 @@
 
 ---
 
-## 📋 Índice
+## Sumário Executivo
 
-- [🎯 Sobre o Projeto](#-sobre-o-projeto)
-- [✨ Funcionalidades](#-funcionalidades)
-- [🛠️ Tecnologias](#️-tecnologias)
-- [🚀 Instalação Rápida](#-instalação-rápida)
-- [🔧 Configuração Manual](#-configuração-manual)
-- [🧪 Testes](#-testes)
-- [🚢 Deploy](#-deploy)
-- [🤝 Contribuindo](#-contribuindo)
-- [📄 Licença](#-licença)
-
----
-
-## 🎯 Sobre o Projeto
-
-O **Pro Apoio** é uma solução completa que facilita a contratação de agentes de apoio escolar, promovendo inclusão e acessibilidade na educação.
-
-### Para Candidatos (Agentes de Apoio):
-- ✅ Criar perfil profissional completo
-- ✅ Buscar vagas por localização e especialidade
-- ✅ Enviar propostas para instituições
-- ✅ Gerenciar experiências profissionais e pessoais
-
-### Para Instituições de Ensino:
-- ✅ Publicar vagas com requisitos específicos
-- ✅ Buscar candidatos qualificados
-- ✅ Receber e avaliar propostas
-- ✅ Gerenciar múltiplas vagas simultaneamente
+- [1. Introdução e Justificativa](#1-introdução-e-justificativa)
+- [2. Propósito e Escopo](#2-propósito-e-escopo)
+- [3. Arquitetura e Funcionalidades](#3-arquitetura-e-funcionalidades)
+- [4. Stack Tecnológico](#4-stack-tecnológico)
+- [5. Guia de Instalação e Execução](#5-guia-de-instalação-e-execução)
+- [6. Testes e Segurança](#6-testes-e-segurança)
+- [7. Autoria e Contato](#7-autoria-e-contato)
+- [8. Licença](#8-licença)
 
 ---
 
-## ✨ Funcionalidades
+## 1. Introdução e Justificativa
 
-### 🔐 Autenticação
-- Cadastro separado para Candidatos e Instituições
-- Login seguro com JWT/Sanctum
-- Recuperação de senha via email
-- Validação robusta de dados (CPF, CNPJ, etc)
+O **Pro Apoio** é um projeto de software desenvolvido com o objetivo de mitigar a lacuna existente entre a demanda por **Agentes de Apoio Escolar** qualificados e a oferta de profissionais para instituições de ensino. O projeto visa centralizar e otimizar o processo de contratação, essencial para garantir a **inclusão plena** de estudantes com deficiência (PcD) conforme as diretrizes da Lei Brasileira de Inclusão (Lei nº 13.146/2015).
 
-### 👤 Perfis
-- Perfis completos e personalizáveis
-- Upload de foto/logo
-- Gerenciamento de experiências
-- Endereços com busca automática por CEP
+Este sistema atua como uma **Plataforma de Conexão (Marketplace)**, estruturada para atender às necessidades específicas do ambiente educacional.
 
-### 💼 Vagas
-- Publicação de vagas com filtros avançados
-- Busca por localização, tipo de deficiência, remuneração
-- Status de vaga (Ativa, Pausada, Fechada)
-- Vagas salvas (favoritos)
+### Contexto Acadêmico
 
-### 📝 Propostas
-- Envio e recebimento de propostas
-- Aceitação/recusa com histórico
-- Notificações em tempo real
-- Sistema de mensagens
-
-### 🔔 Notificações
-- Notificações de novas propostas
-- Alertas de vagas fechadas
-- Sistema de badges não lidas
+* **Instituição:** *ATEC Itapetininga*
+* **Disciplina/Módulo:** *Trabalho de Graduação*
+* **Semestre/Ano:** * 2025/2*
 
 ---
 
-## 🛠️ Tecnologias
+## 2. Propósito e Escopo
 
-### Backend
-- **Laravel 10** - Framework PHP moderno
-- **MySQL/PostgreSQL** - Banco de dados relacional
-- **Sanctum** - Autenticação de API
-- **Eloquent ORM** - Mapeamento objeto-relacional
-- **Laravel Mail** - Envio de emails
+O escopo do projeto abrange a criação de dois perfis primários de usuário, cada um com funcionalidades dedicadas:
 
-### Frontend
-- **React 18** - Biblioteca JavaScript
-- **TypeScript** - Superset tipado de JavaScript
-- **Vite** - Build tool ultrarrápido
-- **React Router** - Roteamento SPA
-- **Zod** - Validação de schemas
-- **Axios** - Cliente HTTP
-
-### Ferramentas
-- **Composer** - Gerenciador de dependências PHP
-- **npm** - Gerenciador de pacotes Node.js
-- **Git** - Controle de versão
+| Usuário | Objetivo Principal | Funcionalidades Chave |
+| :--- | :--- | :--- |
+| **Candidato (Agente de Apoio)** | Apresentar qualificações e buscar oportunidades de trabalho. | Criação de perfil profissional detalhado, busca por vagas com filtros de especialidade e localização, e gerenciamento de propostas. |
+| **Instituição de Ensino** | Publicar e gerenciar vagas, e localizar profissionais especializados. | Publicação de vagas com requisitos específicos, recebimento/avaliação de propostas e gerenciamento centralizado de candidatos. |
 
 ---
 
-## 🚀 Instalação Rápida
+## 3. Arquitetura e Funcionalidades
 
-### Opção 1: Script Automatizado (Recomendado)
+O projeto adota uma arquitetura *API-First*, separando o *backend* (API) do *frontend* (SPA), garantindo escalabilidade e flexibilidade para o desenvolvimento.
 
-#### 🐧 Linux / 🍎 macOS
+### 3.1. Arquitetura de Software
+O sistema é dividido em duas componentes principais:
 
-```bash
-# 1. Clone o repositório
-git clone https://github.com/Kerolinferreira/Pro_Apoio-.git
-cd Pro_Apoio-
+* **Backend (API):** Desenvolvido em **Laravel**, responsável pela lógica de negócios, manipulação do banco de dados e autenticação via API.
+* **Frontend (SPA):** Desenvolvido em **React/TypeScript**, responsável pela interface do usuário e interação assíncrona com o Backend.
 
-# 2. Execute o script de instalação
-chmod +x install.sh
-./install.sh
+### 3.2. Funcionalidades Detalhadas
 
-# 3. Siga as instruções na tela
-```
+#### Módulo de Autenticação e Segurança
+* Cadastro e Login Separados (Candidato/Instituição).
+* Autenticação via **JWT/Sanctum** para comunicação segura.
+* Recuperação de credenciais via e-mail.
 
-#### 🪟 Windows
+#### Módulo de Perfis (User Management)
+* **Customização:** Campos específicos para credenciais profissionais (Agente) e dados corporativos (Instituição - CNPJ, etc.).
+* **Localização:** Uso de serviços de geolocalização para busca automática de endereços (via CEP).
 
+#### Módulo de Vagas e Matchmaking
+* Publicação de vagas com taxonomias detalhadas (Tipo de Deficiência, Remuneração, Horário).
+* Mecanismo de busca e filtros avançados.
+
+#### Módulo de Comunicação
+* **Propostas:** Fluxo de envio, recebimento, aceite e recusa de propostas de trabalho.
+* **Notificações:** Sistema em tempo real (badges) para alertar sobre novas propostas e *updates* de vagas.
+
+---
+
+## 4. Stack Tecnológico
+
+A escolha das tecnologias baseou-se na robustez, performance e no ecossistema de suporte de cada ferramenta.
+
+| Categoria | Tecnologia | Versão | Propósito Principal |
+| :--- | :--- | :--- | :--- |
+| **Backend (API)** | **Laravel** | 10 | Framework PHP principal, Lógica de Negócios e Rotas API. |
+| | **MySQL/PostgreSQL** | *latest* | Banco de dados relacional (ORM Eloquent). |
+| | **Sanctum** | *latest* | Geração e gerenciamento de tokens de API. |
+| **Frontend (Interface)** | **React** | 18 | Construção da interface de usuário (Single Page Application - SPA). |
+| | **TypeScript** | 5 | Tipagem estática para maior segurança e manutenção do código. |
+| | **Vite** | 5 | Ferramenta de *build* e servidor de desenvolvimento otimizado. |
+| **Utilitários** | **Composer** | *latest* | Gerenciamento de dependências PHP. |
+| | **npm/Yarn** | *latest* | Gerenciamento de pacotes Node.js. |
+
+---
+
+## 5. Guia de Instalação e Execução
+
+Para replicar e avaliar o projeto, siga os passos abaixo.
+
+### 5.1. Pré-requisitos
+Certifique-se de ter instalado:
+* **Git**
+* **PHP** (versão 8.1 ou superior)
+* **Composer**
+* **Node.js** (versão 18 ou superior) e **npm**
+* Um servidor de banco de dados (MySQL ou PostgreSQL).
+
+### 5.2. Instalação (Script Automatizado - Recomendado para Windows)
+
+#### Windows
 ```cmd
 # 1. Clone o repositório
-git clone https://github.com/Kerolinferreira/Pro_Apoio-.git
+git clone [https://github.com/Kerolinferreira/Pro_Apoio-.git](https://github.com/Kerolinferreira/Pro_Apoio-.git)
 cd Pro_Apoio-
 
 # 2. Execute o script de instalação
 install.bat
+### 5.3. Execução do Projeto
 
-# 3. Siga as instruções na tela
-```
+Após a instalação, abra dois terminais separados para iniciar o *backend* e o *frontend*.
 
-### Opção 2: Comando único
+| Componente | Terminal | Comandos (Windows/Gerais) |
+| :--- | :--- | :--- |
+| **Backend** | Terminal 1 | `cd api_proapoio` <br> `php artisan serve` |
+| **Frontend** | Terminal 2 | `cd frontend_proapoio` <br> `npm run dev` |
 
-#### Linux/Mac
-```bash
-git clone https://github.com/Kerolinferreira/Pro_Apoio-.git && \
-cd Pro_Apoio- && \
-chmod +x install.sh && \
-./install.sh
-```
+**Acessar a Aplicação:** O projeto estará disponível em `http://localhost:5174`.
 
-#### Windows (PowerShell)
-```powershell
-git clone https://github.com/Kerolinferreira/Pro_Apoio-.git; cd Pro_Apoio-; .\install.bat
-```
-
-### Depois da instalação:
-
-#### Linux/Mac
-**Terminal 1 - Backend:**
-```bash
-cd api_proapoio
-php artisan serve
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend_proapoio
-npm run dev
-```
-
-#### Windows
-**Terminal 1 - Backend:**
-```cmd
-cd api_proapoio
-php artisan serve
-```
-
-**Terminal 2 - Frontend:**
-```cmd
-cd frontend_proapoio
-npm run dev
-```
-
-**Acesse:** http://localhost:5174
 
 ---
 
-### 📝 Scripts Disponíveis
+## 6. Testes e Segurança
 
-| Script | Linux/Mac | Windows | Função |
-|--------|-----------|---------|---------|
-| **Instalação** | `./install.sh` | `install.bat` | Instalação automatizada completa |
-| **Verificação** | `./verificar.sh` | `verificar.bat` | Verifica se está tudo configurado |
+### 6.1. Testes Unitários e de Integração
+Os testes foram implementados para garantir a robustez e a integridade da lógica de negócios.
 
-💡 **Dica Windows:** Se preferir usar os scripts `.sh`, você pode usar:
-- **Git Bash** (vem com Git for Windows)
-- **WSL** (Windows Subsystem for Linux)
-- **PowerShell** com WSL instalado
+* **Backend:** Execute os testes do Laravel.
+    ```bash
+    cd api_proapoio
+    php artisan test
+    ```
+* **Frontend:** Execute os testes do React.
+    ```bash
+    cd frontend_proapoio
+    npm run test
+    ```
 
----
-
-## 🔧 Configuração Manual
-
-Se preferir configurar manualmente:
-
-### 1. Backend (Laravel)
-
-```bash
-cd api_proapoio
-
-# Instalar dependências
-composer install
-
-# Configurar ambiente
-cp .env.example .env
-php artisan key:generate
-
-# Configurar banco de dados no .env
-# DB_CONNECTION=mysql
-# DB_DATABASE=proapoio
-# DB_USERNAME=seu_usuario
-# DB_PASSWORD=sua_senha
-
-# Executar migrations
-php artisan migrate
-
-# (Opcional) Seeders
-php artisan db:seed
-
-# Iniciar servidor
-php artisan serve
-```
-
-### 2. Frontend (React)
-
-```bash
-cd frontend_proapoio
-
-# Instalar dependências
-npm install
-
-# Configurar ambiente
-echo "VITE_API_URL=http://localhost:8000/api" > .env
-
-# Iniciar servidor
-npm run dev
-```
+### 6.2. Protocolos de Segurança
+O projeto foi desenvolvido com foco em segurança, aplicando as seguintes práticas:
+* **Validação:** Implementação de Zod (Frontend) e Validação Laravel (Backend) em todos os *inputs*.
+* **Proteção de API:** Uso de *Rate Limiting* e Autenticação *Stateless* (Sanctum/JWT).
+* **Prevenção:** Medidas contra XSS (*Cross-Site Scripting*), CSRF (*Cross-Site Request Forgery*) e *SQL Injection*.
 
 ---
 
-## 📊 Estrutura do Projeto
+## 7. Autoria e Contato
 
-```
-Pro_Apoio-/
-├── api_proapoio/           # Backend Laravel
-│   ├── app/
-│   │   ├── Http/
-│   │   │   ├── Controllers/
-│   │   │   ├── Middleware/
-│   │   │   └── Requests/
-│   │   ├── Models/
-│   │   └── Enums/
-│   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   ├── routes/
-│   └── tests/
-│
-├── frontend_proapoio/      # Frontend React
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── contexts/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   └── types/
-│   └── public/
-│
-├── install.sh              # Script de instalação
-└── README.md               # Este arquivo
-```
+Este projeto foi concebido e desenvolvido como parte de um requisito acadêmico por:
+
+| Nome Completo | Papel no Projeto | Contato (GitHub/LinkedIn) |
+| :--- | :--- | :--- |
+| **Kerolin Ferreira de Oliveira** | Desenvolvimento Full-Stack e Gestão do Projeto | [GitHub/Kerolinferreira](https://github.com/Kerolinferreira) |
+| **Diogo Lima Gomes de Oliveira** | Desenvolvimento Backend e Arquitetura de Dados | [GitHub/diogolimaoliveira](https://github.com/diogolimaoliveira)* |
+
+
+**Contribuições:**
+* Para relatar bugs ou sugerir melhorias, utilize a seção **Issues** do repositório.
 
 ---
 
-## 🔒 Segurança
 
-O projeto implementa diversas medidas de segurança:
-
-- ✅ Autenticação JWT/Sanctum
-- ✅ Rate limiting em rotas sensíveis
-- ✅ Sanitização de inputs
-- ✅ Validação robusta de dados
-- ✅ CSRF protection
-- ✅ SQL injection prevention
-- ✅ XSS protection
-- ✅ CORS configurável
-
----
-
-## 🧪 Testes
-
-### Backend
-
-```bash
-cd api_proapoio
-php artisan test
-```
-
-### Frontend
-
-```bash
-cd frontend_proapoio
-npm run test
-```
-
----
-
-## 🚢 Deploy
-
-### Backend (Laravel)
-
-```bash
-# Build de produção
-composer install --optimize-autoloader --no-dev
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# Configure .env para produção
-APP_ENV=production
-APP_DEBUG=false
-```
-
-### Frontend (React)
-
-```bash
-# Build de produção
-npm run build
-
-# Arquivos estarão em dist/
-# Sirva com Nginx, Apache, ou outro servidor
-```
-
----
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Para contribuir:
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/NovaFuncionalidade`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/NovaFuncionalidade`)
-5. Abra um Pull Request
-
-### Diretrizes
-
-- Siga os padrões de código existentes
-- Escreva testes para novas funcionalidades
-- Atualize a documentação quando necessário
-- Use mensagens de commit descritivas
-
----
-
-## 🐛 Reportando Bugs
-
-Encontrou um bug? Por favor, [abra uma issue](https://github.com/Kerolinferreira/Pro_Apoio-/issues/new) com:
-
-- Descrição clara do problema
-- Passos para reproduzir
-- Comportamento esperado vs atual
-- Screenshots (se aplicável)
-- Ambiente (OS, versões, etc)
-
----
-
----
-
-## 📄 Licença
-
-Este projeto está sob a licença [MIT](LICENSE).
-
----
-
-## 👥 Autores
-
-- **Kerolinferreira** - *Desenvolvimento* - [GitHub](https://github.com/Kerolinferreira)
-- **Claude Code** - *Auditoria e Documentação*
-
----
-
-## 📞 Contato
-
-Para dúvidas ou sugestões, abra uma [issue](https://github.com/Kerolinferreira/Pro_Apoio-/issues) no GitHub.
-
----
-
-## 🌟 Apoie o Projeto
-
-Se este projeto foi útil para você, considere dar uma ⭐ no GitHub!
-
----
-
-**Desenvolvido com ❤️ para promover inclusão e acessibilidade na educação**
-
----
-
-## 📚 Links Úteis
-
-- [Documentação Laravel](https://laravel.com/docs)
-- [Documentação React](https://react.dev)
-- [Documentação TypeScript](https://www.typescriptlang.org/docs)
-- [Documentação Vite](https://vitejs.dev)
-- [Guia de Acessibilidade](https://www.w3.org/WAI/)
 
 ---
 
 <div align="center">
-
-**Pro Apoio** - Conectando Talentos, Promovendo Inclusão
-
+  <h3>Pro Apoio - Desenvolvido com o objetivo de promover a inclusão social e educacional.</h3>
 </div>
