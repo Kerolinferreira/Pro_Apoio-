@@ -37,3 +37,6 @@ require __DIR__.'/propostas.php';
 
 // APIs Externas e Notificações
 require __DIR__.'/external.php';
+
+// Dashboard
+require __DIR__.'/dashboard.php';

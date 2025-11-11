@@ -30,6 +30,7 @@ Route::middleware('throttle:100,1')->prefix('external')->name('external.')->grou
 // Notificações (requer autenticação)
 Route::middleware('jwt')->prefix('notificacoes')->name('notificacoes.')->group(function () {
     Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/count', [NotificationController::class, 'count'])->name('count');
     Route::post('/marcar-como-lidas', [NotificationController::class, 'markRead'])->name('markRead');
 });
 

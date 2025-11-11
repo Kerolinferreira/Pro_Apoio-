@@ -57,6 +57,14 @@ class VagaController extends Controller
     public function index(Request $request)
     {
         $perPage = $this->safePerPage($request, 10);
+        $user = $request->user();
+        $candidatoId = null;
+
+        // Verifica se o usuário é candidato para incluir status de candidatura
+        if ($user && strtoupper($user->tipo_usuario ?? '') === 'CANDIDATO') {
+            $candidato = \App\Models\Candidato::where('id_usuario', $user->id)->first();
+            $candidatoId = $candidato ? $candidato->id : null;
+        }
 
         $query = Vaga::query()
             ->with('instituicao')
@@ -118,19 +126,51 @@ class VagaController extends Controller
         // Ordenação por mais recentes
         $query->orderByDesc('id_vaga');
 
-        return $this->paginatedResponse($query->paginate($perPage));
+        $paginator = $query->paginate($perPage);
+
+        // Adiciona o campo ja_candidatou para cada vaga se o usuário for candidato
+        if ($candidatoId) {
+            $vagasIds = $paginator->pluck('id_vaga')->toArray();
+            $propostas = \App\Models\Proposta::whereIn('id_vaga', $vagasIds)
+                ->where('id_candidato', $candidatoId)
+                ->pluck('id_vaga')
+                ->toArray();
+
+            $paginator->getCollection()->transform(function ($vaga) use ($propostas) {
+                $vaga->ja_candidatou = in_array($vaga->id_vaga, $propostas);
+                return $vaga;
+            });
+        }
+
+        return $this->paginatedResponse($paginator);
     }
 
     /**
      * GET /vagas/{id}
      * Detalhe público de vaga ATIVA.
      */
-    public function showPublic($id)
+    public function showPublic(Request $request, $id)
     {
         $vaga = Vaga::with(['deficiencias', 'instituicao'])
             ->where('id_vaga', $id)
             ->where('status', 'ATIVA')
             ->firstOrFail();
+
+        // Adiciona o campo ja_candidatou se o usuário for candidato
+        $user = $request->user();
+        if ($user && strtoupper($user->tipo_usuario ?? '') === 'CANDIDATO') {
+            $candidato = \App\Models\Candidato::where('id_usuario', $user->id)->first();
+            if ($candidato) {
+                $proposta = \App\Models\Proposta::where('id_vaga', $id)
+                    ->where('id_candidato', $candidato->id)
+                    ->exists();
+                $vaga->ja_candidatou = $proposta;
+            } else {
+                $vaga->ja_candidatou = false;
+            }
+        } else {
+            $vaga->ja_candidatou = false;
+        }
 
         return response()->json($vaga);
     }

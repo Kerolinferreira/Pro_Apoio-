@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Candidato;
 use App\Models\Instituicao;
 use App\Models\Endereco;
+use App\Models\ExperienciaProfissional;
 use App\Helpers\JwtHelper;
 
 /**
@@ -87,6 +88,28 @@ class AuthController extends Controller
             // Associa as deficiências selecionadas ao candidato
             if (!empty($data['deficiencia_ids'])) {
                 $candidato->deficiencias()->sync($data['deficiencia_ids']);
+            }
+
+            // Cria as experiências profissionais do candidato
+            if (!empty($data['experiencias_profissionais'])) {
+                foreach ($data['experiencias_profissionais'] as $experienciaData) {
+                    // Sanitiza a descrição/comentário para evitar XSS
+                    $descricao = strip_tags($experienciaData['comentario'] ?? '');
+
+                    // Mapeia os campos do front para o banco de dados
+                    $experiencia = ExperienciaProfissional::create([
+                        'id_candidato'                => $candidato->id_candidato,
+                        'idade_aluno'                 => $experienciaData['idade_aluno'] ?? null,
+                        'tempo_experiencia'           => $experienciaData['tempo_experiencia'] ?? null,
+                        'interesse_mesma_deficiencia' => (bool)($experienciaData['candidatar_mesma_deficiencia'] ?? false),
+                        'descricao'                   => $descricao,
+                    ]);
+
+                    // Associa as deficiências trabalhadas nesta experiência
+                    if (!empty($experienciaData['deficiencia_ids'])) {
+                        $experiencia->deficiencias()->sync($experienciaData['deficiencia_ids']);
+                    }
+                }
             }
 
             $token = JwtHelper::generateToken($user);
@@ -254,5 +277,80 @@ class AuthController extends Controller
         return $status === Password::PASSWORD_RESET
             ? response()->json(['message' => 'Senha redefinida com sucesso'])
             : response()->json(['message' => 'Token inválido ou expirado'], 400);
+    }
+
+    /**
+     * Verifica se um email já está em uso
+     * GET /auth/check-email?email=exemplo@teste.com
+     */
+    public function checkEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = $this->normEmail($request->input('email'));
+        $exists = User::where('email', $email)->exists();
+
+        return response()->json([
+            'available' => !$exists,
+            'exists' => $exists,
+        ]);
+    }
+
+    /**
+     * Verifica se um CPF já está em uso
+     * GET /auth/check-cpf?cpf=12345678900
+     */
+    public function checkCpf(Request $request)
+    {
+        $request->validate([
+            'cpf' => 'required|string',
+        ]);
+
+        $cpf = $this->onlyDigits($request->input('cpf'));
+
+        if (!$cpf || strlen($cpf) !== 11) {
+            return response()->json([
+                'available' => false,
+                'exists' => false,
+                'error' => 'CPF inválido',
+            ], 400);
+        }
+
+        $exists = Candidato::where('cpf', $cpf)->exists();
+
+        return response()->json([
+            'available' => !$exists,
+            'exists' => $exists,
+        ]);
+    }
+
+    /**
+     * Verifica se um CNPJ já está em uso
+     * GET /auth/check-cnpj?cnpj=12345678000190
+     */
+    public function checkCnpj(Request $request)
+    {
+        $request->validate([
+            'cnpj' => 'required|string',
+        ]);
+
+        $cnpj = $this->onlyDigits($request->input('cnpj'));
+
+        if (!$cnpj || strlen($cnpj) !== 14) {
+            return response()->json([
+                'available' => false,
+                'exists' => false,
+                'error' => 'CNPJ inválido',
+            ], 400);
+        }
+
+        $exists = Instituicao::where('cnpj', $cnpj)->exists();
+
+        return response()->json([
+            'available' => !$exists,
+            'exists' => $exists,
+        ]);
     }
 }

@@ -26,6 +26,7 @@ interface Vaga {
   localizacao: string;
   deficiencias: Deficiencia[]; // Lista de deficiências associadas
   necessidades_descricao: string;
+  ja_candidatou?: boolean; // Indica se o candidato já se candidatou à vaga
   instituicao?: {
     id: number;
     nome_fantasia: string;
@@ -103,11 +104,13 @@ const DetalhesVagaPage: React.FC = () => {
       try {
         // GET /vagas/{id} [cite: Documentação final.docx]
         const response = await api.get(`/vagas/${id}`);
-        setVaga(response.data as Vaga);
+        const vagaData = response.data as Vaga;
+        setVaga(vagaData);
 
-        // Simulação de verificação de status (Deve ser implementado no BE)
-        // setIsSaved(response.data.status_candidato?.salva || false);
-        // setIsApplied(response.data.status_candidato?.proposta_enviada || false);
+        // Atualiza o status de candidatura a partir do backend
+        if (vagaData.ja_candidatou !== undefined) {
+          setIsApplied(vagaData.ja_candidatou);
+        }
 
         setLoading(false);
       } catch (err) {

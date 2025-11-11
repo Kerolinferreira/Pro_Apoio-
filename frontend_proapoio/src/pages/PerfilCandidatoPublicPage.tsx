@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PropostaModal from '../components/PropostaModal';
 import { User, MapPin, Briefcase, GraduationCap, Accessibility, Send, Loader2, AlertTriangle, Calendar, Zap, MessageSquare, X, Copy, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
@@ -100,8 +101,11 @@ const PerfilCandidatoPublicPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isPropostaSent, setIsPropostaSent] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showPropostaModal, setShowPropostaModal] = useState(false);
+    const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
     const [vagas, setVagas] = useState<Vaga[]>([]);
     const [loadingVagas, setLoadingVagas] = useState(false);
+    const [checkingPropostas, setCheckingPropostas] = useState(false);
 
     // --- LÓGICA DE BUSCA DO PERFIL (GET /candidatos/{id}) ---
     const fetchProfile = useCallback(async () => {
@@ -146,6 +150,37 @@ const PerfilCandidatoPublicPage: React.FC = () => {
         }
     };
 
+    // --- VERIFICAR PROPOSTAS EXISTENTES ---
+    const checkExistingPropostas = useCallback(async () => {
+        if (!user || user.tipo_usuario !== 'instituicao' || !id) return;
+
+        setCheckingPropostas(true);
+        try {
+            // Busca propostas enviadas pela instituição
+            const response = await api.get('/propostas?tipo=enviadas');
+            const propostas = response.data.data || [];
+
+            // Verifica se já existe proposta para este candidato
+            const propostaExistente = propostas.find((p: any) =>
+                p.id_candidato === parseInt(id) && p.status !== 'recusada'
+            );
+
+            if (propostaExistente) {
+                setIsPropostaSent(true);
+            }
+        } catch (err) {
+            logger.error('Erro ao verificar propostas:', err);
+        } finally {
+            setCheckingPropostas(false);
+        }
+    }, [user, id]);
+
+    useEffect(() => {
+        if (user && user.tipo_usuario === 'instituicao') {
+            checkExistingPropostas();
+        }
+    }, [user, checkExistingPropostas]);
+
     // --- AÇÕES DA INSTITUIÇÃO ---
 
     const handleSendProposta = async () => {
@@ -153,8 +188,54 @@ const PerfilCandidatoPublicPage: React.FC = () => {
             toast.warning('Você precisa estar logado como Instituição para enviar uma proposta.');
             return;
         }
+
+        if (isPropostaSent) {
+            toast.info('Você já enviou uma proposta para este candidato.');
+            return;
+        }
+
         setShowModal(true);
         await fetchVagas();
+    };
+
+    const handleSelectVaga = (vaga: Vaga) => {
+        setSelectedVaga(vaga);
+        setShowModal(false);
+        setShowPropostaModal(true);
+    };
+
+    const handleSubmitProposta = async (mensagem: string) => {
+        if (!selectedVaga || !id) {
+            throw new Error('Dados incompletos para enviar proposta');
+        }
+
+        try {
+            await api.post('/propostas', {
+                id_vaga: selectedVaga.id_vaga,
+                id_candidato: parseInt(id),
+                mensagem: mensagem,
+            });
+
+            setIsPropostaSent(true);
+            setShowPropostaModal(false);
+            setSelectedVaga(null);
+            toast.success('Proposta enviada com sucesso! O candidato será notificado.');
+        } catch (err: any) {
+            logger.error('Erro ao enviar proposta:', err);
+
+            const errorMsg = err.response?.data?.message ||
+                           err.response?.data?.errors?.id_vaga?.[0] ||
+                           'Não foi possível enviar a proposta.';
+
+            if (errorMsg.includes('já possui uma proposta')) {
+                setIsPropostaSent(true);
+                toast.error('Você já enviou uma proposta para este candidato nesta vaga.');
+            } else {
+                toast.error(errorMsg);
+            }
+
+            throw err;
+        }
     };
 
     const handleCopyVagaLink = (vagaId: number) => {
@@ -340,14 +421,24 @@ const PerfilCandidatoPublicPage: React.FC = () => {
                                                         <span className="badge-gray text-xs">{vaga.tipo}</span>
                                                     )}
                                                 </div>
-                                                <button
-                                                    onClick={() => handleCopyVagaLink(vaga.id_vaga)}
-                                                    className="btn-secondary btn-icon btn-sm"
-                                                    aria-label="Copiar link da vaga"
-                                                >
-                                                    <Copy size={16} />
-                                                    Copiar Link
-                                                </button>
+                                                <div className="flex-actions-end gap-xs">
+                                                    <button
+                                                        onClick={() => handleCopyVagaLink(vaga.id_vaga)}
+                                                        className="btn-secondary btn-icon btn-sm"
+                                                        aria-label="Copiar link da vaga"
+                                                        title="Copiar link"
+                                                    >
+                                                        <Copy size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSelectVaga(vaga)}
+                                                        className="btn-primary btn-icon btn-sm"
+                                                        aria-label="Enviar proposta com esta vaga"
+                                                    >
+                                                        <Send size={16} />
+                                                        Enviar Proposta
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -365,6 +456,19 @@ const PerfilCandidatoPublicPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* MODAL: PROPOSTA COM MENSAGEM PERSONALIZADA */}
+            {showPropostaModal && selectedVaga && (
+                <PropostaModal
+                    isOpen={showPropostaModal}
+                    onClose={() => {
+                        setShowPropostaModal(false);
+                        setSelectedVaga(null);
+                    }}
+                    onSubmit={handleSubmitProposta}
+                    vagaTitulo={selectedVaga.titulo_vaga || selectedVaga.titulo || 'Vaga'}
+                />
             )}
         </div>
     );

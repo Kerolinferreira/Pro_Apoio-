@@ -299,6 +299,54 @@ class CandidatoProfileController extends Controller
         return response()->json(count($criadas) === 1 ? $criadas[0] : $criadas, 201);
     }
 
+    /**
+     * Atualiza experiência profissional do candidato.
+     * PUT /candidatos/me/experiencias-profissionais/{id}
+     */
+    public function updateExperienciaPro(Request $request, $id)
+    {
+        $user = $request->user();
+        $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
+
+        $experiencia = ExperienciaProfissional::where('id_experiencia_profissional', $id)
+            ->where('id_candidato', $candidato->id)
+            ->firstOrFail();
+
+        // Mapear chaves do front para o schema da tabela
+        $mapped = [
+            'idade_aluno'                 => $request->input('idade_aluno'),
+            'tempo_experiencia'           => $request->input('tempo_experiencia') ?? $request->input('tempo'),
+            'interesse_mesma_deficiencia' => $request->has('candidatar_mesma_deficiencia')
+                ? (bool)$request->input('candidatar_mesma_deficiencia')
+                : (bool)$request->input('interesse_mesma_deficiencia', false),
+            'descricao'                   => $this->sanitizeHtml($request->input('comentario') ?? $request->input('descricao', '')),
+            'deficiencia_ids'             => $request->input('deficiencia_ids', []),
+        ];
+
+        // Validação
+        $validated = validator($mapped, [
+            'idade_aluno'                 => 'nullable|integer|min:0|max:120',
+            'tempo_experiencia'           => 'nullable|string|max:255',
+            'interesse_mesma_deficiencia' => 'nullable|boolean',
+            'descricao'                   => 'nullable|string|max:1000',
+            'deficiencia_ids'             => 'nullable|array',
+            'deficiencia_ids.*'           => 'integer|exists:deficiencias,id_deficiencia',
+        ])->validate();
+
+        // Envolver em transação para garantir consistência
+        $experiencia = \Illuminate\Support\Facades\DB::transaction(function() use ($experiencia, $validated) {
+            $experiencia->update(collect($validated)->except('deficiencia_ids')->toArray());
+
+            if (array_key_exists('deficiencia_ids', $validated)) {
+                $experiencia->deficiencias()->sync($validated['deficiencia_ids'] ?? []);
+            }
+
+            return $experiencia->load('deficiencias');
+        });
+
+        return response()->json($experiencia);
+    }
+
     /** Remove experiência profissional do candidato. */
     public function deleteExperienciaPro(Request $request, $id)
     {

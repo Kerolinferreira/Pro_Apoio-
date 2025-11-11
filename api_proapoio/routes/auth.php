@@ -32,6 +32,13 @@ Route::prefix('auth')->group(function () {
     // Rota de login sem rate limiting
     Route::post('/login', [AuthController::class, 'login']);
 
+    // Rotas de validação de duplicidade (rate limiting moderado para evitar abuso)
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::get('/check-email', [AuthController::class, 'checkEmail']);
+        Route::get('/check-cpf', [AuthController::class, 'checkCpf']);
+        Route::get('/check-cnpj', [AuthController::class, 'checkCnpj']);
+    });
+
     // Logout (requer autenticação)
     Route::middleware('jwt')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

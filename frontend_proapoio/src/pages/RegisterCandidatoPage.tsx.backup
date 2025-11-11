@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft, UserPlus, PlusCircle, Trash2, Accessibility } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Lock, Briefcase, GraduationCap, Calendar, Loader2, AlertTriangle, ArrowLeft, UserPlus } from 'lucide-react';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks';
-import { ESCOLARIDADE_OPTIONS, ESTADOS_BRASILEIROS, TEMPO_EXPERIENCIA_OPTIONS } from '../constants/options';
+import { ESCOLARIDADE_OPTIONS, ESTADOS_BRASILEIROS } from '../constants/options';
 import { logger } from '../utils/logger';
 
 // ===================================
@@ -89,13 +89,7 @@ export default function RegisterCandidatoPage() {
         escolaridade: '',
         curso_superior: '',
         instituicao_ensino: '', // Nome da instituição
-        experiencias_profissionais: [{
-            idade_aluno: '',
-            tempo_experiencia: '',
-            candidatar_mesma_deficiencia: false,
-            comentario: '',
-            deficiencia_ids: []
-        }],
+        experiencia: '',
         deficiencia_ids: [],
     });
 
@@ -161,55 +155,6 @@ export default function RegisterCandidatoPage() {
                     : [...prev.deficiencia_ids, deficienciaId]
             };
         });
-    }
-
-    // Funções para gerenciar experiências profissionais
-    function addExperiencia() {
-        setFormData(prev => ({
-            ...prev,
-            experiencias_profissionais: [
-                ...prev.experiencias_profissionais,
-                {
-                    idade_aluno: '',
-                    tempo_experiencia: '',
-                    candidatar_mesma_deficiencia: false,
-                    comentario: '',
-                    deficiencia_ids: []
-                }
-            ]
-        }));
-    }
-
-    function removeExperiencia(index: number) {
-        if (formData.experiencias_profissionais.length === 1) {
-            alert('Você deve ter pelo menos uma experiência profissional.');
-            return;
-        }
-        setFormData(prev => ({
-            ...prev,
-            experiencias_profissionais: prev.experiencias_profissionais.filter((_, i) => i !== index)
-        }));
-    }
-
-    function updateExperiencia(index: number, field: keyof ExperienciaProfissional, value: any) {
-        setFormData(prev => ({
-            ...prev,
-            experiencias_profissionais: prev.experiencias_profissionais.map((exp, i) =>
-                i === index ? { ...exp, [field]: value } : exp
-            )
-        }));
-    }
-
-    function toggleDeficienciaInExperiencia(expIndex: number, deficienciaId: number) {
-        const exp = formData.experiencias_profissionais[expIndex];
-        if (!exp) return;
-
-        const isSelected = exp.deficiencia_ids.includes(deficienciaId);
-        updateExperiencia(expIndex, 'deficiencia_ids',
-            isSelected
-                ? exp.deficiencia_ids.filter(id => id !== deficienciaId)
-                : [...exp.deficiencia_ids, deficienciaId]
-        );
     }
 
     function senhaValida(s: string) {
@@ -292,20 +237,9 @@ export default function RegisterCandidatoPage() {
             if (!formData.instituicao_ensino.trim()) e.instituicao_ensino = 'Informe a instituição de ensino.';
         }
         
-        // Experiências profissionais
-        if (!formData.experiencias_profissionais || formData.experiencias_profissionais.length === 0) {
-            (e as any).experiencias_profissionais = 'Adicione ao menos uma experiência profissional.';
-        } else {
-            formData.experiencias_profissionais.forEach((exp, index) => {
-                if (!exp.comentario || exp.comentario.trim().length < 20) {
-                    (e as any)[`experiencia_${index}_comentario`] = `Descreva a experiência ${index + 1} com mais detalhes (mínimo 20 caracteres).`;
-                }
-                if (!exp.deficiencia_ids || exp.deficiencia_ids.length === 0) {
-                    (e as any)[`experiencia_${index}_deficiencias`] = `Selecione ao menos uma deficiência para a experiência ${index + 1}.`;
-                }
-            });
-        }
-
+        // Experiência
+        if (formData.experiencia.trim().length < 20) e.experiencia = 'Descreva sua experiência em mais detalhes (mínimo 20 caracteres).';
+        
         return e;
     }
 
@@ -382,13 +316,7 @@ export default function RegisterCandidatoPage() {
                 nivel_escolaridade: formData.escolaridade,
                 curso_superior: formData.curso_superior,
                 instituicao_ensino: formData.instituicao_ensino,
-                experiencias_profissionais: formData.experiencias_profissionais.map(exp => ({
-                    idade_aluno: exp.idade_aluno === '' ? null : Number(exp.idade_aluno),
-                    tempo_experiencia: exp.tempo_experiencia || null,
-                    candidatar_mesma_deficiencia: exp.candidatar_mesma_deficiencia,
-                    comentario: exp.comentario.trim(),
-                    deficiencia_ids: exp.deficiencia_ids
-                })),
+                experiencia: formData.experiencia,
                 deficiencia_ids: formData.deficiencia_ids,
             };
 
@@ -672,156 +600,18 @@ export default function RegisterCandidatoPage() {
                             </div>
                         )}
 
-                        {/* Experiências Profissionais */}
-                        <div className="mt-md">
-                            <div className="flex justify-between items-center mb-md">
-                                <div>
-                                    <label className="form-label">Experiências Profissionais</label>
-                                    <p className="text-xs text-muted">Adicione suas experiências com apoio a pessoas com deficiência</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={addExperiencia}
-                                    className="btn-secondary btn-sm btn-icon"
-                                    disabled={submitting}
-                                >
-                                    <PlusCircle size={16} className="mr-xs" />
-                                    Adicionar Experiência
-                                </button>
-                            </div>
-
-                            {formData.experiencias_profissionais.map((exp, index) => (
-                                <div key={index} className="card-bordered p-md mb-md">
-                                    <div className="flex justify-between items-start mb-md">
-                                        <h4 className="font-medium">Experiência {index + 1}</h4>
-                                        {formData.experiencias_profissionais.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeExperiencia(index)}
-                                                className="btn-ghost btn-icon text-red-600"
-                                                aria-label={`Remover experiência ${index + 1}`}
-                                                disabled={submitting}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-md">
-                                        {/* Idade do aluno */}
-                                        <div className="form-group">
-                                            <label htmlFor={`exp_${index}_idade`} className="form-label">
-                                                Idade do(a) aluno(a) atendido(a) (opcional)
-                                            </label>
-                                            <input
-                                                id={`exp_${index}_idade`}
-                                                type="number"
-                                                min="0"
-                                                max="120"
-                                                value={exp.idade_aluno}
-                                                onChange={(e) => updateExperiencia(index, 'idade_aluno', e.target.value === '' ? '' : parseInt(e.target.value))}
-                                                className="form-input"
-                                                placeholder="Ex: 10"
-                                                disabled={submitting}
-                                            />
-                                        </div>
-
-                                        {/* Tempo de experiência */}
-                                        <div className="form-group">
-                                            <label htmlFor={`exp_${index}_tempo`} className="form-label">
-                                                Tempo de experiência (opcional)
-                                            </label>
-                                            <select
-                                                id={`exp_${index}_tempo`}
-                                                value={exp.tempo_experiencia}
-                                                onChange={(e) => updateExperiencia(index, 'tempo_experiencia', e.target.value)}
-                                                className="form-select"
-                                                disabled={submitting}
-                                            >
-                                                <option value="">Selecione...</option>
-                                                {TEMPO_EXPERIENCIA_OPTIONS.map((option) => (
-                                                    <option key={option} value={option}>
-                                                        {option}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Deficiências trabalhadas */}
-                                        <div className="form-group">
-                                            <label className="form-label">
-                                                Deficiências com as quais trabalhou *
-                                            </label>
-                                            <div className="space-y-xs">
-                                                {deficiencias.map((def) => (
-                                                    <label key={def.id} className="flex items-center gap-xs cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={exp.deficiencia_ids.includes(def.id)}
-                                                            onChange={() => toggleDeficienciaInExperiencia(index, def.id)}
-                                                            className="form-checkbox"
-                                                            disabled={submitting}
-                                                        />
-                                                        <Accessibility size={16} className="text-brand-color" />
-                                                        <span className="text-sm">{def.nome}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                            <ErrorText
-                                                id={`erro-exp-${index}-deficiencias`}
-                                                message={(errors as any)[`experiencia_${index}_deficiencias`]}
-                                            />
-                                        </div>
-
-                                        {/* Interesse em trabalhar com mesma deficiência */}
-                                        <div className="form-group">
-                                            <label className="flex items-center gap-xs cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={exp.candidatar_mesma_deficiencia}
-                                                    onChange={(e) => updateExperiencia(index, 'candidatar_mesma_deficiencia', e.target.checked)}
-                                                    className="form-checkbox"
-                                                    disabled={submitting}
-                                                />
-                                                <span className="text-sm">Tenho interesse em trabalhar com as mesmas deficiências novamente</span>
-                                            </label>
-                                        </div>
-
-                                        {/* Descrição */}
-                                        <div className="form-group">
-                                            <label htmlFor={`exp_${index}_comentario`} className="form-label">
-                                                Descrição da experiência *
-                                            </label>
-                                            <textarea
-                                                id={`exp_${index}_comentario`}
-                                                value={exp.comentario}
-                                                onChange={(e) => updateExperiencia(index, 'comentario', e.target.value)}
-                                                placeholder="Descreva sua experiência profissional com apoio a pessoas com deficiência..."
-                                                rows={4}
-                                                maxLength={1000}
-                                                className="form-textarea"
-                                                disabled={submitting}
-                                                aria-invalid={!!(errors as any)[`experiencia_${index}_comentario`]}
-                                                aria-describedby={`exp-${index}-help`}
-                                            />
-                                            <ErrorText
-                                                id={`erro-exp-${index}-comentario`}
-                                                message={(errors as any)[`experiencia_${index}_comentario`]}
-                                            />
-                                            <small className="form-text" id={`exp-${index}-help`}>
-                                                {exp.comentario.length}/1000 caracteres (mínimo 20)
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="form-group mt-md">
+                            <label htmlFor="experiencia" className="form-label">Descreva sua experiência</label>
+                            <textarea id="experiencia" name="experiencia" rows={4} required value={formData.experiencia} onChange={handleChange} className="form-textarea" aria-invalid={!!errors.experiencia} aria-describedby={errors.experiencia ? 'erro-experiencia' : 'ajuda-experiencia'} />
+                            <ErrorText id="erro-experiencia" message={errors.experiencia} />
+                            <p id="ajuda-experiencia" className="text-xs text-muted mt-xs">Informe pelo menos uma experiência relevante com alunos com deficiência (mínimo 20 caracteres).</p>
                         </div>
 
-                        {/* Seleção de deficiências com experiência (global - opcional) */}
+                        {/* Seleção de deficiências com experiência */}
                         {deficiencias.length > 0 && (
                             <div className="form-group mt-md">
-                                <label className="form-label">Deficiências com experiência geral (opcional)</label>
-                                <p className="text-xs text-muted mb-sm">Selecione outras deficiências com as quais você possui experiência:</p>
+                                <label className="form-label">Deficiências com experiência (opcional)</label>
+                                <p className="text-xs text-muted mb-sm">Selecione as deficiências com as quais você já possui experiência de trabalho:</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-sm">
                                     {deficiencias.map((def) => (
                                         <label key={def.id} className="flex items-center gap-xs cursor-pointer">
@@ -830,7 +620,6 @@ export default function RegisterCandidatoPage() {
                                                 checked={formData.deficiencia_ids.includes(def.id)}
                                                 onChange={() => handleDeficienciaToggle(def.id)}
                                                 className="form-checkbox"
-                                                disabled={submitting}
                                             />
                                             <span className="text-sm">{def.nome}</span>
                                         </label>

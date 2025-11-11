@@ -94,6 +94,7 @@ const PerfilCandidatoPage: React.FC = () => {
     const [isExpPessoalModalOpen, setIsExpPessoalModalOpen] = useState(false);
     const [deletingExpProId, setDeletingExpProId] = useState<number | null>(null);
     const [deletingExpPesId, setDeletingExpPesId] = useState<number | null>(null);
+    const [experienciaToEdit, setExperienciaToEdit] = useState<ExperienciaProfissional | null>(null);
 
     // Busca lista de deficiências da API
     useEffect(() => {
@@ -195,6 +196,16 @@ const PerfilCandidatoPage: React.FC = () => {
     };
 
     // --- LÓGICA DE EXPERIÊNCIAS ---
+    const handleEditExperienciaProfissional = (exp: ExperienciaProfissional) => {
+        setExperienciaToEdit(exp);
+        setIsExpProfModalOpen(true);
+    };
+
+    const handleCloseExpProfModal = () => {
+        setIsExpProfModalOpen(false);
+        setExperienciaToEdit(null);
+    };
+
     const handleDeleteExperienciaProfissional = async (id: number) => {
         if (!window.confirm('Tem certeza que deseja remover esta experiência profissional?')) {
             return;
@@ -601,19 +612,29 @@ const PerfilCandidatoPage: React.FC = () => {
                                                 )}
                                             </div>
                                             {editMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteExperienciaProfissional(exp.id_experiencia_profissional)}
-                                                    className="btn-secondary btn-sm btn-error"
-                                                    aria-label="Remover experiência profissional"
-                                                    disabled={deletingExpProId === exp.id_experiencia_profissional}
-                                                >
-                                                    {deletingExpProId === exp.id_experiencia_profissional ? (
-                                                        <Loader2 size={16} className="icon-spin" />
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
-                                                </button>
+                                                <div className="flex-actions-start">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditExperienciaProfissional(exp)}
+                                                        className="btn-secondary btn-sm"
+                                                        aria-label="Editar experiência profissional"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteExperienciaProfissional(exp.id_experiencia_profissional)}
+                                                        className="btn-secondary btn-sm btn-error"
+                                                        aria-label="Remover experiência profissional"
+                                                        disabled={deletingExpProId === exp.id_experiencia_profissional}
+                                                    >
+                                                        {deletingExpProId === exp.id_experiencia_profissional ? (
+                                                            <Loader2 size={16} className="icon-spin" />
+                                                        ) : (
+                                                            <Trash2 size={16} />
+                                                        )}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -757,9 +778,10 @@ const PerfilCandidatoPage: React.FC = () => {
             {/* Modal de Experiência Profissional */}
             <ExperienciaProfissionalModal
                 isOpen={isExpProfModalOpen}
-                onClose={() => setIsExpProfModalOpen(false)}
+                onClose={handleCloseExpProfModal}
                 onSuccess={fetchProfile}
                 deficienciaOptions={deficienciaOptions}
+                experienciaToEdit={experienciaToEdit}
             />
 
             {/* Modal de Experiência Pessoal */}

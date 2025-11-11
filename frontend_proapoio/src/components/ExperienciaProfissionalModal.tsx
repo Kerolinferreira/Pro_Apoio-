@@ -23,11 +23,21 @@ interface ExperienciaProfissionalFormData {
     deficiencia_ids: number[];
 }
 
+interface ExperienciaProfissional {
+    id_experiencia_profissional: number;
+    idade_aluno?: number | null;
+    tempo_experiencia?: string | null;
+    interesse_mesma_deficiencia: boolean;
+    descricao: string;
+    deficiencias: Deficiencia[];
+}
+
 interface ExperienciaProfissionalModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void; // Callback após sucesso (para recarregar lista)
     deficienciaOptions: Deficiencia[]; // Lista de deficiências disponíveis
+    experienciaToEdit?: ExperienciaProfissional | null; // Experiência a ser editada (opcional)
 }
 
 const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> = ({
@@ -35,6 +45,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
     onClose,
     onSuccess,
     deficienciaOptions,
+    experienciaToEdit,
 }) => {
     const toast = useToast();
 
@@ -50,9 +61,19 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // Limpar formulário ao fechar
+    // Preencher formulário ao abrir (para edição) ou limpar (para criação)
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen && experienciaToEdit) {
+            // Modo edição: preenche com os dados existentes
+            setFormData({
+                idade_aluno: experienciaToEdit.idade_aluno ?? '',
+                tempo_experiencia: experienciaToEdit.tempo_experiencia ?? '',
+                candidatar_mesma_deficiencia: experienciaToEdit.interesse_mesma_deficiencia,
+                comentario: experienciaToEdit.descricao,
+                deficiencia_ids: experienciaToEdit.deficiencias.map(d => d.id),
+            });
+        } else if (isOpen) {
+            // Modo criação: limpa o formulário
             setFormData({
                 idade_aluno: '',
                 tempo_experiencia: '',
@@ -60,9 +81,9 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
                 comentario: '',
                 deficiencia_ids: [],
             });
-            setErrors({});
         }
-    }, [isOpen]);
+        setErrors({});
+    }, [isOpen, experienciaToEdit]);
 
     /**
      * Valida o formulário antes do envio
@@ -92,7 +113,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
     };
 
     /**
-     * Submete a requisição de criação de experiência profissional
+     * Submete a requisição de criação ou edição de experiência profissional
      */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -113,9 +134,16 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
                 deficiencia_ids: formData.deficiencia_ids,
             };
 
-            await api.post('/candidatos/me/experiencias-profissionais', payload);
+            if (experienciaToEdit) {
+                // Modo edição: PUT
+                await api.put(`/candidatos/me/experiencias-profissionais/${experienciaToEdit.id_experiencia_profissional}`, payload);
+                toast.success('Experiência profissional atualizada com sucesso!');
+            } else {
+                // Modo criação: POST
+                await api.post('/candidatos/me/experiencias-profissionais', payload);
+                toast.success('Experiência profissional adicionada com sucesso!');
+            }
 
-            toast.success('Experiência profissional adicionada com sucesso!');
             onClose();
             onSuccess(); // Recarregar lista
         } catch (error: any) {
@@ -176,7 +204,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
                 {/* Header */}
                 <div className="modal-header">
                     <h2 id="experiencia-profissional-modal-title" className="modal-title">
-                        Adicionar Experiência Profissional
+                        {experienciaToEdit ? 'Editar Experiência Profissional' : 'Adicionar Experiência Profissional'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -342,7 +370,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
                                 Salvando...
                             </>
                         ) : (
-                            'Adicionar Experiência'
+                            experienciaToEdit ? 'Salvar Alterações' : 'Adicionar Experiência'
                         )}
                     </button>
                 </div>

@@ -48,6 +48,22 @@ class NotificationController extends Controller
     }
 
     /**
+     * GET /notificacoes/count
+     * Retorna contagem de notificações não lidas
+     * Otimizado para evitar carga desnecessária
+     */
+    public function count(Request $request)
+    {
+        $user = $request->user();
+
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return response()->json([
+            'unread_count' => $unreadCount,
+        ]);
+    }
+
+    /**
      * POST /notificacoes/marcar-como-lidas
      * Body:
      *  - ids: string[] (opcional)

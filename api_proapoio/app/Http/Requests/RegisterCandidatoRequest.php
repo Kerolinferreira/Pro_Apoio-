@@ -93,7 +93,16 @@ class RegisterCandidatoRequest extends FormRequest
             'deficiencia_ids'   => 'nullable|array',
             'deficiencia_ids.*' => 'integer|exists:deficiencias,id_deficiencia',
 
-            // Outros (o campo 'experiencia' foi removido pois não era persistido)
+            // Experiências profissionais (cadastro inicial)
+            'experiencias_profissionais'                              => 'required|array|min:1',
+            'experiencias_profissionais.*.idade_aluno'                => 'nullable|integer|min:0|max:120',
+            'experiencias_profissionais.*.tempo_experiencia'          => 'nullable|string|max:255',
+            'experiencias_profissionais.*.candidatar_mesma_deficiencia' => 'nullable|boolean',
+            'experiencias_profissionais.*.comentario'                 => 'required|string|min:20|max:1000',
+            'experiencias_profissionais.*.deficiencia_ids'            => 'required|array|min:1',
+            'experiencias_profissionais.*.deficiencia_ids.*'          => 'integer|exists:deficiencias,id_deficiencia',
+
+            // Outros
             'link_perfil'   => 'nullable|url',
             'termos_aceite' => 'nullable|boolean',
         ];
@@ -127,6 +136,25 @@ class RegisterCandidatoRequest extends FormRequest
             'deficiencia_ids.array'            => 'Deficiências devem ser uma lista válida.',
             'deficiencia_ids.*.integer'        => 'ID de deficiência inválido.',
             'deficiencia_ids.*.exists'         => 'Uma ou mais deficiências selecionadas não existem.',
+
+            // Mensagens de validação para experiências profissionais
+            'experiencias_profissionais.required'                       => 'Por favor, adicione ao menos uma experiência profissional.',
+            'experiencias_profissionais.array'                          => 'Experiências profissionais devem ser uma lista válida.',
+            'experiencias_profissionais.min'                            => 'Adicione ao menos uma experiência profissional.',
+            'experiencias_profissionais.*.idade_aluno.integer'          => 'A idade do aluno deve ser um número inteiro.',
+            'experiencias_profissionais.*.idade_aluno.min'              => 'A idade do aluno deve ser no mínimo 0.',
+            'experiencias_profissionais.*.idade_aluno.max'              => 'A idade do aluno deve ser no máximo 120.',
+            'experiencias_profissionais.*.tempo_experiencia.max'        => 'O tempo de experiência não pode ter mais de 255 caracteres.',
+            'experiencias_profissionais.*.candidatar_mesma_deficiencia.boolean' => 'O campo de interesse deve ser verdadeiro ou falso.',
+            'experiencias_profissionais.*.comentario.required'          => 'Por favor, descreva sua experiência profissional.',
+            'experiencias_profissionais.*.comentario.min'               => 'A descrição da experiência deve ter no mínimo 20 caracteres.',
+            'experiencias_profissionais.*.comentario.max'               => 'A descrição da experiência não pode ter mais de 1000 caracteres.',
+            'experiencias_profissionais.*.deficiencia_ids.required'     => 'Selecione ao menos uma deficiência para cada experiência.',
+            'experiencias_profissionais.*.deficiencia_ids.array'        => 'As deficiências devem ser uma lista válida.',
+            'experiencias_profissionais.*.deficiencia_ids.min'          => 'Selecione ao menos uma deficiência para cada experiência.',
+            'experiencias_profissionais.*.deficiencia_ids.*.integer'    => 'ID de deficiência inválido.',
+            'experiencias_profissionais.*.deficiencia_ids.*.exists'     => 'Uma ou mais deficiências selecionadas não existem.',
+
             'link_perfil.url'                  => 'O link do perfil deve ser uma URL válida.',
             'termos_aceite.boolean'            => 'O aceite dos termos é inválido.',
         ];
