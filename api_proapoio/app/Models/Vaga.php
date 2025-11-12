@@ -76,6 +76,13 @@ class Vaga extends Model
     ];
 
     /**
+     * Atributos adicionais a serem incluídos na serialização do modelo.
+     */
+    protected $appends = [
+        'id', // Inclui o accessor getIdAttribute() na serialização JSON
+    ];
+
+    /**
      * Scope para filtrar vagas ativas.
      */
     public function scopeAtivas($query)

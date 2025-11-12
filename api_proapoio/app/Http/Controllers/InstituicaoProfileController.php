@@ -250,7 +250,7 @@ class InstituicaoProfileController extends Controller
 
         // Gera nome seguro e único para o arquivo
         $extension = $file->getClientOriginalExtension();
-        $filename = 'instituicao_' . $instituicao->id . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
+        $filename = 'instituicao_' . $instituicao->id_instituicao . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
 
         $path = $file->storeAs('logos-instituicoes', $filename, 'public');
         $instituicao->update(['logo_url' => $path]);

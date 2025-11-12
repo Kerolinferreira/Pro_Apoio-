@@ -35,7 +35,7 @@ class EnsureInstituicao
         }
 
         // Verificar se é instituição (case-insensitive)
-        if (strtoupper($user->tipo_usuario ?? '') !== TipoUsuario::INSTITUICAO) {
+        if (strtoupper($user->tipo_usuario ?? '') !== TipoUsuario::INSTITUICAO->value) {
             return response()->json([
                 'message' => 'Acesso negado.'
             ], 403);

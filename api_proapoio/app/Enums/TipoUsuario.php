@@ -5,8 +5,8 @@ namespace App\Enums;
 /**
  * Tipos de usuário no sistema.
  */
-class TipoUsuario
+enum TipoUsuario: string
 {
-    const CANDIDATO = 'CANDIDATO';
-    const INSTITUICAO = 'INSTITUICAO';
+    case CANDIDATO = 'CANDIDATO';
+    case INSTITUICAO = 'INSTITUICAO';
 }

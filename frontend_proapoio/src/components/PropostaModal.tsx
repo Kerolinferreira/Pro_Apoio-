@@ -7,6 +7,7 @@ interface PropostaModalProps {
   onClose: () => void;
   onSubmit: (mensagem: string) => Promise<void>;
   vagaTitulo: string;
+  mode?: 'candidate' | 'institution';
 }
 
 /**
@@ -18,6 +19,7 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
   onClose,
   onSubmit,
   vagaTitulo,
+  mode = 'candidate', // Default to candidate mode
 }) => {
   const [mensagem, setMensagem] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,13 +28,39 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
   const maxLength = 2000;
   const remainingChars = maxLength - mensagem.length;
 
+  // Text configuration based on mode
+  const textConfig = {
+    candidate: {
+      title: 'Candidatar-se à Vaga',
+      label: 'Mensagem de Apresentação',
+      description: 'Conte um pouco sobre você, suas experiências e por que você é o candidato ideal para esta vaga.',
+      placeholder: 'Olá! Tenho muito interesse nesta vaga porque...',
+      submitButton: 'Enviar Candidatura',
+      submitButtonLoading: 'Enviando...',
+      errorEmpty: 'Por favor, escreva uma mensagem para sua candidatura.',
+      tip: 'Uma boa mensagem de candidatura inclui suas motivações, experiências relevantes e como você pode contribuir para a instituição.',
+    },
+    institution: {
+      title: 'Enviar Proposta ao Candidato',
+      label: 'Mensagem da Proposta',
+      description: 'Descreva a oportunidade e por que este candidato é ideal para esta vaga.',
+      placeholder: 'Olá! Gostaríamos de convidá-lo(a) para esta oportunidade porque...',
+      submitButton: 'Enviar Proposta',
+      submitButtonLoading: 'Enviando...',
+      errorEmpty: 'Por favor, escreva uma mensagem para sua proposta.',
+      tip: 'Uma boa proposta inclui detalhes sobre a vaga, benefícios e expectativas.',
+    },
+  };
+
+  const texts = textConfig[mode];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // Validação
     if (!mensagem.trim()) {
-      setError('Por favor, escreva uma mensagem para sua candidatura.');
+      setError(texts.errorEmpty);
       return;
     }
 
@@ -85,7 +113,7 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
         <div className="flex-group-md-row mb-md" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2 id="proposta-modal-title" className="title-lg mb-xs">
-              Candidatar-se à Vaga
+              {texts.title}
             </h2>
             <p className="text-sm text-muted">{vagaTitulo}</p>
           </div>
@@ -103,17 +131,17 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="mb-lg">
             <label htmlFor="mensagem" className="form-label">
-              Mensagem de Apresentação <span className="text-error">*</span>
+              {texts.label} <span className="text-error">*</span>
             </label>
             <p className="text-sm text-muted mb-sm">
-              Conte um pouco sobre você, suas experiências e por que você é o candidato ideal para esta vaga.
+              {texts.description}
             </p>
             <textarea
               id="mensagem"
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
               className={`form-textarea ${error ? 'form-input' : ''}`}
-              placeholder="Olá! Tenho muito interesse nesta vaga porque..."
+              placeholder={texts.placeholder}
               rows={8}
               maxLength={maxLength}
               disabled={isSubmitting}
@@ -130,8 +158,7 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
           {/* Info Box */}
           <div className="alert alert-info mb-lg">
             <p className="text-sm">
-              <strong>Dica:</strong> Uma boa mensagem de candidatura inclui suas motivações,
-              experiências relevantes e como você pode contribuir para a instituição.
+              <strong>Dica:</strong> {texts.tip}
             </p>
           </div>
 
@@ -153,12 +180,12 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 size={20} className="icon-spin" />
-                  Enviando...
+                  {texts.submitButtonLoading}
                 </>
               ) : (
                 <>
                   <Send size={20} />
-                  Enviar Candidatura
+                  {texts.submitButton}
                 </>
               )}
             </button>

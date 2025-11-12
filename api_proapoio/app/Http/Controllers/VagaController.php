@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Vaga;
+use App\Enums\TipoUsuario;
 
 class VagaController extends Controller
 {
@@ -61,7 +62,7 @@ class VagaController extends Controller
         $candidatoId = null;
 
         // Verifica se o usuário é candidato para incluir status de candidatura
-        if ($user && strtoupper($user->tipo_usuario ?? '') === 'CANDIDATO') {
+        if ($user && strtoupper($user->tipo_usuario ?? '') === TipoUsuario::CANDIDATO->value) {
             $candidato = \App\Models\Candidato::where('id_usuario', $user->id)->first();
             $candidatoId = $candidato ? $candidato->id : null;
         }
@@ -158,7 +159,7 @@ class VagaController extends Controller
 
         // Adiciona o campo ja_candidatou se o usuário for candidato
         $user = $request->user();
-        if ($user && strtoupper($user->tipo_usuario ?? '') === 'CANDIDATO') {
+        if ($user && strtoupper($user->tipo_usuario ?? '') === TipoUsuario::CANDIDATO->value) {
             $candidato = \App\Models\Candidato::where('id_usuario', $user->id)->first();
             if ($candidato) {
                 $proposta = \App\Models\Proposta::where('id_vaga', $id)

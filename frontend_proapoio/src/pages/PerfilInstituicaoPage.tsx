@@ -80,7 +80,7 @@ const ErrorAlert: React.FC<{ message: string }> = ({ message }) => (
 // COMPONENTE DE CAMPO DE SEÇÃO (DEFINIÇÃO ÚNICA E CORRETA)
 // ===================================
 
-const SectionField: React.FC<{ 
+const SectionField: React.FC<{
     label: string, // Rótulo do campo
     name: keyof Instituicao | keyof Endereco, // Nome do campo (pode ser da Instituição ou do Endereço)
     icon: React.ReactNode, // Ícone a ser exibido
@@ -88,26 +88,45 @@ const SectionField: React.FC<{
     options?: string[], // Opções para select
     readonly?: boolean, // Se o campo é somente leitura
     formData: Partial<Instituicao>, // Dados do formulário
-    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void, 
-    handleAddressChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void, 
-    handleCepBlur?: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => Promise<void>, 
-    editMode: boolean 
-}> = ({ label, name, icon, type = 'text', options, readonly = false, formData, handleChange, handleAddressChange, handleCepBlur, editMode }) => {
-    
+    instituicao?: Instituicao | null, // Dados da instituição para exibição
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void,
+    handleAddressChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void,
+    handleCepBlur?: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => Promise<void>,
+    editMode: boolean
+}> = ({ label, name, icon, type = 'text', options, readonly = false, formData, instituicao, handleChange, handleAddressChange, handleCepBlur, editMode }) => {
+
     // VERIFICA SE O CAMPO PERTENCE AO ENDEREÇO OU À INSTITUIÇÃO
     const isAddressField = name in (formData.endereco || {});
     const value = isAddressField // Valor do campo
-        ? (formData.endereco?.[name as keyof Endereco] || '') 
+        ? (formData.endereco?.[name as keyof Endereco] || '')
         : (formData[name as keyof Instituicao] || '');
-        
+    const displayValue = isAddressField
+        ? (instituicao?.endereco?.[name as keyof Endereco] || '')
+        : (instituicao?.[name as keyof Instituicao] || '');
+
     const onChangeHandler = isAddressField ? handleAddressChange : handleChange;
-    
+
     // Desabilitar o campo se não estiver no modo edição, for somente leitura,
     // ou se for um campo de endereço que deve ser preenchido pelo CEP
     // Nota: 'estado' removido da lista para permitir seleção manual mesmo após CEP
     const isDisabled = !editMode || readonly || (isAddressField && (name === 'logradouro' || name === 'bairro' || name === 'cidade'));
 
     const InputComponent = type === 'textarea' ? 'textarea' : 'input'; // Componente a ser renderizado
+
+    // Se não está em modo de edição, exibir como texto
+    if (!editMode) {
+        return (
+            <div className="form-group">
+                <label className="form-label">{label}</label>
+                <div className="form-input-icon-wrapper">
+                    {icon}
+                    <div className={type === 'textarea' ? 'form-textarea with-icon pl-lg' : 'form-input with-icon'} style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: type === 'textarea' ? 'flex-start' : 'center', minHeight: type === 'textarea' ? '100px' : 'auto', whiteSpace: type === 'textarea' ? 'pre-wrap' : 'normal' }}>
+                        {String(displayValue || 'Não informado')}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="form-group">
@@ -404,15 +423,15 @@ const PerfilInstituicaoPage: React.FC = () => {
                         </div>
 
                         <div className="grid-2-col-lg"> {/* Layout de grid com 2 colunas */}
-                            <SectionField label="Nome Fantasia" name="nome_fantasia" icon={<Building size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Razão Social (Apenas leitura)" name="razao_social" icon={<LockIcon size={20} />} readonly formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="CNPJ (Apenas leitura)" name="cnpj" icon={<LockIcon size={20} />} readonly formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Email" name="email" icon={<Mail size={20} />} type="email" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Telefone" name="telefone" icon={<Phone size={20} />} type="tel" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Nome Fantasia" name="nome_fantasia" icon={<Building size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Razão Social" name="razao_social" icon={<LockIcon size={20} />} readonly formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="CNPJ" name="cnpj" icon={<LockIcon size={20} />} readonly formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Email" name="email" icon={<Mail size={20} />} type="email" formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Telefone" name="telefone" icon={<Phone size={20} />} type="tel" formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                         </div>
                         {/* Campo de descrição da instituição */}
                         <div className="form-group mt-lg">
-                            <SectionField label="Descrição da Instituição e Requisitos" name="descricao" icon={<Briefcase size={20} />} type="textarea" formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Descrição da Instituição e Requisitos" name="descricao" icon={<Briefcase size={20} />} type="textarea" formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             <p className="text-sm text-muted mt-xs">Descreva a missão da instituição e quais são os requisitos gerais para agentes de apoio.</p>
                         </div>
                     </Section>
@@ -420,33 +439,44 @@ const PerfilInstituicaoPage: React.FC = () => {
                     {/* SEÇÃO 2: ENDEREÇO */}
                     <Section title="Endereço Principal">
                         <div className="grid-2-col-lg"> {/* Layout de grid com 2 colunas */}
-                            <SectionField label="CEP" name="cep" icon={<MapPin size={20} />} handleCepBlur={handleCepBlur} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Logradouro" name="logradouro" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="CEP" name="cep" icon={<MapPin size={20} />} handleCepBlur={handleCepBlur} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Logradouro" name="logradouro" icon={<MapPin size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+
+                            <SectionField label="Número" name="numero" icon={<MapPin size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Complemento (Opcional)" name="complemento" icon={<MapPin size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+
+                            <SectionField label="Bairro" name="bairro" icon={<MapPin size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
+                            <SectionField label="Cidade" name="cidade" icon={<MapPin size={20} />} formData={formData} instituicao={instituicao} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
                             
-                            <SectionField label="Número" name="numero" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Complemento (Opcional)" name="complemento" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            
-                            <SectionField label="Bairro" name="bairro" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            <SectionField label="Cidade" name="cidade" icon={<MapPin size={20} />} formData={formData} handleChange={handleChange} handleAddressChange={handleAddressChange} editMode={editMode} />
-                            
-                            {/* Estado - Simulação de Select */}
-                            <div className="form-group"> {/* Campo de seleção para o estado */}
-                                <label htmlFor="estado" className="form-label">Estado</label>
-                                <div className="form-input-icon-wrapper">
-                                    <MapPin size={20} className="form-icon" />
-                                    <select
-                                        id="estado"
-                                        name="estado"
-                                        value={formData.endereco?.estado || ''}
-                                        onChange={handleAddressChange}
-                                        className="form-select with-icon"
-                                        disabled={!editMode}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {ESTADOS_BRASILEIROS.map(e => <option key={e} value={e}>{e}</option>)}
-                                    </select>
+                            {/* Campo de Estado - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                <div className="form-group"> {/* Campo de seleção para o estado */}
+                                    <label htmlFor="estado" className="form-label">Estado</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <MapPin size={20} className="form-icon" />
+                                        <select
+                                            id="estado"
+                                            name="estado"
+                                            value={formData.endereco?.estado || ''}
+                                            onChange={handleAddressChange}
+                                            className="form-select with-icon"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {ESTADOS_BRASILEIROS.map(e => <option key={e} value={e}>{e}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Estado</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <MapPin size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {instituicao?.endereco?.estado || 'Não informado'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Section>
                     

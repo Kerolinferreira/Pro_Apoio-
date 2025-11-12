@@ -225,7 +225,7 @@ class CandidatoProfileController extends Controller
 
         // Gera nome seguro e único para o arquivo
         $extension = $file->getClientOriginalExtension();
-        $filename = 'candidato_' . $candidato->id . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
+        $filename = 'candidato_' . $candidato->id_candidato . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
 
         $path = $file->storeAs('fotos-candidatos', $filename, 'public');
         $candidato->update(['foto_url' => $path]);

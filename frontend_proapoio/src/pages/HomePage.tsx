@@ -104,16 +104,16 @@ export default function HomePage() {
                             <Link
                                 to="/register/candidato"
                                 className="btn-primary btn-lg" // btn-lg para destaque
-                                aria-label="Sou Candidato, Quero Ajudar"
+                                aria-label="Sou Candidato"
                             >
-                                Sou Candidato, Quero Ajudar
+                                Sou Candidato
                             </Link>
                             <Link
                                 to="/register/instituicao"
                                 className="btn-secondary btn-lg" // btn-lg para destaque
-                                aria-label="Sou Instituição, Preciso de Apoio"
+                                aria-label="Sou Instituição"
                             >
-                                Sou Instituição, Preciso de Apoio
+                                Sou Instituição
                             </Link>
                         </div>
                     </div>

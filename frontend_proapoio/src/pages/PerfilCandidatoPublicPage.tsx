@@ -468,6 +468,7 @@ const PerfilCandidatoPublicPage: React.FC = () => {
                     }}
                     onSubmit={handleSubmitProposta}
                     vagaTitulo={selectedVaga.titulo_vaga || selectedVaga.titulo || 'Vaga'}
+                    mode="institution"
                 />
             )}
         </div>

@@ -56,11 +56,11 @@ class VagaSalva extends Model
 
     public function candidato()
     {
-        return $this->belongsTo(Candidato::class, 'id_candidato');
+        return $this->belongsTo(Candidato::class, 'id_candidato', 'id_candidato');
     }
 
     public function vaga()
     {
-        return $this->belongsTo(Vaga::class, 'id_vaga');
+        return $this->belongsTo(Vaga::class, 'id_vaga', 'id_vaga');
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Candidato;
 use App\Models\Deficiencia;
 use App\Models\Instituicao;
 use App\Models\Endereco;
+use App\Enums\TipoUsuario;
 use Illuminate\Support\Facades\DB;
 
 class CandidatoFinderController extends Controller
@@ -21,9 +22,9 @@ class CandidatoFinderController extends Controller
     public function buscar(Request $request)
     {
         $user = $request->user();
-        
-        // Garante que apenas Instituições podem usar a busca 
-        if (($user->tipo_usuario ?? '') !== 'INSTITUICAO') {
+
+        // Garante que apenas Instituições podem usar a busca (case-insensitive para robustez)
+        if (strtoupper($user->tipo_usuario ?? '') !== TipoUsuario::INSTITUICAO->value) {
             return $this->forbidden('Acesso negado. Apenas instituições podem buscar candidatos.');
         }
 
@@ -151,10 +152,10 @@ class CandidatoFinderController extends Controller
             return [
                 'id' => $exp->id_experiencia_pessoal,
                 'tipo' => 'pessoal',
-                'titulo' => $exp->titulo ?? 'Experiência Pessoal', // Fallback title
+                'titulo' => 'Experiência Pessoal',
                 'descricao' => $exp->descricao,
-                'data_inicio' => $exp->data_inicio,
-                'data_fim' => $exp->data_fim,
+                'data_inicio' => null,
+                'data_fim' => null,
             ];
         });
 
@@ -162,16 +163,16 @@ class CandidatoFinderController extends Controller
             return [
                 'id' => $exp->id_experiencia_profissional,
                 'tipo' => 'profissional',
-                'titulo' => $exp->titulo,
+                'titulo' => 'Experiência Profissional',
                 'descricao' => $exp->descricao,
-                'data_inicio' => $exp->data_inicio,
-                'data_fim' => $exp->data_fim,
+                'data_inicio' => null,
+                'data_fim' => null,
             ];
         });
 
         // Une e ordena experiências por data de início (mais recente primeiro)
         // Tratamento de valores null: experiências sem data vão para o final
-        $todasExperiencias = $experienciasPessoais->merge($experienciasProfissionais)
+        $todasExperiencias = $experienciasPessoais->concat($experienciasProfissionais)
             ->sortByDesc(function ($exp) {
                 // Coloca null no final ao inverter a ordenação
                 return $exp['data_inicio'] ?? '1900-01-01';

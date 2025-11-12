@@ -3,8 +3,8 @@
 namespace App\Observers;
 
 use App\Models\Proposta;
-use App\Notifications\NovaPropostaNotification;
 use App\Notifications\PropostaAceitaNotification;
+use App\Enums\TipoUsuario;
 
 /**
  * Observer para o modelo Proposta.
@@ -19,20 +19,15 @@ class PropostaObserver
     /**
      * Ação ao criar uma nova proposta.
      *
+     * Notificações de nova proposta são gerenciadas pelo PropostaController
+     * para ter controle explícito do fluxo e evitar duplicação.
+     *
      * @param Proposta $proposta
      */
     public function created(Proposta $proposta)
     {
-        // Determina quem deve ser notificado: se iniciador é candidato,
-        // notificar a instituição; caso contrário, notificar o candidato
-        if ($proposta->iniciador === 'CANDIDATO') {
-            $destinatario = $proposta->vaga->instituicao->user;
-        } else {
-            $destinatario = $proposta->candidato->user;
-        }
-        if ($destinatario) {
-            $destinatario->notify(new NovaPropostaNotification($proposta));
-        }
+        // Notificações são disparadas no PropostaController::store()
+        // para evitar notificações duplicadas
     }
 
     /**
@@ -44,7 +39,7 @@ class PropostaObserver
     {
         // Ao aceitar uma proposta, notifique o iniciador
         if ($proposta->isDirty('status') && $proposta->status === 'ACEITA') {
-            if ($proposta->iniciador === 'CANDIDATO') {
+            if ($proposta->iniciador === TipoUsuario::CANDIDATO->value) {
                 // iniciador é candidato, notificar candidato
                 $destinatario = $proposta->candidato->user;
             } else {

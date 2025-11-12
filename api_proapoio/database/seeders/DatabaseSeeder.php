@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Popula a tabela de deficiências
+        $this->call(DeficienciaSeeder::class);
+
         // Cria um candidato de exemplo
         $userCandidato = User::create([
             'nome' => 'Candidato Exemplo',

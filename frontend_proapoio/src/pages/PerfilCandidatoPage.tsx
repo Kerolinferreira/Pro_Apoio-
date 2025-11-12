@@ -404,8 +404,24 @@ const PerfilCandidatoPage: React.FC = () => {
     ) => {
         const isAddressField = (name as keyof Endereco) in (formData.endereco || {});
         const value = isAddressField ? (formData.endereco?.[name as keyof Endereco] || '') : (formData[name as keyof Candidato] || '');
+        const displayValue = isAddressField ? (candidato?.endereco?.[name as keyof Endereco] || '') : (candidato?.[name as keyof Candidato] || '');
         const onChangeHandler = isAddressField ? handleAddressChange : handleChange;
         const isDisabled = !editMode || readOnly || (isAddressField && (name === 'logradouro' || name === 'bairro' || name === 'cidade')); // Desabilita campos preenchidos pelo CEP
+
+        // Se não está em modo de edição, exibir como texto
+        if (!editMode) {
+            return (
+                <div className="form-group">
+                    <label className="form-label">{label}</label>
+                    <div className="form-input-icon-wrapper">
+                        {icon}
+                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                            {String(displayValue || 'Não informado')}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className="form-group">
@@ -495,29 +511,83 @@ const PerfilCandidatoPage: React.FC = () => {
 
                         <div className="grid-2-col-lg">
                             {renderField('Nome Completo', 'nome_completo', <User size={20} />, 'text', undefined, false, true)}
-                            {renderField('Email (Não editável)', 'email', <Mail size={20} />, 'email', undefined, true, true)}
-                            {renderField('Telefone', 'telefone', <Phone size={20} />, 'tel', undefined, false, true)}
-                            {renderField('Data de Nascimento (Não editável)', 'data_nascimento', <Calendar size={20} />, 'date', undefined, true, true)}
-                            {renderField('CPF (Não editável)', 'cpf', <LockIcon size={20} />, 'text', undefined, true, true)}
-                            
-                            {/* Gênero - Simulação de Select */}
-                            <div className="form-group">
-                                <label htmlFor="genero" className="form-label">Gênero</label>
-                                <div className="form-input-icon-wrapper">
-                                    <User size={20} className="form-icon" />
-                                    <select
-                                        id="genero"
-                                        name="genero"
-                                        value={formData.genero || ''}
-                                        onChange={handleChange}
-                                        className="form-select with-icon"
-                                        disabled={!editMode}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {GENERO_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
+
+                            {/* Campo de Email - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                renderField('Email', 'email', <Mail size={20} />, 'email', undefined, true, true)
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Email</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <Mail size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.email}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {renderField('Telefone', 'telefone', <Phone size={20} />, 'tel', undefined, false, true)}
+
+                            {/* Campo de Data de Nascimento - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                renderField('Data de Nascimento', 'data_nascimento', <Calendar size={20} />, 'date', undefined, true, true)
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Data de Nascimento</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <Calendar size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.data_nascimento ? new Date(candidato.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Campo de CPF - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                renderField('CPF', 'cpf', <LockIcon size={20} />, 'text', undefined, true, true)
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">CPF</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <LockIcon size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.cpf}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Campo de Gênero - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                <div className="form-group">
+                                    <label htmlFor="genero" className="form-label">Gênero</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <User size={20} className="form-icon" />
+                                        <select
+                                            id="genero"
+                                            name="genero"
+                                            value={formData.genero || ''}
+                                            onChange={handleChange}
+                                            className="form-select with-icon"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {GENERO_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Gênero</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <User size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.genero || 'Não informado'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Section>
 
@@ -532,33 +602,73 @@ const PerfilCandidatoPage: React.FC = () => {
 
                             {renderField('Bairro', 'bairro', <MapPin size={20} />, 'text', undefined, false, true)}
                             {renderField('Cidade', 'cidade', <MapPin size={20} />, 'text', undefined, false, true)}
-                            
-                            {/* Estado - Simulação de Select */}
-                            <div className="form-group">
-                                <label htmlFor="estado" className="form-label">Estado</label>
-                                <div className="form-input-icon-wrapper">
-                                    <MapPin size={20} className="form-icon" />
-                                    <select
-                                        id="estado"
-                                        name="estado"
-                                        value={formData.endereco?.estado || ''}
-                                        onChange={handleAddressChange}
-                                        className="form-select with-icon"
-                                        disabled={!editMode}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {ESTADOS_BRASILEIROS.map(e => <option key={e} value={e}>{e}</option>)}
-                                    </select>
+
+                            {/* Campo de Estado - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                <div className="form-group">
+                                    <label htmlFor="estado" className="form-label">Estado</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <MapPin size={20} className="form-icon" />
+                                        <select
+                                            id="estado"
+                                            name="estado"
+                                            value={formData.endereco?.estado || ''}
+                                            onChange={handleAddressChange}
+                                            className="form-select with-icon"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {ESTADOS_BRASILEIROS.map(e => <option key={e} value={e}>{e}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Estado</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <MapPin size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.endereco?.estado || 'Não informado'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Section>
                     
                     {/* SEÇÃO 3: EXPERIÊNCIA E ESCOLARIDADE */}
                     <Section title="Qualificação Profissional">
                         <div className="grid-2-col-lg">
-                            {/* Escolaridade - Simulação de Select */}
-                            {renderField('Nível de Escolaridade', 'escolaridade', <GraduationCap size={20} />, 'select', ESCOLARIDADE_OPTIONS as unknown as string[])}
+                            {/* Campo de Escolaridade - Exibir como texto quando não editável */}
+                            {editMode ? (
+                                <div className="form-group">
+                                    <label htmlFor="escolaridade" className="form-label">Nível de Escolaridade</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <GraduationCap size={20} className="form-icon" />
+                                        <select
+                                            id="escolaridade"
+                                            name="escolaridade"
+                                            value={formData.escolaridade || ''}
+                                            onChange={handleChange}
+                                            className="form-select with-icon"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {ESCOLARIDADE_OPTIONS.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Nível de Escolaridade</label>
+                                    <div className="form-input-icon-wrapper">
+                                        <GraduationCap size={20} className="form-icon" />
+                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                            {candidato?.escolaridade || 'Não informado'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         
                         <h3 className="title-md mt-md mb-md">Experiências Relevantes</h3>

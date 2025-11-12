@@ -35,7 +35,7 @@ class EnsureCandidato
         }
 
         // Verificar se é candidato (case-insensitive)
-        if (strtoupper($user->tipo_usuario ?? '') !== TipoUsuario::CANDIDATO) {
+        if (strtoupper($user->tipo_usuario ?? '') !== TipoUsuario::CANDIDATO->value) {
             return response()->json([
                 'message' => 'Apenas candidatos.'
             ], 403);

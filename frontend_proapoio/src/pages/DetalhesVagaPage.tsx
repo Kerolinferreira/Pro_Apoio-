@@ -138,13 +138,9 @@ const DetalhesVagaPage: React.FC = () => {
 
   /**
    * @function handleApply
-   * @description Abre o modal de candidatura
+   * @description Abre o modal de candidatura diretamente
    */
   const handleApply = () => {
-    if (!candidatoId) {
-      toast.error('Erro ao identificar candidato. Tente fazer login novamente.');
-      return;
-    }
     setIsPropostaModalOpen(true);
   };
 
@@ -237,6 +233,17 @@ const DetalhesVagaPage: React.FC = () => {
   const formatSalary = (salary: number | null) =>
     salary != null ? `R$ ${salary.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}` : 'A combinar';
 
+  /**
+   * @function formatDate
+   * @description Formata a data de publicação, tratando valores inválidos.
+   */
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Data não informada';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Data não informada';
+    return date.toLocaleDateString('pt-BR');
+  };
+
   // Renderização condicional de estados
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorAlert message={error} />;
@@ -288,7 +295,7 @@ const DetalhesVagaPage: React.FC = () => {
             <InfoItem
                 icon={<Calendar size={20} />}
                 label="Publicado em"
-                value={new Date(vaga.data_publicacao).toLocaleDateString('pt-BR')}
+                value={formatDate(vaga.data_publicacao)}
             />
           </div>
 
@@ -372,6 +379,7 @@ const DetalhesVagaPage: React.FC = () => {
         onClose={() => setIsPropostaModalOpen(false)}
         onSubmit={handleSubmitProposta}
         vagaTitulo={vaga.titulo}
+        mode="candidate"
       />
     </div>
   );
