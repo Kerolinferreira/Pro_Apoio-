@@ -170,4 +170,17 @@ class Vaga extends Model
             $this->attributes['valor_remuneracao'] = $value;
         }
     }
+
+    /**
+     * Accessor para o campo data_publicacao.
+     * Retorna data_criacao ou created_at como data de publicação.
+     */
+    public function getDataPublicacaoAttribute()
+    {
+        // Prioriza data_criacao, depois created_at
+        if (isset($this->attributes['data_criacao'])) {
+            return \Carbon\Carbon::parse($this->attributes['data_criacao']);
+        }
+        return $this->created_at;
+    }
 }

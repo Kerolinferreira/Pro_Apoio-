@@ -22,7 +22,7 @@ interface Vaga {
   descricao: string;
   tipo_apoio: string; // Ex.: Presencial, Online
   data_publicacao: string; // ISO string
-  salario: number | null;
+  salario: number | string | null; // Pode vir como string da API
   localizacao: string;
   deficiencias: Deficiencia[]; // Lista de deficiências associadas
   necessidades_descricao: string;
@@ -230,8 +230,12 @@ const DetalhesVagaPage: React.FC = () => {
    * @function formatSalary
    * @description Formata o valor do salário para BRL.
    */
-  const formatSalary = (salary: number | null) =>
-    salary != null ? `R$ ${salary.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}` : 'A combinar';
+  const formatSalary = (salary: number | string | null) => {
+    if (salary == null) return 'A combinar';
+    const numSalary = typeof salary === 'string' ? parseFloat(salary) : salary;
+    if (isNaN(numSalary)) return 'A combinar';
+    return `R$ ${numSalary.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  };
 
   /**
    * @function formatDate
@@ -274,7 +278,7 @@ const DetalhesVagaPage: React.FC = () => {
           </div>
 
           {/* Informações Básicas (Grid 2 colunas) */}
-          <div className="grid-2-col gap-y-md gap-x-lg text-base">
+          <div className="grid-2-col gap-y-md gap-x-lg text-base mb-lg">
 
             <InfoItem
                 icon={<Zap size={20} />}

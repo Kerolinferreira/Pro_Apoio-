@@ -173,7 +173,30 @@ class VagaController extends Controller
             $vaga->ja_candidatou = false;
         }
 
-        return response()->json($vaga);
+        // Formata a resposta para o frontend
+        $response = [
+            'id' => $vaga->id,
+            'titulo' => $vaga->titulo ?? $vaga->titulo_vaga,
+            'descricao' => $vaga->descricao ?? $vaga->necessidades_descricao,
+            'tipo_apoio' => $vaga->tipo ?? $vaga->modalidade ?? 'Não informado',
+            'data_publicacao' => $vaga->data_publicacao ? $vaga->data_publicacao->toISOString() : null,
+            'salario' => $vaga->remuneracao ?? $vaga->valor_remuneracao,
+            'localizacao' => trim(($vaga->cidade ?? '') . ($vaga->cidade && $vaga->estado ? ', ' : '') . ($vaga->estado ?? '')) ?: 'Não informado',
+            'deficiencias' => $vaga->deficiencias->map(function ($def) {
+                return [
+                    'id' => $def->id_deficiencia,
+                    'nome' => $def->nome,
+                ];
+            }),
+            'necessidades_descricao' => $vaga->necessidades_descricao ?? '',
+            'ja_candidatou' => $vaga->ja_candidatou ?? false,
+            'instituicao' => $vaga->instituicao ? [
+                'id' => $vaga->instituicao->id_instituicao,
+                'nome_fantasia' => $vaga->instituicao->nome_fantasia,
+            ] : null,
+        ];
+
+        return response()->json($response);
     }
 
     /**
