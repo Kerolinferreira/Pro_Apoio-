@@ -245,7 +245,9 @@ class InstituicaoProfileController extends Controller
 
         // Remove logo antigo se existir
         if ($instituicao->logo_url) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($instituicao->logo_url);
+            // CORREÇÃO P21: Remove /storage/ prefix se presente
+            $oldPath = str_replace('/storage/', '', $instituicao->logo_url);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
         }
 
         // Gera nome seguro e único para o arquivo
@@ -253,9 +255,12 @@ class InstituicaoProfileController extends Controller
         $filename = 'instituicao_' . $instituicao->id_instituicao . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
 
         $path = $file->storeAs('logos-instituicoes', $filename, 'public');
-        $instituicao->update(['logo_url' => $path]);
 
-        return response()->json(['logo_url' => $path]);
+        // CORREÇÃO P21: Retornar URL completa acessível pelo frontend
+        $url = '/storage/' . $path;
+        $instituicao->update(['logo_url' => $url]);
+
+        return response()->json(['logo_url' => $url]);
     }
 
     /**

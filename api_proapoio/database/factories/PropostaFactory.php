@@ -26,7 +26,7 @@ class PropostaFactory extends Factory
             'id_vaga' => Vaga::factory(),
             'id_candidato' => Candidato::factory(),
             'iniciador' => fake()->randomElement(['CANDIDATO', 'INSTITUICAO']),
-            'status' => 'ENVIADA',
+            'status' => \App\Enums\PropostaStatus::ENVIADA,
             'mensagem' => fake()->optional()->paragraph(),
             'mensagem_resposta' => null,
             'data_envio' => fake()->optional()->dateTimeBetween('-1 month', 'now'),
@@ -45,7 +45,7 @@ class PropostaFactory extends Factory
     public function enviada(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'ENVIADA',
+            'status' => \App\Enums\PropostaStatus::ENVIADA,
             'mensagem_resposta' => null,
             'data_resposta' => null,
         ]);
@@ -57,7 +57,7 @@ class PropostaFactory extends Factory
     public function aceita(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'ACEITA',
+            'status' => \App\Enums\PropostaStatus::ACEITA,
             'mensagem_resposta' => fake()->paragraph(),
             'data_resposta' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);
@@ -69,7 +69,7 @@ class PropostaFactory extends Factory
     public function recusada(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'RECUSADA',
+            'status' => \App\Enums\PropostaStatus::RECUSADA,
             'mensagem_resposta' => fake()->paragraph(),
             'data_resposta' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);

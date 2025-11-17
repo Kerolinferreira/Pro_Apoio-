@@ -6,7 +6,7 @@ use Tests\Support\AcceptanceTester;
 
 class PropostaCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
 
     // Teste de Criar Proposta (Instituição para Candidato)
     public function testCreatePropostaByInstituicao(AcceptanceTester $I)

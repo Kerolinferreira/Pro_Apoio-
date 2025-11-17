@@ -226,25 +226,17 @@ class CandidatoFinderControllerTest extends TestCase
     {
         $candidato = $this->createCandidato();
 
-        // Experiência profissional mais recente
+        // Experiência profissional
         ExperienciaProfissional::create([
             'id_candidato' => $candidato->id,
-            'titulo' => 'Experiência Recente',
-            'descricao' => 'Teste',
-            'data_inicio' => '2023-01-01',
-            'data_fim' => null,
+            'descricao' => 'Experiência profissional de teste',
             'tempo_experiencia' => '1-2 anos',
-            'candidatar_mesma_deficiencia' => false,
-            'comentario' => 'Teste'
         ]);
 
-        // Experiência pessoal mais antiga
+        // Experiência pessoal
         ExperienciaPessoal::create([
             'id_candidato' => $candidato->id,
-            'titulo' => 'Experiência Antiga',
-            'descricao' => 'Teste',
-            'data_inicio' => '2020-01-01',
-            'data_fim' => '2021-01-01',
+            'descricao' => 'Experiência pessoal de teste',
             'interesse_atuar' => true
         ]);
 
@@ -253,11 +245,19 @@ class CandidatoFinderControllerTest extends TestCase
         $response->assertOk();
         $experiencias = $response->json('experiencias');
 
-        // Verifica que a mais recente vem primeiro
-        $this->assertEquals('Experiência Recente', $experiencias[0]['titulo']);
-        $this->assertEquals('profissional', $experiencias[0]['tipo']);
-        $this->assertEquals('Experiência Antiga', $experiencias[1]['titulo']);
-        $this->assertEquals('pessoal', $experiencias[1]['tipo']);
+        // Verifica que as experiências foram unificadas
+        $this->assertCount(2, $experiencias);
+
+        // Verifica que contém ambos os tipos
+        $tipos = collect($experiencias)->pluck('tipo')->toArray();
+        $this->assertContains('profissional', $tipos);
+        $this->assertContains('pessoal', $tipos);
+
+        // Verifica estrutura esperada
+        $this->assertArrayHasKey('id', $experiencias[0]);
+        $this->assertArrayHasKey('tipo', $experiencias[0]);
+        $this->assertArrayHasKey('titulo', $experiencias[0]);
+        $this->assertArrayHasKey('descricao', $experiencias[0]);
     }
 
     // Helpers

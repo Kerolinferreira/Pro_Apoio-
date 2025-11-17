@@ -117,7 +117,8 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Candidato cadastrado com sucesso.',
                 'user'  => [
-                    'id' => $user->id,
+                    'id_usuario' => $user->id_usuario,
+                    'nome' => $user->nome,
                     'email' => $user->email,
                     'tipo_usuario' => strtolower($user->tipo_usuario),
                 ],
@@ -177,7 +178,8 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Instituição cadastrada com sucesso.',
                 'user'  => [
-                    'id' => $user->id,
+                    'id_usuario' => $user->id_usuario,
+                    'nome' => $user->nome,
                     'email' => $user->email,
                     'tipo_usuario' => strtolower($user->tipo_usuario),
                 ],
@@ -218,7 +220,8 @@ class AuthController extends Controller
 
         return response()->json([
             'user'  => [
-                'id' => $user->id,
+                'id_usuario' => $user->id_usuario,
+                'nome' => $user->nome,
                 'email' => $user->email,
                 'tipo_usuario' => strtolower($user->tipo_usuario),
             ],

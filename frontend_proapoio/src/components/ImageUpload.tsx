@@ -4,6 +4,7 @@ import { useToast } from './Toast';
 import api from '../services/api';
 import { parseApiError } from '../utils/errorHandler';
 import { logger } from '../utils/logger';
+import { getAbsoluteImageUrl } from '../utils/imageUtils';
 
 interface ImageUploadProps {
   currentImageUrl?: string | null;
@@ -33,7 +34,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
+  const [preview, setPreview] = useState<string | null>(getAbsoluteImageUrl(currentImageUrl) || null);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -137,7 +138,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       // Reverter preview em caso de erro
-      setPreview(currentImageUrl || null);
+      setPreview(getAbsoluteImageUrl(currentImageUrl) || null);
       setSelectedFile(null);
     } finally {
       setUploading(false);
@@ -149,7 +150,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleCancel = () => {
-    setPreview(currentImageUrl || null);
+    setPreview(getAbsoluteImageUrl(currentImageUrl) || null);
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';

@@ -44,6 +44,7 @@ class Vaga extends Model
      */
     protected $attributes = [
         'status' => 'ATIVA',
+        'tipo' => 'PRESENCIAL',
     ];
 
     protected $fillable = [
@@ -155,7 +156,8 @@ class Vaga extends Model
     public function getRemuneracaoAttribute($value)
     {
         // Se remuneracao estiver vazio, retorna valor_remuneracao
-        return $value !== null ? $value : ($this->attributes['valor_remuneracao'] ?? null);
+        $result = $value !== null ? $value : ($this->attributes['valor_remuneracao'] ?? null);
+        return $result !== null ? (float) $result : null;
     }
 
     /**

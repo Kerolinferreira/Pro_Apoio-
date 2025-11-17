@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, Loader2 } from 'lucide-react';
 import { logger } from '../utils/logger';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 interface PropostaModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface PropostaModalProps {
 /**
  * @component PropostaModal
  * @description Modal para envio de proposta de candidatura a uma vaga
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
 const PropostaModal: React.FC<PropostaModalProps> = ({
   isOpen,
@@ -24,6 +26,9 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
   const [mensagem, setMensagem] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Hook de acessibilidade para foco
+  const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isSubmitting, onClose);
 
   const maxLength = 2000;
   const remainingChars = maxLength - mensagem.length;
@@ -108,7 +113,7 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
       aria-modal="true"
       aria-labelledby="proposta-modal-title"
     >
-      <div className="modal-content card" style={{ maxWidth: '600px' }}>
+      <div ref={modalRef} className="modal-content card" style={{ maxWidth: '600px' }}>
         {/* Header */}
         <div className="flex-group-md-row mb-md" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
@@ -118,6 +123,7 @@ const PropostaModal: React.FC<PropostaModalProps> = ({
             <p className="text-sm text-muted">{vagaTitulo}</p>
           </div>
           <button
+            ref={firstFocusableRef}
             onClick={handleClose}
             className="btn-icon btn-sm"
             aria-label="Fechar modal"

@@ -49,6 +49,20 @@ class ExperienciaPessoal extends Model
     }
 
     /**
+     * CORREÇÃO P6: Relação muitos-para-muitos entre experiências pessoais e deficiências.
+     * Permite associar deficiências a experiências pessoais do candidato.
+     */
+    public function deficiencias()
+    {
+        return $this->belongsToMany(
+            Deficiencia::class,
+            'experiencias_pessoais_deficiencias',
+            'id_experiencia_pessoal',
+            'id_deficiencia'
+        );
+    }
+
+    /**
      * Acessor de compatibilidade para a propriedade id.
      *
      * Permite que $experiencia->id retorne o valor de

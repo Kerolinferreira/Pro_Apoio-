@@ -31,7 +31,8 @@ class VagaSalvaController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
 
-            // Formata a resposta para retornar apenas os dados das vagas
+            // Formata a resposta para retornar os dados das vagas salvas
+            // CORREÇÃO P20: Frontend espera estrutura plana com id, titulo, instituicao, cidade, regime_contratacao
             $vagas = $vagasSalvas->map(function ($vagaSalva) {
                 if (!$vagaSalva->vaga) {
                     \Log::warning('VagaSalva sem vaga associada', ['id' => $vagaSalva->id, 'id_vaga' => $vagaSalva->id_vaga]);
@@ -41,21 +42,20 @@ class VagaSalvaController extends Controller
                 $vaga = $vagaSalva->vaga;
 
                 return [
-                    'id' => $vaga->id,
-                    'titulo' => $vaga->titulo ?? $vaga->titulo_vaga ?? 'Sem título',
+                    'id' => $vaga->id_vaga, // ID da vaga, não do relacionamento
+                    'titulo' => $vaga->titulo_vaga ?? $vaga->titulo ?? 'Sem título',
                     'cidade' => $vaga->cidade ?? 'Não informado',
                     'estado' => $vaga->estado ?? 'SP',
                     'regime_contratacao' => $vaga->regime_contratacao ?? 'Não informado',
                     'modalidade' => $vaga->modalidade,
                     'tipo' => $vaga->tipo,
                     'instituicao' => [
-                        'id' => $vaga->instituicao->id_instituicao ?? null,
                         'nome_fantasia' => $vaga->instituicao->nome_fantasia ?? 'Não informado',
                     ],
                 ];
             })->filter()->values(); // Remove nulls e reindex
 
-            return response()->json($vagas, 200);
+            return response()->json(['data' => $vagas], 200);
 
         } catch (\Exception $e) {
             \Log::error('Erro ao buscar vagas salvas', [
@@ -88,7 +88,7 @@ class VagaSalvaController extends Controller
         $candidato = $user->candidato;
 
         $salva = VagaSalva::firstOrCreate([
-            'id_candidato' => $candidato->id,
+            'id_candidato' => $candidato->id_candidato,
             'id_vaga' => $id,
         ]);
 
@@ -106,7 +106,7 @@ class VagaSalvaController extends Controller
         $candidato = $user->candidato;
 
         $vagaSalva = VagaSalva::where('id_vaga', $id)
-            ->where('id_candidato', $candidato->id)
+            ->where('id_candidato', $candidato->id_candidato)
             ->first();
 
         if (!$vagaSalva) {

@@ -4,10 +4,12 @@ import api from '../services/api';
 import { useToast } from './Toast';
 import { parseApiError, getFieldErrorMessage } from '../utils/errorHandler';
 import { TEMPO_EXPERIENCIA_OPTIONS } from '../constants/options';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 /**
  * Modal para adicionar ou editar experiência profissional do candidato.
  * Permite especificar idade do aluno, tempo de experiência, deficiências trabalhadas, etc.
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
 
 interface Deficiencia {
@@ -60,6 +62,9 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
 
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    // Hook de acessibilidade para foco
+    const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isLoading, onClose);
 
     // Preencher formulário ao abrir (para edição) ou limpar (para criação)
     useEffect(() => {
@@ -195,6 +200,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
+                ref={modalRef}
                 className="modal-content modal-lg"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
@@ -351,6 +357,7 @@ const ExperienciaProfissionalModal: React.FC<ExperienciaProfissionalModalProps> 
                 {/* Footer */}
                 <div className="modal-footer">
                     <button
+                        ref={firstFocusableRef}
                         type="button"
                         onClick={onClose}
                         className="btn-secondary"

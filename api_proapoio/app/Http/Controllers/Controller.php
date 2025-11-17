@@ -57,6 +57,12 @@ abstract class Controller
                 'total'        => $paginator->total(),
                 'last_page'    => $paginator->lastPage(),
             ],
+            'links' => [
+                'first' => $paginator->url(1),
+                'last' => $paginator->url($paginator->lastPage()),
+                'prev' => $paginator->previousPageUrl(),
+                'next' => $paginator->nextPageUrl(),
+            ],
         ]);
     }
 

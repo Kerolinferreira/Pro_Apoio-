@@ -7,7 +7,7 @@ use Codeception\Util\Locator;
 
 class AuthCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
 
     public function _before(AcceptanceTester $I)
     {
@@ -184,9 +184,11 @@ class AuthCest
     {
         // Criar usuário via API ou banco de dados
         $I->haveInDatabase('usuarios', [
+            'nome' => 'Usuario Teste',
             'email' => 'teste@email.com',
-            'senha' => password_hash('senha123', PASSWORD_BCRYPT),
-            'tipo' => 'candidato'
+            'senha_hash' => password_hash('senha123', PASSWORD_BCRYPT),
+            'tipo_usuario' => 'candidato',
+            'termos_aceite' => true
         ]);
     }
 
@@ -195,9 +197,11 @@ class AuthCest
         $token = bin2hex(random_bytes(32));
 
         $I->haveInDatabase('usuarios', [
+            'nome' => 'Usuario Teste',
             'email' => 'teste@email.com',
-            'senha' => password_hash('senha123', PASSWORD_BCRYPT),
-            'tipo' => 'candidato'
+            'senha_hash' => password_hash('senha123', PASSWORD_BCRYPT),
+            'tipo_usuario' => 'candidato',
+            'termos_aceite' => true
         ]);
 
         $I->haveInDatabase('password_reset_tokens', [

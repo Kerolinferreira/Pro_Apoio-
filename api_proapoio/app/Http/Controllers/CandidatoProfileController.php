@@ -36,10 +36,22 @@ class CandidatoProfileController extends Controller
             ->with([
                 'endereco',
                 'experienciasProfissionais.deficiencias',
-                'experienciasPessoais',
+                'experienciasPessoais.deficiencias', // CORREÇÃO P6: Incluir deficiências de experiências pessoais
             ])->firstOrFail();
 
-        return response()->json($candidato);
+        // CORREÇÃO P2: Adicionar email do usuário para compatibilidade com frontend
+        $data = $candidato->toArray();
+        $data['email'] = $user->email;
+
+        // CORREÇÃO P2: Garantir que data_nascimento está no formato correto (YYYY-MM-DD)
+        if (isset($data['data_nascimento']) && $data['data_nascimento']) {
+            // Se for um objeto Carbon, converte para string Y-m-d
+            if ($candidato->data_nascimento instanceof \Carbon\Carbon) {
+                $data['data_nascimento'] = $candidato->data_nascimento->format('Y-m-d');
+            }
+        }
+
+        return response()->json($data);
     }
 
     /** Atualiza dados do candidato e do endereço (cria endereço se ausente). */
@@ -220,7 +232,9 @@ class CandidatoProfileController extends Controller
 
         // Remove foto antiga se existir
         if ($candidato->foto_url) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($candidato->foto_url);
+            // CORREÇÃO P21: Remove /storage/ prefix se presente
+            $oldPath = str_replace('/storage/', '', $candidato->foto_url);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
         }
 
         // Gera nome seguro e único para o arquivo
@@ -228,9 +242,12 @@ class CandidatoProfileController extends Controller
         $filename = 'candidato_' . $candidato->id_candidato . '_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $extension;
 
         $path = $file->storeAs('fotos-candidatos', $filename, 'public');
-        $candidato->update(['foto_url' => $path]);
 
-        return response()->json(['foto_url' => $path]);
+        // CORREÇÃO P21: Retornar URL completa acessível pelo frontend
+        $url = '/storage/' . $path;
+        $candidato->update(['foto_url' => $url]);
+
+        return response()->json(['foto_url' => $url]);
     }
 
     /**
@@ -362,27 +379,108 @@ class CandidatoProfileController extends Controller
         return response()->json(['message' => 'Experiência profissional removida.']);
     }
 
-    /** Cria experiência pessoal. */
+    /**
+     * Cria experiência pessoal.
+     * Compatível com:
+     *  - objeto único no corpo
+     *  - { experiencias: [ ... ] }
+     * Aceita chaves:
+     *  - interesse_atuar, descricao, deficiencia_ids[]
+     */
     public function storeExperienciaPessoal(Request $request)
     {
         $user = $request->user();
         $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
 
-        $data = $request->validate([
-            'interesse_atuar' => 'nullable|boolean',
-            'descricao'       => 'nullable|string|max:1000',
-        ]);
+        $experienciasPayload = $request->has('experiencias')
+            ? $request->input('experiencias')
+            : [$request->all()];
 
-        // Sanitizar descricao
-        if (isset($data['descricao'])) {
-            $data['descricao'] = $this->sanitizeHtml($data['descricao']);
+        if (!is_array($experienciasPayload)) {
+            return response()->json(['message' => 'O campo experiencias deve ser um array de objetos.'], 422);
         }
 
-        $data['id_candidato'] = $candidato->id;
+        // Envolver em transação para garantir consistência
+        $criadas = \Illuminate\Support\Facades\DB::transaction(function() use ($experienciasPayload, $candidato) {
+            $criadas = [];
 
-        $experiencia = ExperienciaPessoal::create($data);
+            foreach ($experienciasPayload as $expData) {
+                // mapear chaves
+                $mapped = [
+                    'interesse_atuar' => array_key_exists('interesse_atuar', $expData)
+                        ? (bool)$expData['interesse_atuar']
+                        : false,
+                    'descricao'       => $this->sanitizeHtml($expData['descricao'] ?? ''),
+                    'deficiencia_ids' => $expData['deficiencia_ids'] ?? [],
+                ];
 
-        return response()->json($experiencia, 201);
+                // validação por item
+                $validated = validator($mapped, [
+                    'interesse_atuar' => 'nullable|boolean',
+                    'descricao'       => 'nullable|string|max:1000',
+                    'deficiencia_ids' => 'nullable|array',
+                    'deficiencia_ids.*' => 'integer|exists:deficiencias,id_deficiencia',
+                ])->validate();
+
+                $validated['id_candidato'] = $candidato->id;
+
+                $experiencia = ExperienciaPessoal::create(collect($validated)->except('deficiencia_ids')->toArray());
+
+                if (!empty($validated['deficiencia_ids'])) {
+                    $experiencia->deficiencias()->sync($validated['deficiencia_ids']);
+                }
+
+                $criadas[] = $experiencia->load('deficiencias');
+            }
+
+            return $criadas;
+        });
+
+        return response()->json(count($criadas) === 1 ? $criadas[0] : $criadas, 201);
+    }
+
+    /**
+     * Atualiza experiência pessoal do candidato.
+     * PUT /candidatos/me/experiencias-pessoais/{id}
+     */
+    public function updateExperienciaPessoal(Request $request, $id)
+    {
+        $user = $request->user();
+        $candidato = Candidato::where('id_usuario', $user->id)->firstOrFail();
+
+        $experiencia = ExperienciaPessoal::where('id_experiencia_pessoal', $id)
+            ->where('id_candidato', $candidato->id)
+            ->firstOrFail();
+
+        // Mapear chaves
+        $mapped = [
+            'interesse_atuar' => $request->has('interesse_atuar')
+                ? (bool)$request->input('interesse_atuar')
+                : null,
+            'descricao'       => $this->sanitizeHtml($request->input('descricao', '')),
+            'deficiencia_ids' => $request->input('deficiencia_ids', []),
+        ];
+
+        // Validação
+        $validated = validator($mapped, [
+            'interesse_atuar' => 'nullable|boolean',
+            'descricao'       => 'nullable|string|max:1000',
+            'deficiencia_ids' => 'nullable|array',
+            'deficiencia_ids.*' => 'integer|exists:deficiencias,id_deficiencia',
+        ])->validate();
+
+        // Envolver em transação para garantir consistência
+        $experiencia = \Illuminate\Support\Facades\DB::transaction(function() use ($experiencia, $validated) {
+            $experiencia->update(collect($validated)->except('deficiencia_ids')->toArray());
+
+            if (array_key_exists('deficiencia_ids', $validated)) {
+                $experiencia->deficiencias()->sync($validated['deficiencia_ids'] ?? []);
+            }
+
+            return $experiencia->load('deficiencias');
+        });
+
+        return response()->json($experiencia);
     }
 
     /** Remove experiência pessoal. */

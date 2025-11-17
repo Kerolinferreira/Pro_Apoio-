@@ -56,6 +56,17 @@ export default function LoginPage() {
   }, [redirectTo, navigate]);
 
   /**
+   * @description CORREÇÃO P11: Limpa formulário ao montar o componente (após logout)
+   */
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setError('');
+    setShowPassword(false);
+    clearErrors();
+  }, []); // Executa apenas uma vez ao montar
+
+  /**
    * @description Efeito para redirecionar imediatamente se o usuário já estiver logado.
    */
   useEffect(() => {

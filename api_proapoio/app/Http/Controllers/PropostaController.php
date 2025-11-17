@@ -60,18 +60,57 @@ class PropostaController extends Controller
     /**
      * Normaliza proposta para compatibilidade com frontend
      * Inclui mascaramento de dados sensíveis se proposta não está aceita
+     * CORREÇÃO P20: Converte status ENVIADA -> pendente para compatibilidade frontend
      */
     private function normalizeProposta($proposta)
     {
         $data = is_array($proposta) ? $proposta : $proposta->toArray();
 
-        // Normalizar status para lowercase
-        if (isset($data['status'])) {
-            $data['status'] = strtolower($data['status']);
+        // CORREÇÃO P20: Garantir que 'id' esteja presente (Model usa id_proposta como PK)
+        if (!isset($data['id']) && isset($data['id_proposta'])) {
+            $data['id'] = $data['id_proposta'];
+        }
+
+        // CORREÇÃO P20: Normalizar status para frontend (ENVIADA -> pendente, ACEITA -> aceita, RECUSADA -> recusada)
+        $statusMap = [
+            'ENVIADA' => 'pendente',
+            'ACEITA' => 'aceita',
+            'RECUSADA' => 'recusada',
+        ];
+        $status = strtoupper($data['status'] ?? 'ENVIADA');
+        $data['status'] = $statusMap[$status] ?? strtolower($status);
+
+        // CORREÇÃO P20: Normalizar campos de vaga para frontend
+        if (isset($data['vaga'])) {
+            if (!isset($data['vaga']['id']) && isset($data['vaga']['id_vaga'])) {
+                $data['vaga']['id'] = $data['vaga']['id_vaga'];
+            }
+            if (!isset($data['vaga']['titulo']) && isset($data['vaga']['titulo_vaga'])) {
+                $data['vaga']['titulo'] = $data['vaga']['titulo_vaga'];
+            }
+            // Normalizar instituicao dentro de vaga
+            if (isset($data['vaga']['instituicao'])) {
+                if (!isset($data['vaga']['instituicao']['id']) && isset($data['vaga']['instituicao']['id_instituicao'])) {
+                    $data['vaga']['instituicao']['id'] = $data['vaga']['instituicao']['id_instituicao'];
+                }
+                if (!isset($data['vaga']['instituicao']['nome']) && isset($data['vaga']['instituicao']['nome_fantasia'])) {
+                    $data['vaga']['instituicao']['nome'] = $data['vaga']['instituicao']['nome_fantasia'];
+                }
+            }
+        }
+
+        // CORREÇÃO P20: Normalizar campos de candidato para frontend
+        if (isset($data['candidato'])) {
+            if (!isset($data['candidato']['id']) && isset($data['candidato']['id_candidato'])) {
+                $data['candidato']['id'] = $data['candidato']['id_candidato'];
+            }
+            if (!isset($data['candidato']['nome']) && isset($data['candidato']['nome_completo'])) {
+                $data['candidato']['nome'] = $data['candidato']['nome_completo'];
+            }
         }
 
         // Mascarar dados sensíveis se proposta não está ACEITA
-        if ($data['status'] !== 'aceita') {
+        if ($status !== 'ACEITA') {
             $data = $this->maskSensitiveData($data);
         }
 
@@ -178,6 +217,7 @@ class PropostaController extends Controller
 
     /**
      * Formata a resposta de paginação com estrutura {data, meta}
+     * CORREÇÃO P20: Frontend espera {data: {items, hasMore}} em vez de paginação Laravel
      */
     private function paginatedResponse($paginator)
     {
@@ -186,8 +226,13 @@ class PropostaController extends Controller
             return $this->normalizeProposta($proposta);
         })->toArray();
 
+        $hasMore = $paginator->currentPage() < $paginator->lastPage();
+
         return response()->json([
-            'data' => $items,
+            'data' => [
+                'items' => $items,
+                'hasMore' => $hasMore,
+            ],
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -214,6 +259,7 @@ class PropostaController extends Controller
     {
         $user = $this->getAuthenticatedUser($request);
         $tipo = $request->input('tipo', 'enviadas'); // padrão
+        $status = $request->input('status'); // filtro opcional por status
 
         $perPage = $this->safePerPage($request, 10);
 
@@ -221,7 +267,8 @@ class PropostaController extends Controller
             if (!$user->candidato) {
                 return $this->forbidden('Candidato não encontrado.');
             }
-            $candidatoId = $user->candidato->id;
+            // CORREÇÃO: Usar chave primária correta
+            $candidatoId = $user->candidato->id_candidato;
 
             $query = Proposta::with(['vaga.instituicao', 'candidato'])
                 ->where('id_candidato', $candidatoId)
@@ -229,6 +276,7 @@ class PropostaController extends Controller
                     fn($subQuery) => $subQuery->where('iniciador', 'INSTITUICAO'),
                     fn($subQuery) => $subQuery->where('iniciador', 'CANDIDATO')
                 )
+                ->when($status, fn($subQuery) => $subQuery->where('status', $status))
                 ->latest();
 
             return $this->paginatedResponse($query->paginate($perPage));
@@ -238,7 +286,8 @@ class PropostaController extends Controller
         if (!$user->instituicao) {
             return $this->forbidden('Instituição não encontrada.');
         }
-        $instituicaoId = $user->instituicao->id;
+        // CORREÇÃO: Usar chave primária correta
+        $instituicaoId = $user->instituicao->id_instituicao;
 
         // Evita N+1: usa whereHas em vez de pluck + whereIn
         $query = Proposta::with(['vaga.instituicao', 'candidato'])
@@ -247,6 +296,7 @@ class PropostaController extends Controller
                 fn($subQuery) => $subQuery->where('iniciador', 'CANDIDATO'),
                 fn($subQuery) => $subQuery->where('iniciador', 'INSTITUICAO')
             )
+            ->when($status, fn($subQuery) => $subQuery->where('status', $status))
             ->latest();
 
         return $this->paginatedResponse($query->paginate($perPage));
@@ -266,23 +316,21 @@ class PropostaController extends Controller
         ])->findOrFail($id);
 
         // autorização básica: precisa ser candidato envolvido OU instituição dona da vaga
+        // CORREÇÃO: Usar chaves primárias corretas
         $isCandidato = $this->isCandidato($user->tipo_usuario)
             && $user->candidato
-            && $user->candidato->id === $proposta->id_candidato;
+            && $user->candidato->id_candidato === $proposta->id_candidato;
 
         $isInstituicao = $this->isInstituicao($user->tipo_usuario)
             && $user->instituicao
             && $proposta->vaga
-            && $user->instituicao->id === $proposta->vaga->id_instituicao;
+            && $user->instituicao->id_instituicao === $proposta->vaga->id_instituicao;
 
         if (!$isCandidato && !$isInstituicao) {
             return $this->forbidden();
         }
 
         $data = $proposta->toArray();
-
-        // Normalizar status para lowercase para compatibilidade com frontend
-        $data['status'] = strtolower($data['status']);
 
         // contatos apenas quando ACEITA
         if ($proposta->status === PropostaStatus::ACEITA) {
@@ -322,13 +370,14 @@ class PropostaController extends Controller
         $data = $request->validate([
             'id_vaga'      => 'required|exists:vagas,id_vaga',
             'id_candidato' => 'required|exists:candidatos,id_candidato',
-            'mensagem'     => 'required|string|max:2000',
+            'mensagem'     => 'required|string|min:3|max:2000',
         ], [
             'id_vaga.required' => 'Por favor, selecione uma vaga.',
             'id_vaga.exists' => 'A vaga selecionada não existe.',
             'id_candidato.required' => 'Por favor, selecione um candidato.',
             'id_candidato.exists' => 'O candidato selecionado não existe.',
             'mensagem.required' => 'Por favor, escreva uma mensagem.',
+            'mensagem.min' => 'A mensagem deve ter pelo menos 3 caracteres.',
             'mensagem.max' => 'A mensagem não pode ter mais de 2000 caracteres.',
         ]);
 
@@ -339,7 +388,8 @@ class PropostaController extends Controller
             if (!$user->candidato) {
                 return $this->forbidden('Candidato não encontrado.');
             }
-            if ($user->candidato->id !== (int)$data['id_candidato']) {
+            // CORREÇÃO: Usar chave primária correta
+            if ($user->candidato->id_candidato !== (int)$data['id_candidato']) {
                 throw ValidationException::withMessages(['id_candidato' => 'Candidato inválido.']);
             }
         } elseif ($this->isInstituicao($user->tipo_usuario)) {
@@ -347,7 +397,8 @@ class PropostaController extends Controller
                 return $this->forbidden('Instituição não encontrada.');
             }
             $vaga = Vaga::where('id_vaga', $data['id_vaga'])->firstOrFail();
-            if ((int)$vaga->id_instituicao !== (int)$user->instituicao->id) {
+            // CORREÇÃO: Usar chave primária correta
+            if ((int)$vaga->id_instituicao !== (int)$user->instituicao->id_instituicao) {
                 throw ValidationException::withMessages(['id_vaga' => 'Vaga não pertence à instituição.']);
             }
         } else {
@@ -386,17 +437,26 @@ class PropostaController extends Controller
         // Disparar notificação para o receptor da proposta
         $proposta->load(['vaga.instituicao.user', 'candidato.user']);
 
+        // CORREÇÃO: Envolver notificação em try-catch para não falhar se email estiver mal configurado
         if ($this->isCandidato($iniciador)) {
             // Candidato enviou proposta → notificar instituição
             $receptorUser = $proposta->vaga?->instituicao?->user;
             if ($receptorUser) {
-                $receptorUser->notify(new NovaPropostaNotification($proposta));
+                try {
+                    $receptorUser->notify(new NovaPropostaNotification($proposta));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Falha ao enviar notificação de nova proposta: ' . $e->getMessage());
+                }
             }
         } else {
             // Instituição enviou proposta → notificar candidato
             $receptorUser = $proposta->candidato?->user;
             if ($receptorUser) {
-                $receptorUser->notify(new NovaPropostaNotification($proposta));
+                try {
+                    $receptorUser->notify(new NovaPropostaNotification($proposta));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Falha ao enviar notificação de nova proposta: ' . $e->getMessage());
+                }
             }
         }
 
@@ -416,14 +476,23 @@ class PropostaController extends Controller
 
         $proposta = Proposta::with(['vaga.instituicao.user', 'candidato.user'])->findOrFail($id);
 
+        // Verificar se a proposta já foi aceita ou recusada
+        if ($proposta->status === PropostaStatus::ACEITA) {
+            return response()->json(['message' => 'Esta proposta já foi aceita.'], 422);
+        }
+        if ($proposta->status === PropostaStatus::RECUSADA) {
+            return response()->json(['message' => 'Esta proposta já foi recusada.'], 422);
+        }
+
         // Só quem recebeu pode aceitar
         $recebidaPorCandidato = $this->isInstituicao($proposta->iniciador);
         $recebidaPorInstituicao = $this->isCandidato($proposta->iniciador);
 
+        // CORREÇÃO: Usar chaves primárias corretas (id_candidato e id_instituicao)
         $canAccept =
-            ($recebidaPorCandidato && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id === $proposta->id_candidato)
+            ($recebidaPorCandidato && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id_candidato === $proposta->id_candidato)
             ||
-            ($recebidaPorInstituicao && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
+            ($recebidaPorInstituicao && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id_instituicao === $proposta->vaga->id_instituicao);
 
         if (!$canAccept) return $this->forbidden();
 
@@ -444,8 +513,14 @@ class PropostaController extends Controller
                 $iniciadorUser = $proposta->vaga?->instituicao?->user;
             }
 
+            // CORREÇÃO: Envolver notificação em try-catch para não falhar se email estiver mal configurado
             if ($iniciadorUser) {
-                $iniciadorUser->notify(new PropostaAceitaNotification($proposta));
+                try {
+                    $iniciadorUser->notify(new PropostaAceitaNotification($proposta));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Falha ao enviar notificação de proposta aceita: ' . $e->getMessage());
+                    // Continua a execução mesmo se a notificação falhar
+                }
             }
 
             // contatos da outra parte (para UX imediata, embora o front busque em GET /propostas/{id})
@@ -481,14 +556,23 @@ class PropostaController extends Controller
         $user = $this->getAuthenticatedUser($request);
         $proposta = Proposta::with('vaga')->findOrFail($id);
 
+        // Verificar se a proposta já foi aceita ou recusada
+        if ($proposta->status === PropostaStatus::ACEITA) {
+            return response()->json(['message' => 'Esta proposta já foi aceita.'], 422);
+        }
+        if ($proposta->status === PropostaStatus::RECUSADA) {
+            return response()->json(['message' => 'Esta proposta já foi recusada.'], 422);
+        }
+
         // Só quem recebeu pode recusar
         $recebidaPorCandidato = $this->isInstituicao($proposta->iniciador);
         $recebidaPorInstituicao = $this->isCandidato($proposta->iniciador);
 
+        // CORREÇÃO: Usar chaves primárias corretas
         $canReject =
-            ($recebidaPorCandidato && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id === $proposta->id_candidato)
+            ($recebidaPorCandidato && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id_candidato === $proposta->id_candidato)
             ||
-            ($recebidaPorInstituicao && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
+            ($recebidaPorInstituicao && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id_instituicao === $proposta->vaga->id_instituicao);
 
         if (!$canReject) return $this->forbidden();
 
@@ -507,8 +591,13 @@ class PropostaController extends Controller
             $iniciadorUser = $proposta->vaga?->instituicao?->user;
         }
 
+        // CORREÇÃO: Envolver notificação em try-catch para não falhar se email estiver mal configurado
         if ($iniciadorUser) {
-            $iniciadorUser->notify(new PropostaRecusadaNotification($proposta));
+            try {
+                $iniciadorUser->notify(new PropostaRecusadaNotification($proposta));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Falha ao enviar notificação de proposta recusada: ' . $e->getMessage());
+            }
         }
 
         return response()->json(['message' => 'Proposta recusada']);
@@ -523,10 +612,11 @@ class PropostaController extends Controller
         $user = $this->getAuthenticatedUser($request);
         $proposta = Proposta::with('vaga')->findOrFail($id);
 
+        // CORREÇÃO: Usar chaves primárias corretas
         $isInitiator =
-            ($this->isCandidato($proposta->iniciador) && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id === $proposta->id_candidato)
+            ($this->isCandidato($proposta->iniciador) && $this->isCandidato($user->tipo_usuario) && $user->candidato && $user->candidato->id_candidato === $proposta->id_candidato)
             ||
-            ($this->isInstituicao($proposta->iniciador) && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id === $proposta->vaga->id_instituicao);
+            ($this->isInstituicao($proposta->iniciador) && $this->isInstituicao($user->tipo_usuario) && $user->instituicao && $proposta->vaga && $user->instituicao->id_instituicao === $proposta->vaga->id_instituicao);
 
         if (!$isInitiator) return $this->forbidden();
 

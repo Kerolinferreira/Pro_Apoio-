@@ -41,7 +41,7 @@ function CandidatoCardBase({ candidato }: Props) {
         {cidade} - {estado}
       </p>
       <p className="text-sm text-muted">
-        Deficiências: {listaDef}
+        Experiência com Deficiências: {listaDef}
       </p>
     </article>
   );

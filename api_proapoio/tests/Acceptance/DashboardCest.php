@@ -6,7 +6,7 @@ use Tests\Support\AcceptanceTester;
 
 class DashboardCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
 
     // Teste de Dashboard do Candidato
     public function testCandidatoDashboard(AcceptanceTester $I)

@@ -45,7 +45,7 @@ class VagaFactory extends Factory
                 'Hora',
                 'Projeto',
             ]) : 'Sem Remuneração',
-            'tipo' => fake()->optional()->randomElement(['CLT', 'PJ', 'Estágio', 'Temporário']),
+            'tipo' => 'PRESENCIAL',
             'modalidade' => fake()->optional()->randomElement(['Presencial', 'Remoto', 'Híbrido']),
             'titulo' => fake()->jobTitle(),
             'titulo_vaga' => fake()->jobTitle(),

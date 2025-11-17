@@ -281,11 +281,6 @@ const DetalhesVagaPage: React.FC = () => {
           <div className="grid-2-col gap-y-md gap-x-lg text-base mb-lg">
 
             <InfoItem
-                icon={<Zap size={20} />}
-                label="Tipo de Apoio"
-                value={vaga.tipo_apoio}
-            />
-            <InfoItem
                 icon={<MapPin size={20} />}
                 label="Localização"
                 value={vaga.localizacao}

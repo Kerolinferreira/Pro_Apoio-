@@ -68,6 +68,12 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_can_register_candidato()
     {
+        // Criar uma deficiência para usar no teste
+        $deficiencia = \App\Models\Deficiencia::firstOrCreate(
+            ['nome' => 'Autismo'],
+            ['nome' => 'Autismo']
+        );
+
         $response = $this->postJson('/api/auth/register/candidato', [
             'nome' => 'João Silva',
             'email' => 'joao@example.com',
@@ -81,7 +87,15 @@ class AuthControllerTest extends TestCase
             'cidade' => 'São Paulo',
             'estado' => 'SP',
             'nivel_escolaridade' => 'Ensino Superior Completo',
-            'experiencia' => 'Tenho experiência com alunos com necessidades especiais há mais de 5 anos.'
+            'experiencias_profissionais' => [
+                [
+                    'idade_aluno' => 12,
+                    'tempo_experiencia' => '5 anos',
+                    'candidatar_mesma_deficiencia' => true,
+                    'comentario' => 'Tenho experiência com alunos com necessidades especiais há mais de 5 anos, principalmente trabalhando com autismo.',
+                    'deficiencia_ids' => [$deficiencia->id_deficiencia]
+                ]
+            ]
         ]);
 
         $response->assertStatus(201)
@@ -529,6 +543,12 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function cpf_accepts_formatted_and_unformatted_values()
     {
+        // Criar uma deficiência para usar no teste
+        $deficiencia = \App\Models\Deficiencia::firstOrCreate(
+            ['nome' => 'Autismo'],
+            ['nome' => 'Autismo']
+        );
+
         // Com formatação
         $response1 = $this->postJson('/api/auth/register/candidato', [
             'nome' => 'João Silva',
@@ -543,7 +563,15 @@ class AuthControllerTest extends TestCase
             'cidade' => 'São Paulo',
             'estado' => 'SP',
             'nivel_escolaridade' => 'Ensino Superior Completo',
-            'experiencia' => 'Tenho experiência'
+            'experiencias_profissionais' => [
+                [
+                    'idade_aluno' => 10,
+                    'tempo_experiencia' => '3 anos',
+                    'candidatar_mesma_deficiencia' => true,
+                    'comentario' => 'Tenho experiência trabalhando com crianças com necessidades especiais.',
+                    'deficiencia_ids' => [$deficiencia->id_deficiencia]
+                ]
+            ]
         ]);
 
         $response1->assertStatus(201);
@@ -562,7 +590,15 @@ class AuthControllerTest extends TestCase
             'cidade' => 'São Paulo',
             'estado' => 'SP',
             'nivel_escolaridade' => 'Ensino Superior Completo',
-            'experiencia' => 'Tenho experiência'
+            'experiencias_profissionais' => [
+                [
+                    'idade_aluno' => 8,
+                    'tempo_experiencia' => '2 anos',
+                    'candidatar_mesma_deficiencia' => false,
+                    'comentario' => 'Tenho experiência trabalhando com educação inclusiva e diversas necessidades especiais.',
+                    'deficiencia_ids' => [$deficiencia->id_deficiencia]
+                ]
+            ]
         ]);
 
         $response2->assertStatus(201);
@@ -664,7 +700,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('user.tipo_usuario', 'CANDIDATO');
+            ->assertJsonPath('user.tipo_usuario', 'candidato'); // API retorna em minúsculas
     }
 
     /** @test */
@@ -684,7 +720,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('user.tipo_usuario', 'INSTITUICAO');
+            ->assertJsonPath('user.tipo_usuario', 'instituicao'); // API retorna em minúsculas
     }
 
     /**

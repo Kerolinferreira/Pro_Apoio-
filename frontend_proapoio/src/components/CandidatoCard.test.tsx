@@ -34,7 +34,7 @@ describe('CandidatoCard', () => {
     expect(screen.getByText('Maria Santos')).toBeInTheDocument()
     expect(screen.getByText('Não informado')).toBeInTheDocument() // escolaridade
     expect(screen.getByText('Cidade não informada - UF')).toBeInTheDocument()
-    expect(screen.getByText(/Deficiências: Não informado/)).toBeInTheDocument()
+    expect(screen.getByText(/Experiência com Deficiências: Não informado/)).toBeInTheDocument()
   })
 
   it('handles empty deficiencias array', () => {
@@ -48,7 +48,7 @@ describe('CandidatoCard', () => {
 
     render(<CandidatoCard candidato={candidatoSemDef} />)
 
-    expect(screen.getByText(/Deficiências: Não informado/)).toBeInTheDocument()
+    expect(screen.getByText(/Experiência com Deficiências: Não informado/)).toBeInTheDocument()
   })
 
   it('filters out null/undefined deficiencias names', () => {

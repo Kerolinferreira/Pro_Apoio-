@@ -15,6 +15,12 @@ class AuthTest extends TestCase
     /** @test */
     public function candidato_can_register()
     {
+        // Criar uma deficiência para usar no teste
+        $deficiencia = \App\Models\Deficiencia::firstOrCreate(
+            ['nome' => 'Autismo'],
+            ['nome' => 'Autismo']
+        );
+
         $response = $this->postJson('/api/auth/register/candidato', [
             'nome' => 'Teste User',
             'email' => 'teste@example.com',
@@ -27,7 +33,15 @@ class AuthTest extends TestCase
             'nivel_escolaridade' => 'Superior Completo',
             'curso_superior' => 'Pedagogia',
             'instituicao_ensino' => 'USP',
-            'experiencia' => 'Tenho experiência de 5 anos trabalhando com educação especial.',
+            'experiencias_profissionais' => [
+                [
+                    'idade_aluno' => 10,
+                    'tempo_experiencia' => '5 anos',
+                    'candidatar_mesma_deficiencia' => true,
+                    'comentario' => 'Tenho experiência de 5 anos trabalhando com educação especial e alunos com autismo.',
+                    'deficiencia_ids' => [$deficiencia->id_deficiencia]
+                ]
+            ],
         ]);
 
         $response->assertStatus(201);

@@ -1,0 +1,9 @@
+tests\Acceptance\AuthCest.php:testRegisterCandidato
+tests\Acceptance\AuthCest.php:testRegisterInstituicao
+tests\Acceptance\AuthCest.php:testLogin
+tests\Acceptance\AuthCest.php:testCheckEmail
+tests\Acceptance\AuthCest.php:testForgotPassword
+tests\Acceptance\AuthCest.php:testResetPassword
+tests\Acceptance\AuthCest.php:testLogout
+tests\Acceptance\AuthCest.php:testCheckCpf
+tests\Acceptance\AuthCest.php:testCheckCnpj

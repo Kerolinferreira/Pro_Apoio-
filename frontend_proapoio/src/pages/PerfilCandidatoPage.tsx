@@ -50,6 +50,7 @@ interface ExperienciaPessoal {
     id?: number; // Alias para compatibilidade
     interesse_atuar: boolean;
     descricao: string;
+    deficiencias: Deficiencia[]; // Deficiências relacionadas
 }
 
 interface Candidato {
@@ -95,6 +96,7 @@ const PerfilCandidatoPage: React.FC = () => {
     const [deletingExpProId, setDeletingExpProId] = useState<number | null>(null);
     const [deletingExpPesId, setDeletingExpPesId] = useState<number | null>(null);
     const [experienciaToEdit, setExperienciaToEdit] = useState<ExperienciaProfissional | null>(null);
+    const [experienciaPessoalToEdit, setExperienciaPessoalToEdit] = useState<ExperienciaPessoal | null>(null);
 
     // Busca lista de deficiências da API
     useEffect(() => {
@@ -204,6 +206,16 @@ const PerfilCandidatoPage: React.FC = () => {
     const handleCloseExpProfModal = () => {
         setIsExpProfModalOpen(false);
         setExperienciaToEdit(null);
+    };
+
+    const handleEditExperienciaPessoal = (exp: ExperienciaPessoal) => {
+        setExperienciaPessoalToEdit(exp);
+        setIsExpPessoalModalOpen(true);
+    };
+
+    const handleCloseExpPessoalModal = () => {
+        setIsExpPessoalModalOpen(false);
+        setExperienciaPessoalToEdit(null);
     };
 
     const handleDeleteExperienciaProfissional = async (id: number) => {
@@ -544,20 +556,19 @@ const PerfilCandidatoPage: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Campo de CPF - Exibir como texto quando não editável */}
-                            {editMode ? (
-                                renderField('CPF', 'cpf', <LockIcon size={20} />, 'text', undefined, true, true)
-                            ) : (
-                                <div className="form-group">
-                                    <label className="form-label">CPF</label>
-                                    <div className="form-input-icon-wrapper">
-                                        <LockIcon size={20} className="form-icon" />
-                                        <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
-                                            {candidato?.cpf}
-                                        </div>
+                            {/* CORREÇÃO P8: Campo de CPF - SEMPRE não editável (dado sensível) */}
+                            <div className="form-group">
+                                <label className="form-label">CPF</label>
+                                <div className="form-input-icon-wrapper">
+                                    <LockIcon size={20} className="form-icon" />
+                                    <div className="form-input with-icon" style={{ backgroundColor: 'var(--color-bg-secondary)', border: 'none', display: 'flex', alignItems: 'center' }}>
+                                        {candidato?.cpf}
                                     </div>
                                 </div>
-                            )}
+                                <p className="text-xs text-muted mt-xs">
+                                    CPF não pode ser alterado. Entre em contato com o suporte se necessário.
+                                </p>
+                            </div>
                             
                             {/* Campo de Gênero - Exibir como texto quando não editável */}
                             {editMode ? (
@@ -777,6 +788,16 @@ const PerfilCandidatoPage: React.FC = () => {
                                             <div className="flex-1">
                                                 <span className="badge-secondary text-xs mb-xs inline-block">Pessoal</span>
                                                 <p className="text-sm mb-xs">{exp.descricao}</p>
+                                                {exp.deficiencias && exp.deficiencias.length > 0 && (
+                                                    <div className="flex-wrap-gap-xs mb-xs">
+                                                        {exp.deficiencias.map(def => (
+                                                            <span key={def.id} className="badge-outline badge-sm">
+                                                                <Accessibility size={14} className="mr-xs" />
+                                                                {def.nome}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 {exp.interesse_atuar && (
                                                     <p className="text-xs text-success">
                                                         ✓ Interesse em atuar profissionalmente
@@ -784,19 +805,29 @@ const PerfilCandidatoPage: React.FC = () => {
                                                 )}
                                             </div>
                                             {editMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteExperienciaPessoal(exp.id_experiencia_pessoal)}
-                                                    className="btn-secondary btn-sm btn-error"
-                                                    aria-label="Remover experiência pessoal"
-                                                    disabled={deletingExpPesId === exp.id_experiencia_pessoal}
-                                                >
-                                                    {deletingExpPesId === exp.id_experiencia_pessoal ? (
-                                                        <Loader2 size={16} className="icon-spin" />
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
-                                                </button>
+                                                <div className="flex-gap-sm">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditExperienciaPessoal(exp)}
+                                                        className="btn-secondary btn-sm"
+                                                        aria-label="Editar experiência pessoal"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteExperienciaPessoal(exp.id_experiencia_pessoal)}
+                                                        className="btn-secondary btn-sm btn-error"
+                                                        aria-label="Remover experiência pessoal"
+                                                        disabled={deletingExpPesId === exp.id_experiencia_pessoal}
+                                                    >
+                                                        {deletingExpPesId === exp.id_experiencia_pessoal ? (
+                                                            <Loader2 size={16} className="icon-spin" />
+                                                        ) : (
+                                                            <Trash2 size={16} />
+                                                        )}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -897,8 +928,10 @@ const PerfilCandidatoPage: React.FC = () => {
             {/* Modal de Experiência Pessoal */}
             <ExperienciaPessoalModal
                 isOpen={isExpPessoalModalOpen}
-                onClose={() => setIsExpPessoalModalOpen(false)}
+                onClose={handleCloseExpPessoalModal}
                 onSuccess={fetchProfile}
+                deficienciaOptions={deficienciaOptions}
+                experienciaToEdit={experienciaPessoalToEdit}
             />
         </div>
     );

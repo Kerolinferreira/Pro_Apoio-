@@ -225,39 +225,20 @@ const CreateVagaPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid-2-col">
-                <div className="form-field">
-                  <label htmlFor="tipo" className="label-field">
-                    Tipo de Apoio
-                  </label>
-                  <select
-                    id="tipo"
-                    name="tipo"
-                    value={formData.tipo}
-                    onChange={handleChange}
-                    className={`input-field ${fieldErrors.tipo ? 'input-error' : ''}`}
-                  >
-                    <option value="PRESENCIAL">Presencial</option>
-                    <option value="ONLINE">Online</option>
-                    <option value="HIBRIDO">Híbrido</option>
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="modalidade" className="label-field">
-                    Modalidade
-                  </label>
-                  <input
-                    type="text"
-                    id="modalidade"
-                    name="modalidade"
-                    value={formData.modalidade}
-                    onChange={handleChange}
-                    className={`input-field ${fieldErrors.modalidade ? 'input-error' : ''}`}
-                    placeholder="Ex: Tempo Integral, Meio Período"
-                    maxLength={50}
-                  />
-                </div>
+              <div className="form-field">
+                <label htmlFor="modalidade" className="label-field">
+                  Modalidade
+                </label>
+                <input
+                  type="text"
+                  id="modalidade"
+                  name="modalidade"
+                  value={formData.modalidade}
+                  onChange={handleChange}
+                  className={`input-field ${fieldErrors.modalidade ? 'input-error' : ''}`}
+                  placeholder="Ex: Tempo Integral, Meio Período"
+                  maxLength={50}
+                />
               </div>
 
               <div className="grid-2-col">

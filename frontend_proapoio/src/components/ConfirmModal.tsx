@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -17,6 +18,7 @@ interface ConfirmModalProps {
  * @component ConfirmModal
  * @description Modal de confirmação customizado para substituir window.confirm
  * Acessível, responsivo e com visual moderno
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
     isOpen,
@@ -29,6 +31,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     type = 'info',
     isLoading = false
 }) => {
+    const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isLoading, onClose);
+
     if (!isOpen) return null;
 
     const getIcon = () => {
@@ -70,8 +74,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
+            aria-describedby="modal-description"
         >
-            <div className="modal-content card">
+            <div className="modal-content card" ref={modalRef}>
                 {/* Header */}
                 <div className="flex-group-md-row mb-md" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div className="flex-group" style={{ gap: '1rem', alignItems: 'center' }}>
@@ -90,12 +95,13 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
                 {/* Message */}
                 <div className="mb-lg">
-                    <p className="text-base text-base-color">{message}</p>
+                    <p id="modal-description" className="text-base text-base-color">{message}</p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex-actions-end" style={{ gap: '0.75rem' }}>
                     <button
+                        ref={firstFocusableRef}
                         onClick={onClose}
                         className="btn-secondary"
                         disabled={isLoading}

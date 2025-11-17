@@ -6,7 +6,7 @@ use Tests\Support\AcceptanceTester;
 
 class InstituicaoCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
     private $authToken;
 
     public function _before(AcceptanceTester $I)

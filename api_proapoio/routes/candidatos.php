@@ -43,6 +43,9 @@ Route::middleware('jwt')->group(function () {
         // Experiências Pessoais
         Route::post('/experiencias-pessoais', [CandidatoProfileController::class, 'storeExperienciaPessoal'])
             ->name('experiencias-pessoais.store');
+        Route::put('/experiencias-pessoais/{id}', [CandidatoProfileController::class, 'updateExperienciaPessoal'])
+            ->whereNumber('id')
+            ->name('experiencias-pessoais.update');
         Route::delete('/experiencias-pessoais/{id}', [CandidatoProfileController::class, 'deleteExperienciaPessoal'])
             ->whereNumber('id')
             ->name('experiencias-pessoais.delete');
@@ -69,6 +72,9 @@ Route::middleware('jwt')->group(function () {
         // Experiências Pessoais
         Route::post('/experiencias-pessoais', [CandidatoProfileController::class, 'storeExperienciaPessoal'])
             ->name('experiencias-pessoais.store');
+        Route::put('/experiencias-pessoais/{id}', [CandidatoProfileController::class, 'updateExperienciaPessoal'])
+            ->whereNumber('id')
+            ->name('experiencias-pessoais.update');
         Route::delete('/experiencias-pessoais/{id}', [CandidatoProfileController::class, 'deleteExperienciaPessoal'])
             ->whereNumber('id')
             ->name('experiencias-pessoais.delete');

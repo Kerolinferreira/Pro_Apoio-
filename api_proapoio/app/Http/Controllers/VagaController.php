@@ -102,8 +102,9 @@ class VagaController extends Controller
         }
 
         // Filtro por tipo (valida contra valores permitidos)
+        // Nota: O tipo de apoio agora é sempre PRESENCIAL, então este filtro pode ser removido
         if ($tipo = $request->input('tipo')) {
-            $tiposValidos = ['CLT', 'PJ', 'Estágio', 'Temporário', 'Voluntariado', 'Trabalho Fixo'];
+            $tiposValidos = ['CLT', 'PJ', 'Estágio', 'Temporário', 'Voluntariado', 'Trabalho Fixo', 'PRESENCIAL'];
 
             if (is_array($tipo)) {
                 // Filtra apenas valores válidos
@@ -175,7 +176,7 @@ class VagaController extends Controller
 
         // Formata a resposta para o frontend
         $response = [
-            'id' => $vaga->id,
+            'id_vaga' => $vaga->id_vaga,
             'titulo' => $vaga->titulo ?? $vaga->titulo_vaga,
             'descricao' => $vaga->descricao ?? $vaga->necessidades_descricao,
             'tipo_apoio' => $vaga->tipo ?? $vaga->modalidade ?? 'Não informado',
@@ -192,7 +193,9 @@ class VagaController extends Controller
             'ja_candidatou' => $vaga->ja_candidatou ?? false,
             'instituicao' => $vaga->instituicao ? [
                 'id' => $vaga->instituicao->id_instituicao,
+                'id_instituicao' => $vaga->instituicao->id_instituicao,
                 'nome_fantasia' => $vaga->instituicao->nome_fantasia,
+                'razao_social' => $vaga->instituicao->razao_social,
             ] : null,
         ];
 
@@ -226,7 +229,7 @@ class VagaController extends Controller
             'valor_remuneracao'       => 'nullable|numeric|min:0',
             'remuneracao'             => 'nullable|numeric|min:0',
             'tipo_remuneracao'        => 'nullable|string|max:30',
-            'titulo_vaga'             => 'required|string|min:3|max:255',
+            'titulo_vaga'             => 'nullable|string|min:3|max:255',
             'titulo'                  => 'nullable|string|min:3|max:255',
             'tipo'                    => 'nullable|string',
             'modalidade'              => 'nullable|string',
@@ -244,7 +247,6 @@ class VagaController extends Controller
             'carga_horaria_semanal.max' => 'A carga horária semanal não pode ser maior que 60 horas.',
             'valor_remuneracao.min' => 'O valor da remuneração deve ser maior ou igual a zero.',
             'remuneracao.min' => 'O valor da remuneração deve ser maior ou igual a zero.',
-            'titulo_vaga.required' => 'Por favor, informe o título da vaga.',
             'titulo_vaga.min' => 'O título da vaga deve ter pelo menos 3 caracteres.',
             'titulo_vaga.max' => 'O título da vaga não pode ter mais de 255 caracteres.',
             'titulo.min' => 'O título da vaga deve ter pelo menos 3 caracteres.',
@@ -262,6 +264,14 @@ class VagaController extends Controller
         // Garantir que ambos os campos titulo estejam preenchidos
         if (isset($data['titulo_vaga'])) {
             $data['titulo'] = $data['titulo_vaga'];
+        }
+
+        // Validar que pelo menos um dos campos de título foi fornecido
+        if (empty($data['titulo']) && empty($data['titulo_vaga'])) {
+            return response()->json([
+                'message' => 'Por favor, informe o título da vaga.',
+                'errors' => ['titulo' => ['Por favor, informe o título da vaga.']]
+            ], 422);
         }
         if (!isset($data['valor_remuneracao']) && isset($data['remuneracao'])) {
             $data['valor_remuneracao'] = $data['remuneracao'];
@@ -350,7 +360,7 @@ class VagaController extends Controller
             return $this->forbidden('Instituição não encontrada.');
         }
 
-        $vaga = Vaga::with(['deficiencias'])
+        $vaga = Vaga::with(['deficiencias', 'instituicao'])
             ->where('id_vaga', $id)
             ->where('id_instituicao', $user->instituicao->id)
             ->firstOrFail();
@@ -465,6 +475,44 @@ class VagaController extends Controller
         }
 
         $vaga->update(['status' => 'PAUSADA']);
+
+        return response()->json($vaga);
+    }
+
+    /**
+     * PUT /vagas/{id}/reativar
+     * CORREÇÃO P19: Transição válida: PAUSADA → ATIVA
+     * Permite que instituições retomem vagas que foram pausadas
+     */
+    public function reativar(Request $request, $id)
+    {
+        $user = $this->getAuthenticatedUser($request);
+        if (!$this->isInstituicao($user->tipo_usuario)) {
+            return $this->forbidden();
+        }
+
+        if (!$user->instituicao) {
+            return $this->forbidden('Instituição não encontrada.');
+        }
+
+        $vaga = Vaga::where('id_vaga', $id)->first();
+
+        if (!$vaga) {
+            return response()->json(['message' => 'Recurso não encontrado.'], 404);
+        }
+
+        if ($vaga->id_instituicao !== $user->instituicao->id) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        // Validar transição de estado: apenas PAUSADA pode ser reativada
+        if ($vaga->status !== 'PAUSADA') {
+            return $this->unprocessable(
+                'Apenas vagas PAUSADAS podem ser reativadas. Status atual: ' . $vaga->status
+            );
+        }
+
+        $vaga->update(['status' => 'ATIVA']);
 
         return response()->json($vaga);
     }

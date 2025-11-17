@@ -4,6 +4,7 @@ import { useToast } from './Toast';
 import api from '../services/api';
 import { parseApiError } from '../utils/errorHandler';
 import { logger } from '../utils/logger';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface ChangePasswordModalProps {
 /**
  * @component ChangePasswordModal
  * @description Modal reutilizável para alteração de senha
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   isOpen,
@@ -33,6 +35,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isSubmitting, onClose);
 
   const handleClose = () => {
     if (!isSubmitting) {
@@ -157,7 +161,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       aria-modal="true"
       aria-labelledby="change-password-modal-title"
     >
-      <div className="modal-content card" style={{ maxWidth: '500px' }}>
+      <div className="modal-content card" style={{ maxWidth: '500px' }} ref={modalRef}>
         {/* Header */}
         <div className="flex-group-md-row mb-md" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div className="flex-group-item" style={{ gap: '0.5rem' }}>
@@ -194,6 +198,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <div className="form-input-icon-wrapper">
                 <Lock size={20} className="form-icon" />
                 <input
+                  ref={firstFocusableRef as React.RefObject<HTMLInputElement>}
                   type={showCurrentPassword ? 'text' : 'password'}
                   id="current_password"
                   value={currentPassword}

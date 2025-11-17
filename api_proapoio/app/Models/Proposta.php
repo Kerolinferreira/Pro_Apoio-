@@ -126,4 +126,20 @@ class Proposta extends Model
     {
         return $this->attributes[$this->primaryKey] ?? null;
     }
+
+    /**
+     * Mutator para garantir que o status seja sempre salvo em maiúsculas.
+     * Necessário porque SQLite não suporta ENUM nativamente.
+     */
+    public function setStatusAttribute($value)
+    {
+        if ($value instanceof \App\Enums\PropostaStatus) {
+            $this->attributes['status'] = $value->value;
+        } elseif (is_string($value)) {
+            // Garantir maiúsculas para compatibilidade com enum
+            $this->attributes['status'] = strtoupper($value);
+        } else {
+            $this->attributes['status'] = $value;
+        }
+    }
 }

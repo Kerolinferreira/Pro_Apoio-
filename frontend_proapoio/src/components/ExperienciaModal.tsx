@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Briefcase, Heart, Loader2 } from 'lucide-react';
 import { logger } from '../utils/logger';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 interface Deficiencia {
     id: number;
@@ -51,6 +52,9 @@ const ExperienciaModal: React.FC<ExperienciaModalProps> = ({
 
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Hook de acessibilidade para foco
+    const { modalRef, firstFocusableRef } = useModalFocus(isOpen, loading, onClose);
 
     // Atualiza o formulário quando initialData muda
     useEffect(() => {
@@ -162,7 +166,7 @@ const ExperienciaModal: React.FC<ExperienciaModalProps> = ({
             aria-modal="true"
             aria-labelledby="modal-title"
         >
-            <div className="modal-content card" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div ref={modalRef} className="modal-content card" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
                 {/* Header */}
                 <div className="flex-group-md-row mb-md" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div className="flex-group" style={{ gap: '1rem', alignItems: 'center' }}>
@@ -172,6 +176,7 @@ const ExperienciaModal: React.FC<ExperienciaModalProps> = ({
                         </h2>
                     </div>
                     <button
+                        ref={firstFocusableRef}
                         onClick={onClose}
                         className="btn-icon btn-sm"
                         aria-label="Fechar modal"

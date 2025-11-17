@@ -34,6 +34,10 @@ Route::middleware('jwt')->group(function () {
         Route::put('/vagas/{id}/pausar', [VagaController::class, 'pause'])
             ->whereNumber('id')
             ->name('vagas.pause');
+        // CORREÇÃO P19: Adicionar rota para reativar vaga pausada
+        Route::put('/vagas/{id}/reativar', [VagaController::class, 'reativar'])
+            ->whereNumber('id')
+            ->name('vagas.reativar');
         Route::put('/vagas/{id}/fechar', [VagaController::class, 'close'])
             ->whereNumber('id')
             ->name('vagas.close');

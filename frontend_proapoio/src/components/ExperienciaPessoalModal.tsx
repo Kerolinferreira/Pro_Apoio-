@@ -1,29 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Accessibility } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from './Toast';
 import { parseApiError, getFieldErrorMessage } from '../utils/errorHandler';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 /**
  * Modal para adicionar ou editar experiência pessoal do candidato.
- * Captura descrição da experiência e interesse em atuar em vagas similares.
+ * Captura descrição da experiência, interesse em atuar em vagas similares e deficiências relacionadas.
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
+
+interface Deficiencia {
+    id: number;
+    nome: string;
+}
 
 interface ExperienciaPessoalFormData {
     interesse_atuar: boolean;
     descricao: string;
+    deficiencia_ids: number[];
+}
+
+interface ExperienciaPessoal {
+    id_experiencia_pessoal: number;
+    interesse_atuar: boolean;
+    descricao: string;
+    deficiencias: Deficiencia[];
 }
 
 interface ExperienciaPessoalModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void; // Callback após sucesso (para recarregar lista)
+    deficienciaOptions: Deficiencia[]; // Lista de deficiências disponíveis
+    experienciaToEdit?: ExperienciaPessoal | null; // Experiência a ser editada (opcional)
 }
 
 const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
     isOpen,
     onClose,
     onSuccess,
+    deficienciaOptions,
+    experienciaToEdit,
 }) => {
     const toast = useToast();
 
@@ -31,21 +50,34 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
     const [formData, setFormData] = useState<ExperienciaPessoalFormData>({
         interesse_atuar: false,
         descricao: '',
+        deficiencia_ids: [],
     });
 
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // Limpar formulário ao fechar
+    // Hook de acessibilidade para foco
+    const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isLoading, onClose);
+
+    // Preencher formulário ao abrir (para edição) ou limpar (para criação)
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen && experienciaToEdit) {
+            // Modo edição: preenche com os dados existentes
+            setFormData({
+                interesse_atuar: experienciaToEdit.interesse_atuar,
+                descricao: experienciaToEdit.descricao,
+                deficiencia_ids: experienciaToEdit.deficiencias.map(d => d.id),
+            });
+        } else if (isOpen) {
+            // Modo criação: limpa o formulário
             setFormData({
                 interesse_atuar: false,
                 descricao: '',
+                deficiencia_ids: [],
             });
-            setErrors({});
         }
-    }, [isOpen]);
+        setErrors({});
+    }, [isOpen, experienciaToEdit]);
 
     /**
      * Valida o formulário antes do envio
@@ -60,12 +92,17 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
             newErrors.descricao = 'A descrição não pode ter mais de 1000 caracteres.';
         }
 
+        // Validação das deficiências (ao menos uma deve ser selecionada)
+        if (formData.deficiencia_ids.length === 0) {
+            newErrors.deficiencia_ids = 'Selecione ao menos uma deficiência relacionada à sua experiência.';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     /**
-     * Submete a requisição de criação de experiência pessoal
+     * Submete a requisição de criação ou edição de experiência pessoal
      */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,11 +118,19 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
             const payload = {
                 interesse_atuar: formData.interesse_atuar,
                 descricao: formData.descricao.trim(),
+                deficiencia_ids: formData.deficiencia_ids,
             };
 
-            await api.post('/candidatos/me/experiencias-pessoais', payload);
+            if (experienciaToEdit) {
+                // Modo edição: PUT
+                await api.put(`/candidatos/me/experiencias-pessoais/${experienciaToEdit.id_experiencia_pessoal}`, payload);
+                toast.success('Experiência pessoal atualizada com sucesso!');
+            } else {
+                // Modo criação: POST
+                await api.post('/candidatos/me/experiencias-pessoais', payload);
+                toast.success('Experiência pessoal adicionada com sucesso!');
+            }
 
-            toast.success('Experiência pessoal adicionada com sucesso!');
             onClose();
             onSuccess(); // Recarregar lista
         } catch (error: any) {
@@ -115,11 +160,29 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
         }
     };
 
+    /**
+     * Toggle de deficiência (adiciona/remove da lista)
+     */
+    const toggleDeficiencia = (deficienciaId: number) => {
+        setFormData((prev) => {
+            const isSelected = prev.deficiencia_ids.includes(deficienciaId);
+            const newIds = isSelected
+                ? prev.deficiencia_ids.filter((id) => id !== deficienciaId)
+                : [...prev.deficiencia_ids, deficienciaId];
+            return { ...prev, deficiencia_ids: newIds };
+        });
+        // Limpa o erro de deficiências ao selecionar
+        if (errors.deficiencia_ids) {
+            setErrors((prev) => ({ ...prev, deficiencia_ids: '' }));
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
+                ref={modalRef}
                 className="modal-content modal-md"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
@@ -129,7 +192,7 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
                 {/* Header */}
                 <div className="modal-header">
                     <h2 id="experiencia-pessoal-modal-title" className="modal-title">
-                        Adicionar Experiência Pessoal
+                        {experienciaToEdit ? 'Editar Experiência Pessoal' : 'Adicionar Experiência Pessoal'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -172,6 +235,33 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
                             </small>
                         </div>
 
+                        {/* Deficiências Relacionadas */}
+                        <div className="form-group">
+                            <label className="form-label required">
+                                Deficiências relacionadas à experiência
+                            </label>
+                            <div className="space-y-xs">
+                                {deficienciaOptions.map((def) => (
+                                    <label key={def.id} className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox"
+                                            checked={formData.deficiencia_ids.includes(def.id)}
+                                            onChange={() => toggleDeficiencia(def.id)}
+                                            disabled={isLoading}
+                                        />
+                                        <Accessibility size={20} className="text-brand-color mr-xs" />
+                                        {def.nome}
+                                    </label>
+                                ))}
+                            </div>
+                            {errors.deficiencia_ids && (
+                                <span className="form-error" role="alert">
+                                    {errors.deficiencia_ids}
+                                </span>
+                            )}
+                        </div>
+
                         {/* Interesse em atuar */}
                         <div className="form-group">
                             <label className="checkbox-label">
@@ -194,6 +284,7 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
                 {/* Footer */}
                 <div className="modal-footer">
                     <button
+                        ref={firstFocusableRef}
                         type="button"
                         onClick={onClose}
                         className="btn-secondary"
@@ -213,7 +304,7 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
                                 Salvando...
                             </>
                         ) : (
-                            'Adicionar Experiência'
+                            experienciaToEdit ? 'Salvar Alterações' : 'Adicionar Experiência'
                         )}
                     </button>
                 </div>

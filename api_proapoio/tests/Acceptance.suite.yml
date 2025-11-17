@@ -2,13 +2,14 @@ actor: AcceptanceTester
 modules:
     enabled:
         - WebDriver:
-            url: 'http://localhost:3074/'
+            url: 'http://localhost:5174/'
             browser: chrome
             host: 127.0.0.1
             port: 9515
+            path: '/'
         - Db:
             dsn: 'mysql:host=127.0.0.1;dbname=proapoio'
             user: 'root'
             password: '1234'
             dump: 'tests/_data/dump.sql'
-        - \Helper\Acceptance
+        - Tests\Support\Helper\Acceptance

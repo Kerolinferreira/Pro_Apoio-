@@ -3,10 +3,12 @@ import { X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from './Toast';
 import { parseApiError, getFieldErrorMessage } from '../utils/errorHandler';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 /**
  * Modal para exclusão de conta do usuário.
  * Requer confirmação por senha e exibe aviso sobre a permanência da ação.
+ * CORREÇÃO P12: Foco automático e trap de foco para leitores de tela
  */
 
 interface DeleteAccountModalProps {
@@ -29,6 +31,9 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    // Hook de acessibilidade para foco
+    const { modalRef, firstFocusableRef } = useModalFocus(isOpen, isLoading, onClose);
 
     // Limpar formulário ao fechar
     useEffect(() => {
@@ -102,6 +107,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
+                ref={modalRef}
                 className="modal-content modal-md"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
@@ -188,6 +194,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
                 {/* Footer */}
                 <div className="modal-footer">
                     <button
+                        ref={firstFocusableRef}
                         type="button"
                         onClick={onClose}
                         className="btn-secondary"

@@ -126,7 +126,34 @@ class CandidatoFinderController extends Controller
         $perPage = $this->safePerPage($request, 20);
         $candidatos = $query->paginate($perPage);
 
-        // Formatação dos dados de resposta, se necessário (ocultar senhas, formatar datas, etc.)
+        // CORREÇÃO P16: Normalizar dados para frontend (cidade, estado, experiências diretamente no objeto)
+        $candidatos->getCollection()->transform(function ($candidato) {
+            $data = $candidato->toArray();
+
+            // Adicionar campos de endereço diretamente no objeto
+            $data['cidade'] = optional($candidato->endereco)->cidade ?? 'Não informado';
+            $data['estado'] = optional($candidato->endereco)->estado ?? '';
+
+            // Normalizar deficiências (experiências profissionais)
+            $deficiencias = $candidato->experienciasProfissionais
+                ->pluck('deficiencias')
+                ->flatten()
+                ->unique('id_deficiencia')
+                ->map(function ($def) {
+                    return ['nome' => $def->nome];
+                })
+                ->values();
+
+            $data['deficiencias'] = $deficiencias;
+
+            // Remover relacionamentos aninhados que já foram normalizados
+            unset($data['endereco']);
+            unset($data['experiencias_profissionais']);
+            unset($data['experiencias_pessoais']);
+
+            return $data;
+        });
+
         return $candidatos;
     }
     
@@ -145,7 +172,11 @@ class CandidatoFinderController extends Controller
             'experienciasPessoais',
             'experienciasProfissionais.deficiencias' // Load deficiencias through professional experiences
         ])
-        ->findOrFail($id);
+        ->find($id);
+
+        if (!$candidato) {
+            return response()->json(['message' => 'Recurso não encontrado.'], 404);
+        }
 
         // Unify personal and professional experiences into a single collection.
         $experienciasPessoais = $candidato->experienciasPessoais->map(function ($exp) {
@@ -170,14 +201,8 @@ class CandidatoFinderController extends Controller
             ];
         });
 
-        // Une e ordena experiências por data de início (mais recente primeiro)
-        // Tratamento de valores null: experiências sem data vão para o final
-        $todasExperiencias = $experienciasPessoais->concat($experienciasProfissionais)
-            ->sortByDesc(function ($exp) {
-                // Coloca null no final ao inverter a ordenação
-                return $exp['data_inicio'] ?? '1900-01-01';
-            })
-            ->values();
+        // Une as experiências (sem ordenação já que não há datas)
+        $todasExperiencias = $experienciasPessoais->concat($experienciasProfissionais)->values();
 
         // Collect unique deficiencies from all professional experiences.
         $deficienciasAtuadas = $candidato->experienciasProfissionais

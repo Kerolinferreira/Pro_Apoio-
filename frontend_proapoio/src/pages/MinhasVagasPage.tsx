@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Edit, Pause, XCircle, CheckCircle, Briefcase, MapPin, DollarSign, Calendar, Loader2, Frown } from 'lucide-react';
+import { PlusCircle, Edit, Pause, Play, XCircle, CheckCircle, Briefcase, MapPin, DollarSign, Calendar, Loader2, Frown } from 'lucide-react';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -41,7 +41,7 @@ const MinhasVagasPage: React.FC = () => {
   const [modalState, setModalState] = useState<{
     show: boolean;
     vagaId: number | null;
-    action: 'pausar' | 'fechar' | 'excluir' | null;
+    action: 'pausar' | 'fechar' | 'excluir' | 'retomar' | null;
     title?: string;
   }>({
     show: false,
@@ -69,7 +69,7 @@ const MinhasVagasPage: React.FC = () => {
   }, []);
 
   // Ações de vaga
-  const handleVagaAction = (vagaId: number, action: 'pausar' | 'fechar' | 'excluir', title?: string) => {
+  const handleVagaAction = (vagaId: number, action: 'pausar' | 'fechar' | 'excluir' | 'retomar', title?: string) => {
     setModalState({ show: true, vagaId, action, title });
   };
 
@@ -84,6 +84,13 @@ const MinhasVagasPage: React.FC = () => {
         await api.delete(`/vagas/${vagaId}`);
         setVagas(prev => prev.filter(v => v.id !== vagaId));
         toast.success('Vaga excluída com sucesso!');
+      } else if (action === 'retomar') {
+        // CORREÇÃO P19: Implementar retomada de vaga pausada
+        await api.put(`/vagas/${vagaId}/reativar`);
+        setVagas(prev => prev.map(v =>
+          v.id === vagaId ? { ...v, status: 'ATIVA' } : v
+        ));
+        toast.success('Vaga reativada com sucesso!');
       } else {
         await api.put(`/vagas/${vagaId}/${action}`);
         setVagas(prev => prev.map(v =>
@@ -108,6 +115,16 @@ const MinhasVagasPage: React.FC = () => {
         message: `Deseja pausar a vaga "${title}"? Você pode reativá-la depois.`,
         confirmText: 'Sim, pausar',
         type: 'warning' as const,
+      };
+    }
+
+    // CORREÇÃO P19: Adicionar configuração modal para retomar vaga
+    if (action === 'retomar') {
+      return {
+        title: 'Retomar Vaga',
+        message: `Deseja reativar a vaga "${title}"? Ela voltará a ficar visível para candidatos.`,
+        confirmText: 'Sim, reativar',
+        type: 'success' as const,
       };
     }
 
@@ -268,6 +285,18 @@ const MinhasVagasPage: React.FC = () => {
                         >
                           <Pause size={16} />
                           <span className="hidden-sm">Pausar</span>
+                        </button>
+                      )}
+
+                      {/* CORREÇÃO P19: Botão para retomar vaga pausada */}
+                      {vaga.status === 'PAUSADA' && (
+                        <button
+                          onClick={() => handleVagaAction(vaga.id, 'retomar', vaga.titulo)}
+                          className="btn-primary btn-sm btn-icon"
+                          aria-label="Retomar vaga"
+                        >
+                          <Play size={16} />
+                          <span className="hidden-sm">Retomar</span>
                         </button>
                       )}
 

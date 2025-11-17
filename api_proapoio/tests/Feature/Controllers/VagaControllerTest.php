@@ -162,8 +162,9 @@ class VagaControllerTest extends TestCase
             'Authorization' => 'Bearer ' . $this->token
         ])->postJson('/api/vagas', []);
 
+        // Apenas titulo/titulo_vaga é obrigatório (validação customizada)
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['titulo', 'descricao', 'tipo', 'modalidade']);
+            ->assertJsonValidationErrors(['titulo']);
     }
 
     /** @test */

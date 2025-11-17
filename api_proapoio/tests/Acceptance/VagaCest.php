@@ -6,7 +6,7 @@ use Tests\Support\AcceptanceTester;
 
 class VagaCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
 
     // Teste de Listagem Pública de Vagas
     public function testListVagas(AcceptanceTester $I)

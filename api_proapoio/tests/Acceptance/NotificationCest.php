@@ -6,7 +6,7 @@ use Tests\Support\AcceptanceTester;
 
 class NotificationCest
 {
-    private $baseUrl = 'http://localhost:3074';
+    private $baseUrl = 'http://localhost:5174';
 
     // Teste de Listar Notificações
     public function testListNotifications(AcceptanceTester $I)
