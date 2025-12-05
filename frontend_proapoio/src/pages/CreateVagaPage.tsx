@@ -57,6 +57,8 @@ const CreateVagaPage: React.FC = () => {
   const [deficiencias, setDeficiencias] = useState<Deficiencia[]>([]);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [useEnderecoInstituicao, setUseEnderecoInstituicao] = useState(true);
+  const [instituicaoEndereco, setInstituicaoEndereco] = useState<{ cidade: string; estado: string } | null>(null);
 
   // Mapeamento de nomes técnicos para nomes amigáveis
   const fieldLabels: Record<string, string> = {
@@ -70,7 +72,6 @@ const CreateVagaPage: React.FC = () => {
     carga_horaria_semanal: 'Carga Horária Semanal',
     regime_contratacao: 'Regime de Contratação',
     valor_remuneracao: 'Remuneração',
-    tipo_remuneracao: 'Tipo de Remuneração',
     aluno_nascimento_mes: 'Mês de Nascimento do Aluno',
     aluno_nascimento_ano: 'Ano de Nascimento do Aluno',
     deficiencia_ids: 'Deficiências Associadas'
@@ -83,6 +84,31 @@ const CreateVagaPage: React.FC = () => {
       navigate('/');
     }
   }, [user, navigate, toast]);
+
+  // Buscar endereço da instituição
+  useEffect(() => {
+    const fetchInstituicaoEndereco = async () => {
+      try {
+        const response = await api.get('/instituicoes/me');
+        const endereco = response.data.endereco;
+        if (endereco?.cidade && endereco?.estado) {
+          setInstituicaoEndereco({
+            cidade: endereco.cidade,
+            estado: endereco.estado
+          });
+          // Preencher formulário automaticamente com endereço da instituição
+          setFormData(prev => ({
+            ...prev,
+            cidade: endereco.cidade,
+            estado: endereco.estado
+          }));
+        }
+      } catch (err) {
+        logger.error('Erro ao carregar endereço da instituição:', err);
+      }
+    };
+    fetchInstituicaoEndereco();
+  }, []);
 
   // Buscar deficiências
   useEffect(() => {
@@ -97,6 +123,24 @@ const CreateVagaPage: React.FC = () => {
     };
     fetchDeficiencias();
   }, [toast]);
+
+  // Atualizar cidade/estado quando checkbox de endereço mudar
+  useEffect(() => {
+    if (useEnderecoInstituicao && instituicaoEndereco) {
+      setFormData(prev => ({
+        ...prev,
+        cidade: instituicaoEndereco.cidade,
+        estado: instituicaoEndereco.estado
+      }));
+    } else if (!useEnderecoInstituicao) {
+      // Limpar campos quando desmarcar checkbox
+      setFormData(prev => ({
+        ...prev,
+        cidade: '',
+        estado: ''
+      }));
+    }
+  }, [useEnderecoInstituicao, instituicaoEndereco]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -241,6 +285,21 @@ const CreateVagaPage: React.FC = () => {
                 />
               </div>
 
+              {/* Checkbox para usar endereço da instituição */}
+              {instituicaoEndereco && (
+                <div className="form-field">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={useEnderecoInstituicao}
+                      onChange={(e) => setUseEnderecoInstituicao(e.target.checked)}
+                      className="form-checkbox"
+                    />
+                    Usar endereço da instituição ({instituicaoEndereco.cidade} - {instituicaoEndereco.estado})
+                  </label>
+                </div>
+              )}
+
               <div className="grid-2-col">
                 <div className="form-field">
                   <label htmlFor="cidade" className="label-field">
@@ -252,6 +311,7 @@ const CreateVagaPage: React.FC = () => {
                     name="cidade"
                     value={formData.cidade}
                     onChange={handleChange}
+                    disabled={useEnderecoInstituicao}
                     className={`input-field ${fieldErrors.cidade ? 'input-error' : ''}`}
                     placeholder="Ex: São Paulo"
                     maxLength={120}
@@ -267,6 +327,7 @@ const CreateVagaPage: React.FC = () => {
                     name="estado"
                     value={formData.estado}
                     onChange={handleChange}
+                    disabled={useEnderecoInstituicao}
                     className={`input-field ${fieldErrors.estado ? 'input-error' : ''}`}
                   >
                     <option value="">Selecione...</option>
@@ -394,8 +455,6 @@ const CreateVagaPage: React.FC = () => {
                     <option value="CLT">CLT</option>
                     <option value="PJ">PJ</option>
                     <option value="ESTAGIO">Estágio</option>
-                    <option value="VOLUNTARIO">Voluntário</option>
-                    <option value="OUTRO">Outro</option>
                   </select>
                 </div>
 
@@ -417,41 +476,21 @@ const CreateVagaPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid-2-col">
-                <div className="form-field">
-                  <label htmlFor="valor_remuneracao" className="label-field">
-                    Valor da Remuneração (R$)
-                  </label>
-                  <input
-                    type="number"
-                    id="valor_remuneracao"
-                    name="valor_remuneracao"
-                    value={formData.valor_remuneracao}
-                    onChange={handleChange}
-                    className={`input-field ${fieldErrors.valor_remuneracao ? 'input-error' : ''}`}
-                    placeholder="Ex: 2500.00"
-                    min={0}
-                    step="0.01"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="tipo_remuneracao" className="label-field">
-                    Tipo de Remuneração
-                  </label>
-                  <select
-                    id="tipo_remuneracao"
-                    name="tipo_remuneracao"
-                    value={formData.tipo_remuneracao}
-                    onChange={handleChange}
-                    className={`input-field ${fieldErrors.tipo_remuneracao ? 'input-error' : ''}`}
-                  >
-                    <option value="MENSAL">Mensal</option>
-                    <option value="HORARIA">Por Hora</option>
-                    <option value="DIARIA">Diária</option>
-                    <option value="PROJETO">Por Projeto</option>
-                  </select>
-                </div>
+              <div className="form-field">
+                <label htmlFor="valor_remuneracao" className="label-field">
+                  Valor da Remuneração Mensal (R$)
+                </label>
+                <input
+                  type="number"
+                  id="valor_remuneracao"
+                  name="valor_remuneracao"
+                  value={formData.valor_remuneracao}
+                  onChange={handleChange}
+                  className={`input-field ${fieldErrors.valor_remuneracao ? 'input-error' : ''}`}
+                  placeholder="Ex: 2500.00"
+                  min={0}
+                  step="0.01"
+                />
               </div>
             </section>
 

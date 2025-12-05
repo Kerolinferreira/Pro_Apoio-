@@ -56,25 +56,27 @@ export default function LoginPage() {
   }, [redirectTo, navigate]);
 
   /**
-   * @description CORREÇÃO P11: Limpa formulário ao montar o componente (após logout)
+   * @description CORREÇÃO P11: Limpa formulário quando usuário faz logout
    */
   useEffect(() => {
-    setEmail('');
-    setPassword('');
-    setError('');
-    setShowPassword(false);
-    clearErrors();
-  }, []); // Executa apenas uma vez ao montar
+    // Se não estiver logado, limpa o formulário (importante após logout)
+    if (!user) {
+      setEmail('');
+      setPassword('');
+      setError('');
+      setShowPassword(false);
+      clearErrors();
+    }
+  }, [user, clearErrors]); // Executa quando user muda para null (logout)
 
   /**
-   * @description Efeito para redirecionar imediatamente se o usuário já estiver logado.
+   * @description Redireciona se usuário já estiver autenticado
    */
   useEffect(() => {
-    // Se o user já existir, redireciona imediatamente
     if (user) {
       goToHomeByRole(user);
     }
-  }, [user, goToHomeByRole]); // user é a dependência correta aqui.
+  }, [user, goToHomeByRole]);
 
   /**
    * @async

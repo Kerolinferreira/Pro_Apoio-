@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Accessibility } from 'lucide-react';
+import { X } from 'lucide-react';
 import api from '../services/api';
 import { useToast } from './Toast';
 import { parseApiError, getFieldErrorMessage } from '../utils/errorHandler';
@@ -250,7 +250,6 @@ const ExperienciaPessoalModal: React.FC<ExperienciaPessoalModalProps> = ({
                                             onChange={() => toggleDeficiencia(def.id)}
                                             disabled={isLoading}
                                         />
-                                        <Accessibility size={20} className="text-brand-color mr-xs" />
                                         {def.nome}
                                     </label>
                                 ))}

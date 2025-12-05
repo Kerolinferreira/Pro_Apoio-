@@ -12,17 +12,8 @@ import Footer from '../components/Footer';
  */
 export default function RegisterPage() {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
-    const { user } = useAuth();
     const successType = searchParams.get('success'); // 'candidato' ou 'instituicao'
     const successRef = useRef<HTMLDivElement>(null);
-
-    // Redireciona para dashboard se já estiver logado
-    useEffect(() => {
-        if (user) {
-            navigate('/dashboard', { replace: true });
-        }
-    }, [user, navigate]);
 
     // Foca no alerta de sucesso após o cadastro
     useEffect(() => {

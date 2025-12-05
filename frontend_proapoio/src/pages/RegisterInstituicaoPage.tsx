@@ -86,14 +86,6 @@ function senhaValida(s: string) {
 
 const RegisterInstituicaoPage: React.FC = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
-
-    // Redireciona para dashboard se já estiver logado
-    useEffect(() => {
-        if (user) {
-            navigate('/dashboard', { replace: true });
-        }
-    }, [user, navigate]);
 
     const [instituicaoForm, setInstituicaoForm] = useState(initialInstituicaoState);
     const [loading, setLoading] = useState(false);

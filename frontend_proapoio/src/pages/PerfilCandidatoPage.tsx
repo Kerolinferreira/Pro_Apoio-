@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Accessibility, Save, Edit, Loader2, AlertTriangle, Trash2, PlusCircle, Eye, EyeOff, Calendar, Lock as LockIcon } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Save, Edit, Loader2, AlertTriangle, Trash2, PlusCircle, Eye, EyeOff, Calendar, Lock as LockIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { ESCOLARIDADE_OPTIONS, GENERO_OPTIONS, ESTADOS_BRASILEIROS } from '../constants/options';
@@ -155,25 +155,26 @@ const PerfilCandidatoPage: React.FC = () => {
                     estado: apiData.estado || ''
                 },
                 deficiencias_atuadas: apiData.deficiencias_atuadas || [],
-                experienciasProfissionais: apiData.experienciasProfissionais || [],
-                experienciasPessoais: apiData.experienciasPessoais || [],
+                // CORREÇÃO P22: Aceitar tanto camelCase quanto snake_case do backend
+                experienciasProfissionais: apiData.experienciasProfissionais || apiData.experiencias_profissionais || [],
+                experienciasPessoais: apiData.experienciasPessoais || apiData.experiencias_pessoais || [],
                 experiencias: [
-                    ...(apiData.experienciasProfissionais || []).map((exp: any) => ({
+                    ...((apiData.experienciasProfissionais || apiData.experiencias_profissionais || []).map((exp: any) => ({
                         id: exp.id_experiencia_profissional,
                         tipo: 'profissional' as const,
                         titulo: exp.titulo || 'Experiência Profissional',
                         descricao: exp.descricao || '',
                         data_inicio: exp.data_inicio || '',
                         data_fim: exp.data_fim || null
-                    })),
-                    ...(apiData.experienciasPessoais || []).map((exp: any) => ({
+                    }))),
+                    ...((apiData.experienciasPessoais || apiData.experiencias_pessoais || []).map((exp: any) => ({
                         id: exp.id_experiencia_pessoal,
                         tipo: 'pessoal' as const,
                         titulo: exp.titulo || 'Experiência Pessoal',
                         descricao: exp.descricao || '',
                         data_inicio: exp.data_inicio || '',
                         data_fim: exp.data_fim || null
-                    }))
+                    })))
                 ]
             };
 
@@ -792,7 +793,6 @@ const PerfilCandidatoPage: React.FC = () => {
                                                     <div className="flex-wrap-gap-xs mb-xs">
                                                         {exp.deficiencias.map(def => (
                                                             <span key={def.id} className="badge-outline badge-sm">
-                                                                <Accessibility size={14} className="mr-xs" />
                                                                 {def.nome}
                                                             </span>
                                                         ))}
@@ -850,7 +850,6 @@ const PerfilCandidatoPage: React.FC = () => {
                                         onChange={(e) => handleDeficienciaChange(def.id, e.target.checked)}
                                         disabled={!editMode}
                                     />
-                                    <Accessibility size={20} className="text-brand-color mr-xs" />
                                     {def.nome}
                                 </label>
                             ))}

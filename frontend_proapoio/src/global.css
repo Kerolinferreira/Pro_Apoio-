@@ -444,6 +444,7 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     text-decoration: none;
     outline: none;
     user-select: none;
+    vertical-align: middle; /* Garante alinhamento vertical */
 }
 .btn-base:disabled {
     opacity: 0.5;
@@ -491,7 +492,20 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
 
 /* Botões de Ícone e Tamanho */
 .btn-icon {
-    gap: 0.5rem;
+    gap: 0.5rem; /* Espaçamento entre ícone e texto */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Garantir que ícones dentro de botões sejam centralizados */
+.btn-base svg,
+.btn-primary svg,
+.btn-secondary svg,
+.btn-icon svg {
+    flex-shrink: 0; /* Previne que o ícone encolha */
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .btn-sm {
@@ -499,13 +513,19 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     font-size: 0.875rem;
     line-height: 1.25;
 }
-.btn-lg { 
+.btn-lg {
     width: 100%;
-    padding: 0.75rem 1.5rem; 
+    padding: 0.75rem 1.5rem;
     font-size: 1rem;
 }
 @media (min-width: 640px) {
     .btn-lg { width: auto; }
+}
+
+/* Classe para botões que devem ter largura automática (ajustada ao conteúdo) */
+.btn-auto {
+    width: auto;
+    min-width: fit-content;
 }
 
 /* Botões Específicos */
@@ -603,6 +623,19 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     font-size: 1rem;
     outline: none;
     font-family: inherit;
+    line-height: 1.5; /* Alinhamento consistente */
+}
+
+/* Placeholder styling para garantir alinhamento */
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    line-height: 1.5;
+}
+.form-select option {
+    line-height: 1.5;
+    padding: var(--spacing-xs);
 }
 .form-input:hover:not(:disabled):not([aria-invalid="true"]),
 .form-select:hover:not(:disabled):not([aria-invalid="true"]),
@@ -634,27 +667,43 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     align-items: center;
     width: 100%;
 }
-.form-icon { 
+.form-icon {
     position: absolute;
-    left: var(--spacing-sm); 
+    left: var(--spacing-sm);
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--color-text-muted);
-    pointer-events: none; 
+    pointer-events: none;
+    z-index: 1; /* Garante que o ícone fique acima do input */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .form-input.with-icon, .form-select.with-icon {
-    padding-left: 2.25rem; 
+    padding-left: 2.5rem; /* Espaço adequado para o ícone */
 }
 .form-input-suffix {
     position: absolute;
-    right: 0;
-    height: 100%;
+    right: var(--spacing-xs);
+    height: calc(100% - 4px); /* Ajusta para não sobrepor a borda */
     padding: 0 0.5rem;
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 0.875rem; 
+    font-size: 0.875rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+    z-index: 2; /* Garante que fique acima do input */
+}
+.form-input-suffix:hover {
+    color: var(--color-brand);
+}
+/* Ajuste de padding quando há sufixo */
+.form-input.pr-lg {
+    padding-right: 3rem; /* Espaço para o botão de sufixo */
 }
 .form-checkbox {
     height: 1rem; 
@@ -669,12 +718,14 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     background-color: var(--color-brand);
     border-color: var(--color-brand);
 }
-.checkbox-label { 
-    display: inline-flex;
+.checkbox-label {
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.5rem; /* Gap de 8px entre checkbox e label */
     cursor: pointer;
     color: var(--color-text-base);
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-xs); /* Espaçamento vertical entre checkboxes */
 }
 
 /* Fieldset Semântico */
@@ -1035,6 +1086,11 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-2xs);
+}
+
+/* Alias para form-error (usado em alguns arquivos) */
+.form-error {
+    composes: error-text;
 }
 
 
@@ -1800,4 +1856,247 @@ h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure {
 /* Gap small (entre xs e md) */
 .gap-sm {
     gap: var(--spacing-sm);
+}
+
+/* ============================== */
+/* TABS SYSTEM (Guias/Abas) */
+/* ============================== */
+
+/* Container das Tabs */
+.tabs-container {
+    display: flex;
+    gap: var(--spacing-xs);
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+/* Botão de Tab */
+.tab-button {
+    position: relative;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+    outline: none;
+}
+
+.tab-button:hover {
+    color: var(--color-brand);
+    background-color: var(--color-hover);
+}
+
+.tab-button:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: -3px;
+    border-radius: var(--border-radius-sm);
+}
+
+/* Tab Ativa */
+.tab-active {
+    color: var(--color-brand);
+    font-weight: 600;
+    border-bottom-color: var(--color-brand);
+    background-color: transparent;
+}
+
+.tab-active:hover {
+    background-color: transparent;
+}
+
+/* Responsividade para tabs em telas pequenas */
+@media (max-width: 640px) {
+    .tabs-container {
+        gap: 0;
+        width: 100%;
+    }
+
+    .tab-button {
+        flex: 1;
+        text-align: center;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.875rem;
+    }
+}
+
+/* ============================== */
+/* CLASSES UTILITÁRIAS ADICIONAIS */
+/* ============================== */
+
+/* Flexbox com espaço entre elementos (space-between) */
+.flex-actions-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* Específico para botões na tela de edição */
+.flex-actions-between > .flex-actions-end {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.flex-actions-between > .btn-secondary,
+.flex-actions-between > .btn-primary {
+    width: auto;
+    min-width: fit-content;
+}
+
+/* Gap para grid de valores */
+.gap-y-md {
+    row-gap: var(--spacing-md);
+}
+
+.gap-x-lg {
+    column-gap: var(--spacing-lg);
+}
+
+/* Cor de texto de sucesso */
+.text-success-color {
+    color: var(--color-success);
+}
+
+/* Content box (fundo cinza claro) */
+.content-box {
+    padding: var(--spacing-md);
+    background-color: var(--color-hover);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+}
+
+/* Italic text */
+.italic {
+    font-style: italic;
+}
+
+/* Info item (usado em DetalhesVagaPage) */
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xs);
+}
+
+/* Classe mr-xs para margem à direita */
+.mr-xs {
+    margin-right: var(--spacing-xs);
+}
+
+/* Classe hidden para esconder elementos */
+.hidden {
+    display: none;
+}
+
+/* Cores de texto específicas */
+.text-info {
+    color: var(--color-info);
+}
+
+.text-brand-color {
+    color: var(--color-brand);
+}
+
+/* Ícone de animação de spin (loading) */
+.icon-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Max width para conteúdo médio */
+.max-w-md-content {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Estilo para classe 'required' em labels */
+.required::after {
+    content: " *";
+    color: var(--color-error);
+}
+
+/* Classe inline para elementos inline */
+.inline {
+    display: inline;
+}
+
+/* Classe mr-sm para margem à direita */
+.mr-sm {
+    margin-right: var(--spacing-sm);
+}
+
+/* Padding right large (usado em inputs com sufixo) */
+.pr-lg {
+    padding-right: var(--spacing-lg);
+}
+
+/* ============================== */
+/* CORREÇÕES ESPECÍFICAS PARA CHECKBOXES EM GRIDS */
+/* ============================== */
+
+/* Grid de checkboxes com espaçamento adequado */
+.grid.grid-cols-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+/* Checkboxes em grids devem ter espaçamento vertical */
+.grid.grid-cols-1 > label,
+.grid.md\:grid-cols-2 > label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) 0;
+    cursor: pointer;
+}
+
+/* Grid de 2 colunas em telas médias */
+@media (min-width: 768px) {
+    .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Container para checkboxes com espaçamento vertical consistente */
+.space-y-xs > label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+    cursor: pointer;
+}
+
+/* Classes utilitárias para flexbox */
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Padding para elementos de lista de checkboxes */
+.form-group[role="group"] label {
+    margin-bottom: var(--spacing-sm);
 }

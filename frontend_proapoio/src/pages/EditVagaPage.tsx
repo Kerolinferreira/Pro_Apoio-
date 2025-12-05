@@ -75,7 +75,6 @@ const EditVagaPage: React.FC = () => {
     carga_horaria_semanal: 'Carga Horária Semanal',
     regime_contratacao: 'Regime de Contratação',
     valor_remuneracao: 'Remuneração',
-    tipo_remuneracao: 'Tipo de Remuneração',
     aluno_nascimento_mes: 'Mês de Nascimento do Aluno',
     aluno_nascimento_ano: 'Ano de Nascimento do Aluno',
     deficiencia_ids: 'Deficiências Associadas'
@@ -467,8 +466,6 @@ const EditVagaPage: React.FC = () => {
                     <option value="CLT">CLT</option>
                     <option value="PJ">PJ</option>
                     <option value="ESTAGIO">Estágio</option>
-                    <option value="VOLUNTARIO">Voluntário</option>
-                    <option value="OUTRO">Outro</option>
                   </select>
                 </div>
 
@@ -490,41 +487,21 @@ const EditVagaPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid-2-col">
-                <div className="form-field">
-                  <label htmlFor="valor_remuneracao" className="label-field">
-                    Valor da Remuneração (R$)
-                  </label>
-                  <input
-                    type="number"
-                    id="valor_remuneracao"
-                    name="valor_remuneracao"
-                    value={formData.valor_remuneracao}
-                    onChange={handleChange}
-                    className="input-field"
-                    placeholder="Ex: 2500.00"
-                    min={0}
-                    step="0.01"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="tipo_remuneracao" className="label-field">
-                    Tipo de Remuneração
-                  </label>
-                  <select
-                    id="tipo_remuneracao"
-                    name="tipo_remuneracao"
-                    value={formData.tipo_remuneracao}
-                    onChange={handleChange}
-                    className="input-field"
-                  >
-                    <option value="MENSAL">Mensal</option>
-                    <option value="HORARIA">Por Hora</option>
-                    <option value="DIARIA">Diária</option>
-                    <option value="PROJETO">Por Projeto</option>
-                  </select>
-                </div>
+              <div className="form-field">
+                <label htmlFor="valor_remuneracao" className="label-field">
+                  Valor da Remuneração Mensal (R$)
+                </label>
+                <input
+                  type="number"
+                  id="valor_remuneracao"
+                  name="valor_remuneracao"
+                  value={formData.valor_remuneracao}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Ex: 2500.00"
+                  min={0}
+                  step="0.01"
+                />
               </div>
             </section>
 

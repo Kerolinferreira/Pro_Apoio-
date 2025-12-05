@@ -110,7 +110,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         },
       });
 
-      const imageUrl = response.data[`${fieldName}_url`] || response.data.url || response.data.path;
+      // CORREÇÃO P21: Buscar URL retornada do backend de forma mais flexível
+      const imageUrl = response.data[`${fieldName}_url`] || response.data.foto_url || response.data.logo_url || response.data.url || response.data.path;
+
+      if (!imageUrl) {
+        logger.error('URL da imagem não retornada pelo backend:', response.data);
+        throw new Error('URL da imagem não foi retornada pelo servidor.');
+      }
 
       onUploadSuccess(imageUrl);
       toast.success('Imagem enviada com sucesso!');

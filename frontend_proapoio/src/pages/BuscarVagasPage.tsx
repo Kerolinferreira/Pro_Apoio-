@@ -348,13 +348,13 @@ const BuscarVagasPage: React.FC = () => {
       <div className="flex-group hidden-lg">
         <button
           onClick={handleApplyFilters}
-          className="btn-primary w-full"
+          className="btn-primary"
         >
           Aplicar Filtros
         </button>
         <button
           onClick={handleClearFilters}
-          className="btn-error w-full"
+          className="btn-secondary btn-warning"
         >
           Limpar Filtros
         </button>
@@ -406,7 +406,7 @@ const BuscarVagasPage: React.FC = () => {
               <div className="mt-md">
                 <button
                   onClick={handleClearFilters}
-                  className="btn-error w-full"
+                  className="btn-secondary btn-warning"
                 >
                   Limpar Filtros
                 </button>

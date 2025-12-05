@@ -4,7 +4,7 @@ import api from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PropostaModal from '../components/PropostaModal';
-import { User, MapPin, Briefcase, GraduationCap, Accessibility, Send, Loader2, AlertTriangle, Calendar, Zap, MessageSquare, X, Copy, CheckCircle } from 'lucide-react';
+import { User, MapPin, Briefcase, GraduationCap, Send, Loader2, AlertTriangle, Calendar, Zap, MessageSquare, X, Copy, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { logger } from '../utils/logger'; 
@@ -346,8 +346,7 @@ const PerfilCandidatoPublicPage: React.FC = () => {
 
                 {/* SEÇÃO 2: DEFICIÊNCIAS E HABILIDADES ATUADAS */}
                 <Section title="Experiência em Atendimento">
-                    <h3 className="title-md mb-md flex-group-item">
-                        <Accessibility size={20} className="mr-sm" />
+                    <h3 className="title-md mb-md">
                         Tipos de Deficiência com Experiência
                     </h3>
                     

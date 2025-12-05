@@ -181,7 +181,7 @@ const BuscarCandidatosPage: React.FC = () => {
                             <h3 className="text-sm mb-sm">Nível de Escolaridade</h3>
                             <div className="space-y-sm">
                                 {ESCOLARIDADE_SELECT_OPTIONS.map(option => (
-                                    <div key={option.value} className="flex-group-item">
+                                    <label key={option.value} htmlFor={`escolaridade-${option.value}`} className="checkbox-label">
                                         <input
                                             id={`escolaridade-${option.value}`}
                                             name="escolaridade"
@@ -189,12 +189,10 @@ const BuscarCandidatosPage: React.FC = () => {
                                             value={option.value}
                                             checked={filters.escolaridade.includes(option.value)}
                                             onChange={handleEscolaridadeChange}
-                                            className="form-checkbox" // Estilo global
+                                            className="form-checkbox"
                                         />
-                                        <label htmlFor={`escolaridade-${option.value}`} className="text-sm text-muted">
-                                            {option.label}
-                                        </label>
-                                    </div>
+                                        {option.label}
+                                    </label>
                                 ))}
                             </div>
                         </div>
